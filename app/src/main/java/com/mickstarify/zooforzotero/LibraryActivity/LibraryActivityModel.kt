@@ -378,10 +378,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
                 override fun onError(e: Throwable) {
                     Log.e("zotero", "got error ${e}")
-//                    if (downloadDisposable?.isDisposed == true) {
-//                        return
-//                    }
-
                     if (e is ZoteroNotFoundException) {
                         presenter.attachmentDownloadError(
                             "The file does not exist on the Zotero server."

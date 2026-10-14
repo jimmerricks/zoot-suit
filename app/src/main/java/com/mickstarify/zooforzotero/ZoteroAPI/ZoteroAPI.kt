@@ -232,7 +232,6 @@ class ZoteroAPI(
     }
 
     fun testConnection(callback: (success: Boolean, message: String) -> (Unit)) {
-        println("testConnection()")
         val call: Call<KeyInfo> = service.getKeyInfo(this.API_KEY)
 
         call.enqueue(object : Callback<KeyInfo> {
