@@ -43,7 +43,7 @@ class ManualApiViewModelTest : BaseViewModelTest() {
 
     @Test
     fun `initial state should have empty api key and submit disabled`() = runTest {
-        viewModel.state.test {
+        viewModel.stateFlow.test {
             val initialState = awaitItem()
             assertEquals(ManualApiViewModel.State(
                 apiKey = EMPTY_STRING,
@@ -56,7 +56,7 @@ class ManualApiViewModelTest : BaseViewModelTest() {
 
     @Test
     fun `api key changed event should update state and enable submit`() = runTest {
-        viewModel.state.test {
+        viewModel.stateFlow.test {
             val initialState = awaitItem()
             assertEquals(ManualApiViewModel.State(
                 apiKey = EMPTY_STRING,
@@ -65,7 +65,7 @@ class ManualApiViewModelTest : BaseViewModelTest() {
                 isSubmitEnabled = false
             ), initialState)
 
-            viewModel.dispatch(ManualApiViewModel.Event.ApiKeyChanged(TEST_API_KEY))
+            viewModel.dispatchEvent(ManualApiViewModel.Event.ApiKeyChanged(TEST_API_KEY))
 
             val updatedState = awaitItem()
             assertEquals(ManualApiViewModel.State(
@@ -83,14 +83,14 @@ class ManualApiViewModelTest : BaseViewModelTest() {
         whenever(apiKeyRepository.validateApiKey(TEST_API_KEY))
             .thenReturn(ApiKeyRepository.ValidationResult.Error("Test error"))
 
-        viewModel.state.test {
+        viewModel.stateFlow.test {
             awaitItem() // Initial state
             
             // Set API key and submit to create an error
-            viewModel.dispatch(ManualApiViewModel.Event.ApiKeyChanged(TEST_API_KEY))
+            viewModel.dispatchEvent(ManualApiViewModel.Event.ApiKeyChanged(TEST_API_KEY))
             awaitItem() // Key changed state
             
-            viewModel.dispatch(ManualApiViewModel.Event.SubmitApiKey)
+            viewModel.dispatchEvent(ManualApiViewModel.Event.SubmitApiKey)
             awaitItem() // Validating state
             
             val errorState = awaitItem() // Error state
@@ -102,7 +102,7 @@ class ManualApiViewModelTest : BaseViewModelTest() {
             ), errorState)
             
             // Now clear the error
-            viewModel.dispatch(ManualApiViewModel.Event.ClearError)
+            viewModel.dispatchEvent(ManualApiViewModel.Event.ClearError)
 
             val clearedState = awaitItem()
             assertEquals(ManualApiViewModel.State(
@@ -129,13 +129,13 @@ class ManualApiViewModelTest : BaseViewModelTest() {
             // Set API key first
 
             // Test state changes first
-            viewModel.state.test {
+            viewModel.stateFlow.test {
                 val initialState = awaitItem()
-                viewModel.dispatch(ManualApiViewModel.Event.ApiKeyChanged(VALID_API_KEY))
+                viewModel.dispatchEvent(ManualApiViewModel.Event.ApiKeyChanged(VALID_API_KEY))
 
                 val changedState = awaitItem()
 
-                viewModel.dispatch(ManualApiViewModel.Event.SubmitApiKey)
+                viewModel.dispatchEvent(ManualApiViewModel.Event.SubmitApiKey)
 
                 // Should see validating true
                 val validatingState = awaitItem()
@@ -149,7 +149,7 @@ class ManualApiViewModelTest : BaseViewModelTest() {
             }
 
             // Test effects separately (effect was already dispatched above)
-            viewModel.effects.test {
+            viewModel.effect.test {
                 val effect = awaitItem()
                 assertEquals(ManualApiViewModel.Effect.NavigateToLibrary, effect)
             }
@@ -162,13 +162,13 @@ class ManualApiViewModelTest : BaseViewModelTest() {
         whenever(apiKeyRepository.validateApiKey(INVALID_API_KEY))
             .thenReturn(ApiKeyRepository.ValidationResult.Error(INVALID_API_ERROR_MESSAGE))
 
-        viewModel.state.test {
+        viewModel.stateFlow.test {
             awaitItem() // Initial state
 
-            viewModel.dispatch(ManualApiViewModel.Event.ApiKeyChanged(INVALID_API_KEY))
+            viewModel.dispatchEvent(ManualApiViewModel.Event.ApiKeyChanged(INVALID_API_KEY))
             val keyChangedState = awaitItem()
 
-            viewModel.dispatch(ManualApiViewModel.Event.SubmitApiKey)
+            viewModel.dispatchEvent(ManualApiViewModel.Event.SubmitApiKey)
 
             val validatingState = awaitItem()
             assertEquals(ManualApiViewModel.State(
@@ -193,13 +193,13 @@ class ManualApiViewModelTest : BaseViewModelTest() {
         whenever(apiKeyRepository.validateApiKey(TEST_API_KEY))
             .thenReturn(ApiKeyRepository.ValidationResult.NetworkError)
 
-        viewModel.state.test {
+        viewModel.stateFlow.test {
             awaitItem() // Initial state
 
-            viewModel.dispatch(ManualApiViewModel.Event.ApiKeyChanged(TEST_API_KEY))
+            viewModel.dispatchEvent(ManualApiViewModel.Event.ApiKeyChanged(TEST_API_KEY))
             awaitItem() // Key changed state
 
-            viewModel.dispatch(ManualApiViewModel.Event.SubmitApiKey)
+            viewModel.dispatchEvent(ManualApiViewModel.Event.SubmitApiKey)
 
             val validatingState = awaitItem()
             assertEquals(ManualApiViewModel.State(
@@ -221,8 +221,8 @@ class ManualApiViewModelTest : BaseViewModelTest() {
 
     @Test
     fun `navigate back event should send navigate back effect`() = runTest {
-        viewModel.effects.test {
-            viewModel.dispatch(ManualApiViewModel.Event.NavigateBack)
+        viewModel.effect.test {
+            viewModel.dispatchEvent(ManualApiViewModel.Event.NavigateBack)
             advanceUntilIdle()
 
             val effect = awaitItem()
