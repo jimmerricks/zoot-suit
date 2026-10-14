@@ -41,7 +41,6 @@ import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.io.FileNotFoundException
 import java.util.LinkedList
-import java.util.Stack
 import java.util.concurrent.TimeUnit
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection as ZoteroCollection
 
@@ -76,11 +75,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     private var groups: List<GroupInfo>? = null
 
 
-    val states = Stack<LibraryModelState>()
+    val navigator = LibraryNavigator()
+    val states get() = navigator.states
     val state: LibraryModelState
-        get() {
-            return states.peek()
-        }
+        get() = navigator.current
     private var zoteroDB: ZoteroDB by zoteroDBPicker
 
     private var performedCleanSync: Boolean = false
@@ -865,22 +863,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     fun getCurrentCollection(): String {
-        return state.currentCollection
+        return navigator.currentCollection()
     }
 
     fun setCurrentCollection(collectionName: String, usePersonalLibrary: Boolean = true) {
-        // check to see if we're in a new state first.
-        if (state.currentCollection == collectionName) {
-            return
-        }
-
-        val newState = LibraryModelState()
-        if (!usePersonalLibrary) {
-            newState.currentGroup = state.currentGroup
-        }
-        newState.currentCollection = collectionName
-        newState.filterText = state.filterText
-        states.push(newState)
+        navigator.setCollection(collectionName, usePersonalLibrary)
     }
 
     fun checkAttachmentStorageAccess() {
@@ -912,11 +899,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     fun isUsingGroups(): Boolean {
-        return state.isUsingGroup()
+        return navigator.isUsingGroup()
     }
 
     fun getCurrentGroup(): GroupInfo? {
-        return state.currentGroup
+        return navigator.currentGroup()
     }
 
     fun loadLibraryLocally(onFinish: () -> Unit = {}) {
@@ -1046,8 +1033,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         preferences = hiltEntryPoint.getPreferences()
 
         val auth = AuthenticationStorage(context)
-        // add the first library state.
-        states.push(LibraryModelState())
+        // the initial (root) library state is seeded by LibraryNavigator's init.
 
         if (auth.hasCredentials()) {
             zoteroAPI = ZoteroAPI(
