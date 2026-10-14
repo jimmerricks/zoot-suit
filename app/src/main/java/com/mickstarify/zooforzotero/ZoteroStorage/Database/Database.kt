@@ -198,7 +198,7 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
     }
 
     fun deleteEverything() {
-        //todo implement.
+        db.clearAllTables()
     }
 }
 
