@@ -42,11 +42,11 @@ Planned divergences are tracked in [dependency-modernization-plan.md](dependency
 
 ## Roadmap
 
-See [dependency-modernization-plan.md](dependency-modernization-plan.md) for the staged migration plan:
+See [dependency-modernization-plan.md](dependency-modernization-plan.md) for the full status. In short, the Kotlin 2.1 / KSP / Hilt / RxJava3 / Compose+Nav3 modernization is largely done; what remains is:
 
-- **Phase 1** — Safe dependency updates (AndroidX, Hilt, Kotlin 2.x, KSP)
-- **Phase 2** — Replace RxJava2 with Coroutines throughout
-- **Phase 3** — Compose UI migration
+- Finish the RxJava3 → Coroutines migration (the app is currently a hybrid)
+- Retire the MVP library core (`LibraryActivityModel` god class) in favour of MVVM
+- Minor dependency tidy-ups (Retrofit, the legacy FAB library, OAuth stack)
 
 ---
 
