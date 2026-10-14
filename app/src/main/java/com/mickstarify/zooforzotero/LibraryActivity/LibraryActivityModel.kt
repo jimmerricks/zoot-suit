@@ -726,8 +726,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                         "Cancel",
                         { uploadAttachment(attachment) },
                         { removeFromRecentlyViewed(attachment) })
+                } else {
+                    uploadAttachment(attachment)
                 }
-                uploadAttachment(attachment)
             },
             { removeFromRecentlyViewed(attachment) })
     }
