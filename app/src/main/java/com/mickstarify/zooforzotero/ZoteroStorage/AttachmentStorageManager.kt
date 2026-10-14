@@ -124,7 +124,8 @@ class AttachmentStorageManager @Inject constructor(
             }
         }
 
-        throw Exception("not implemented")
+        Log.e("zotero", "checkIfAttachmentExists called with unconfigured storage mode")
+        return false
     }
 
     fun calculateMd5(attachment: Item): String {

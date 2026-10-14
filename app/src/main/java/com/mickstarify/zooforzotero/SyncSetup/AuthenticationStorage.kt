@@ -16,7 +16,7 @@ class AuthenticationStorage(context: Context) {
     }
 
     fun getUsername(): String {
-        return sharedPreferences.getString("username", "error")!!
+        return sharedPreferences.getString("username", "")!!
     }
 
     fun setCredentials(username: String, userID: String, userkey: String) {
@@ -28,11 +28,11 @@ class AuthenticationStorage(context: Context) {
     }
 
     fun getUserKey(): String {
-        return sharedPreferences.getString("userkey", "error")!!
+        return sharedPreferences.getString("userkey", "")!!
     }
 
     fun getUserID(): String {
-        return sharedPreferences.getString("userID", "error")!!
+        return sharedPreferences.getString("userID", "")!!
     }
 
     fun destroyCredentials() {
