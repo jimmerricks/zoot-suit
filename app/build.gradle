@@ -144,7 +144,13 @@ dependencies {
 
     // Unit Testing
     testImplementation 'org.junit.jupiter:junit-jupiter:5.13.4'
+    // Pin the launcher to match jupiter 5.13.x (platform 1.13.x); Gradle 8.13
+    // otherwise supplies an older launcher and Jupiter fails to discover tests.
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
     testImplementation 'junit:junit:4.13.2'
+    // Vintage engine so the existing JUnit4 model tests also run under the
+    // JUnit Platform; without it useJUnitPlatform() silently skips them.
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.13.4'
     testImplementation 'org.mockito:mockito-core:5.18.0'
     testImplementation 'org.mockito.kotlin:mockito-kotlin:6.0.0'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2'
