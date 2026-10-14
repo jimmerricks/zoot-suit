@@ -1,96 +1,56 @@
+# Zoot Suit
 
-# Zoo for Zotero [![Build Status](https://travis-ci.org/mickstar/Zoo-For-Zotero.svg?branch=master)](https://travis-ci.org/mickstar/Zoo-For-Zotero) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/80b55ec190444aab978050ad03a7b4b5)](https://www.codacy.com/manual/mickstar/Zoo-For-Zotero?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mickstar/Zoo-For-Zotero&amp;utm_campaign=Badge_Grade)
+A personal fork of [Zoo for Zotero](https://github.com/mickstar/Zoo-For-Zotero) by Michael Johnston, an Android client for browsing and syncing Zotero libraries.
 
-  
+**Upstream:** `mickstar/Zoo-For-Zotero` — forked at v4.0.0 (commit `0261040`)  
+**License:** GPLv3 (inherited)  
+**Not affiliated with the Zotero project.**
 
-[<img src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png"
+---
 
-alt="Download from Google Play"
+## What this fork does differently
 
-height="80">](https://play.google.com/store/apps/details?id=com.mickstarify.zooforzotero)
+| Change | Upstream | This fork |
+|---|---|---|
+| App name | Zoo for Zotero | Zoot Suit |
+| minSdkVersion | 26 (Android 8.0) | 24 (Android 7.0) |
 
-  
+Planned divergences are tracked in [dependency-modernization-plan.md](dependency-modernization-plan.md).
 
-Zoo for Zotero is an Android application for viewing zotero libraries.
+---
 
-  
+## Features (inherited from upstream)
 
-<img src="github/screenshot1.png" width="280"/> <img src="github/screenshot2.png" width="280"/> <img src="github/screenshot3.png" width="280" />
+- Browse and search your Zotero library
+- Collections and subcollections
+- Two-way attachment sync (Zotero file storage and WebDAV)
+- Group libraries
+- Create, edit, and delete notes
+- Barcode scanner for ISBN lookup
+- MVVM architecture, written in Kotlin
 
-  
-
-## Features
-
-- Material Design
-
-- Support for organization via Collections, including subcollections
-
-- Supports two way syncing of attachments for (including WebDav)
-
-- Support for viewing group libraries
-
-- Supports the creating, editing and deleting Zotero's notes
-
-- Flexible searching of your library
-
-- Written in Kotlin using the MVP design pattern for a fast native experience
-
-- Currently readonly, but have plans allow for editing in the future
-
-- Support for the Zotero Account Sync service
-
-  
-
-## Libraries utilised
-
-- Dagger2
-
-- RxJava2
-
-- Room
-
-- Retrofit
-
-- And more, the full list can be found in the app.gradle.
-
-## Guides
-
- [Instructions for using Syncthing](https://github.com/arpsoid/zoo-syncthing/blob/main/README.md)
-
-## How to Contribute
-
-Any contributions, whether it be pull requests or even suggestions are welcome!
-
-I am kind of busy but I will get to it!
-
-  
+---
 
 ## Building
 
-* Provide your own Zotero api key/secret in the apikeys.properties file.
+1. Copy `apikeys.properties.example` to `apikeys.properties` and supply your Zotero OAuth key/secret from [zotero.org/settings/applications](https://www.zotero.org/settings/applications).
+2. Build with Android Studio or `./gradlew assembleDebug`.
 
-* Provide your own google services api (otherwise replace firebase with a stubs library)
+**Requirements:** Android 7.0+ (API 24), JDK 17+.
 
-  
+---
 
-  
+## Roadmap
 
-## License
+See [dependency-modernization-plan.md](dependency-modernization-plan.md) for the staged migration plan:
 
-* The application is released fully under GPLv3
+- **Phase 1** — Safe dependency updates (AndroidX, Hilt, Kotlin 2.x, KSP)
+- **Phase 2** — Replace RxJava2 with Coroutines throughout
+- **Phase 3** — Compose UI migration
 
-* This application is 100% Free with no ads!
+---
 
-* We utilise graphical resources directly from the desktop zotero client.
+## Credits
 
-  
-
-  
-
-Credits:
-
-- Michael Johnston
-
-  
-
-This is a third party zotero client and is not affiliated with Zotero.
+- [Michael Johnston](https://github.com/mickstar) — original Zoo for Zotero
+- Zotero graphical resources — [zotero.org](https://www.zotero.org) (Roy Rosenzweig Center for History and New Media)
