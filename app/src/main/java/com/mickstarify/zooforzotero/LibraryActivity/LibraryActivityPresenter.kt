@@ -195,6 +195,10 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         view.hideAttachmentDownloadProgress()
     }
 
+    override fun finishLibrary() {
+        view.finish()
+    }
+
     override fun createYesNoPrompt(
         title: String,
         message: String,

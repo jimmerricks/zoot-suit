@@ -96,6 +96,7 @@ interface Contract {
         fun onTagOpen(tagName: String)
         fun showLoadingAlertDialog(message: String)
         fun hideLoadingAlertDialog()
+        fun finishLibrary()
 
         var libraryListViewModel: LibraryListViewModel
         var libraryLoadingViewModel: LibraryLoadingScreenViewModel

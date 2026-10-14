@@ -1,6 +1,5 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
-import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -998,7 +997,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         // check at 2.
         if (states.size <= 2) {
             if (doubleBackToExitPressedOnce) {
-                (this.context as Activity).finish()
+                presenter.finishLibrary()
                 return
             }
 
@@ -1039,7 +1038,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     init {
-        val appContext = (context as Activity).applicationContext
+        val appContext = context.applicationContext
         val hiltEntryPoint = EntryPointAccessors.fromApplication(appContext, SingletonComponentsEntryPoint::class.java)
 
         zoteroDatabase = hiltEntryPoint.getZoteroDatabase()
@@ -1063,7 +1062,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 "Error with stored API",
                 "The API Key we have stored in the application is invalid!" +
                         "Please re-authenticate the application"
-            ) { context.finish() }
+            ) { presenter.finishLibrary() }
             auth.destroyCredentials()
             zoteroDB.clearItemsVersion()
         }
