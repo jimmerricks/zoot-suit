@@ -209,7 +209,6 @@ class ZoteroAPI(
                                 inputStream?.close()
                                 throw (e)
                             }
-                            progress += read
                         }
                         emitter.onComplete()
                     } else if (response.code() == 404) {
