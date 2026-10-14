@@ -138,7 +138,6 @@ class ZoteroDB(
 
 
     fun loadTrashItemsFromDB(): Completable{
-        zoteroDatabase.getItemsFromUserTrash()
         return Completable.fromMaybe(zoteroDatabase.getItemsFromUserTrash().doOnSuccess{
             this.trashItems = it
         })
