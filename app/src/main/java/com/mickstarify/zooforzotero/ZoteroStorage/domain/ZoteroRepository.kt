@@ -116,7 +116,7 @@ class ZoteroRepositoryImpl @Inject constructor(
                 )
 
             awaitClose {
-                // Cleanup if needed
+                downloadDisposable.dispose()
             }
         }.flowOn(dispatchersProvider.io)
 }
