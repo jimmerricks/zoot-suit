@@ -3,6 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/pending_edits"
+        android:title="@string/sync"
+        android:visible="false"
+        app:showAsAction="always|withText" />
+
+    <item
         android:id="@+id/tag_filter"
         android:icon="@drawable/baseline_label_white_24"
         android:title="Filter by tag"

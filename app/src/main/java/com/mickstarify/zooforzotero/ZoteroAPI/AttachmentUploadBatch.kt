@@ -39,14 +39,6 @@ object AttachmentUploadBatch {
         else -> e.toString()
     }
 
-    /**
-     * Whether to prompt on our own (not on request) about [changedKeys]: only if one of them
-     * hasn't been offered yet, so that choosing "Later" isn't answered with the same question
-     * every time the user comes back from the PDF viewer.
-     */
-    fun shouldOffer(changedKeys: Collection<String>, alreadyOffered: Set<String>): Boolean =
-        changedKeys.any { it !in alreadyOffered }
-
     /** Title and message summarising a finished batch. */
     fun summary(outcomes: List<Outcome>): Summary {
         val failed = outcomes.filter { it.failure != null }

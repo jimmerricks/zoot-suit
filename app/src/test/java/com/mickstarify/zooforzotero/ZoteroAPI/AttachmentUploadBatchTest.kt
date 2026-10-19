@@ -62,13 +62,6 @@ class AttachmentUploadBatchTest {
     }
 
     @Test
-    fun `offers only when something new has changed`() {
-        assertTrue(AttachmentUploadBatch.shouldOffer(listOf("A", "B"), setOf("A")))
-        assertFalse(AttachmentUploadBatch.shouldOffer(listOf("A", "B"), setOf("A", "B")))
-        assertFalse(AttachmentUploadBatch.shouldOffer(emptyList(), emptySet()))
-    }
-
-    @Test
     fun `reasons keep the preflight's explanation`() {
         val reason = AttachmentUploadBatch.failureReason(RemoteAttachmentChangedException("Changed on desktop."))
         assertTrue(reason.startsWith("Changed on desktop."))

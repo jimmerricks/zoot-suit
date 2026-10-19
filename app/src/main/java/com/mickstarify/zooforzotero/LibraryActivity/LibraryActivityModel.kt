@@ -424,6 +424,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                         return
                     } else {
                         recordBase(item, attachmentStorageManager.calculateMd5(item))
+                        refreshPendingEdits()
                         if (openWhenDone) {
                             openPDF(item)
                         } else {
@@ -693,51 +694,39 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             })
     }
 
-    /** Keys of edited attachments already offered for upload since the app started. */
-    private val offeredUploadKeys = HashSet<String>()
+    /** Counts edited attachments off the main thread and shows the number in the toolbar. */
+    fun refreshPendingEdits() {
+        Single.fromCallable { findEditedAttachments().size }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ presenter.showPendingEdits(it) }, { e ->
+                Log.e("zotero", "counting edited attachments failed: $e")
+            })
+    }
 
-    /**
-     * Finds opened attachments whose file now differs from Zotero's and offers to upload
-     * them together. On its own (returning from the PDF viewer, library load) it only asks
-     * when a file has changed that wasn't offered yet; [userRequested] always asks.
-     */
-    fun checkAllAttachmentsForModification(userRequested: Boolean = false) {
+    /** "Upload edited attachments": lists every edited attachment to pick which to upload. */
+    fun chooseEditedAttachmentsToUpload() {
         if (state.isUsingGroup()) {
-            Log.d(
-                "zotero",
-                "not checking attachments because we do not support groups"
-            )
-            if (userRequested) {
-                presenter.makeToastAlert("Uploading is only supported in My Library.")
-            }
+            presenter.makeToastAlert("Uploading is only supported in My Library.")
             return
         }
-
         if (!preferences.isAttachmentUploadingEnabled()) {
-            Log.d("zotero", "Not checking attachments, disabled by preferences")
-            if (userRequested) {
-                presenter.makeToastAlert("Attachment uploading is turned off in settings.")
-            }
+            presenter.makeToastAlert("Attachment uploading is turned off in settings.")
             return
         }
-
         Single.fromCallable {
             findEditedAttachments().map { Pair(it, uploadChoiceLabel(it)) }
         }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ changed ->
-                val keys = changed.map { it.first.itemKey }
                 if (changed.isEmpty()) {
-                    if (userRequested) presenter.makeToastAlert("No edited attachments to upload.")
-                } else if (userRequested ||
-                    AttachmentUploadBatch.shouldOffer(keys, offeredUploadKeys)
-                ) {
-                    offeredUploadKeys.addAll(keys)
+                    presenter.makeToastAlert("No edited attachments to upload.")
+                } else {
                     askToUploadAttachments(changed)
                 }
             }, { e ->
-                Log.e("zotero", "validateMd5 observer got error $e")
+                Log.e("zotero", "looking for edited attachments failed: $e")
             })
     }
 
@@ -749,12 +738,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return "$name (${size / 1000} KB)"
     }
 
-    /**
-     * Lists every edited attachment, all ticked. Unticked ones, and all of them on "Later",
-     * stay pending: they're offered again via "Upload edited attachments" and whenever
-     * another file changes. The preflight in uploadOne refuses any whose remote file
-     * moved on, so no separate "outdated version" question is needed.
-     */
+    /** Lists every edited attachment, all ticked; unticked ones stay edited for a later sync. */
     private fun askToUploadAttachments(changed: List<Pair<Item, String>>) {
         presenter.chooseAttachmentsToUpload(changed.map { it.second }) { chosen ->
             uploadAttachments(chosen.map { changed[it].first })
@@ -804,11 +788,13 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 } else {
                     presenter.createErrorAlert(summary.title, summary.message, {})
                 }
+                refreshPendingEdits()
                 onDone?.invoke()
             }, { e ->
                 Log.e("zotero", "upload batch failed: $e")
                 presenter.stopUploadingAttachmentProgress()
                 presenter.createErrorAlert("Error uploading attachments", e.toString(), {})
+                refreshPendingEdits()
                 onDone?.invoke()
             })
     }
@@ -1103,7 +1089,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                     // incase there was an error, i don't want users to be stuck with an empty library.
                     db.setItemsVersion(0)
                 }
-                this.checkAllAttachmentsForModification()
+                this.refreshPendingEdits()
             }.onErrorComplete {
                 presenter.createErrorAlert("error loading library", "got error message ${it}", {})
                 presenter.hideBasicSyncAnimation()
@@ -1160,6 +1146,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     override fun deleteLocalAttachment(attachment: Item) {
         val delete = {
             attachmentStorageManager.deleteAttachment(attachment)
+            refreshPendingEdits()
             presenter.makeToastAlert("Deleted the copy of ${attachment.getTitle()} on this device.")
         }
         val base = attachmentBase(attachment)

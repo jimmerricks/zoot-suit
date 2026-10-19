@@ -292,6 +292,10 @@ class LibraryActivity : AppCompatActivity(),
                 TagPickerDialog(this, presenter.getAllTags()) { presenter.onTagOpen(it) }.show()
             }
 
+            R.id.pending_edits -> {
+                presenter.requestLibraryRefresh()
+            }
+
             R.id.upload_edited_attachments -> {
                 presenter.uploadEditedAttachments()
             }
@@ -319,10 +323,28 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     lateinit var searchView: SearchView
+    private var pendingEdits = 0
+
+    /** Edited attachments waiting to go up; shown in the toolbar, tapping it syncs. */
+    fun showPendingEdits(count: Int) {
+        if (count == pendingEdits) return
+        pendingEdits = count
+        invalidateOptionsMenu()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         super.onCreateOptionsMenu(menu)
         menuInflater.inflate(R.menu.activity_library_actionbar, menu)
         return true
+    }
+
+    // here rather than in onCreateOptionsMenu: LibraryListFragment re-inflates the menu after it
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.pending_edits)?.apply {
+            isVisible = pendingEdits > 0
+            title = resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)
+        }
+        return super.onPrepareOptionsMenu(menu)
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {

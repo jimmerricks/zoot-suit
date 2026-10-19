@@ -53,7 +53,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
     override fun onResume() {
         if (model.isLoaded()) {
             model.checkAttachmentStorageAccess()
-            model.checkAllAttachmentsForModification()
+            model.refreshPendingEdits()
         }
     }
 
@@ -228,6 +228,10 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         view.createYesNoPrompt(title, message, yesText, noText, onYesClick, onNoClick)
     }
 
+    override fun showPendingEdits(count: Int) {
+        view.showPendingEdits(count)
+    }
+
     override fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit) {
         view.chooseAttachmentsToUpload(labels, onUpload)
     }
@@ -330,7 +334,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
 
     override fun uploadEditedAttachments() {
         if (model.isLoaded()) {
-            model.checkAllAttachmentsForModification(userRequested = true)
+            model.chooseEditedAttachmentsToUpload()
         }
     }
 
