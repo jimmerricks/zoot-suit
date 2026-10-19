@@ -166,9 +166,17 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         }
     private var savedFilter: LibraryFilter? = null // read lazily: preferences is set in init
 
-    /** The items the list showed last, after the filter: for counts in the filter dialog. */
-    var lastFilteredItems: List<Item> = emptyList()
+    /**
+     * The items the list shows, after the filter; null if the current list doesn't go
+     * through the filter (trash, My Publications). For counts in the dialog and toolbar.
+     */
+    var lastFilteredItems: List<Item>? = null
         private set
+
+    /** Called before the presenter builds a list; see [lastFilteredItems]. */
+    fun startListUpdate() {
+        lastFilteredItems = null
+    }
 
     /** Attachment keys whose file is on this device / has edits to sync; see refreshPendingEdits. */
     @Volatile private var onDeviceKeys: Set<String> = emptySet()

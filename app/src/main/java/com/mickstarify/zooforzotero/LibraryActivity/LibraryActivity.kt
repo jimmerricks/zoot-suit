@@ -429,6 +429,10 @@ class LibraryActivity : AppCompatActivity(),
         supportActionBar?.title = title
     }
 
+    fun setSubtitle(subtitle: String?) {
+        supportActionBar?.subtitle = subtitle
+    }
+
     fun showItemDialog(
     ) {
         itemView = ItemViewFragment()

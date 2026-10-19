@@ -154,8 +154,18 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
     fun previewLibraryFilter(filter: LibraryFilter): LibraryFilterDialog.Preview {
         model.libraryFilter = filter
         redisplayItems()
-        val shown = model.lastFilteredItems
+        val shown = model.lastFilteredItems ?: emptyList()
         return LibraryFilterDialog.Preview(shown.size, LibraryItemFilter.tagCounts(shown))
+    }
+
+    /** Toolbar subtitle naming the active filter and its count, if the list uses the filter. */
+    private fun showFilterSummary() {
+        val filter = model.libraryFilter
+        val shown = model.lastFilteredItems
+        view.setSubtitle(
+            if (!filter.isActive || shown == null) null
+            else "Filter: ${filter.describe()} · ${shown.size} " + if (shown.size == 1) "item" else "items"
+        )
     }
 
     override fun onTagOpen(tagName: String) {
@@ -186,10 +196,12 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             return
         }
 
+        model.startListUpdate()
         if (query.startsWith("tag:")) {
             val tagName = query.substring(4) // remove tag:
             val entries = model.getItemsForTag(tagName).sort().map { ListEntry(it) }
             libraryListViewModel.setItems(entries)
+            showFilterSummary()
             return
         }
 
@@ -205,6 +217,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
 
         Log.d("zotero", "setting items ${entries.size}")
         libraryListViewModel.setItems(entries)
+        showFilterSummary()
     }
 
     override fun attachmentDownloadError(message: String) {
@@ -314,6 +327,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
     }
 
     override fun openMyPublications() {
+        model.startListUpdate()
         if (!model.isLoaded()) {
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
@@ -324,9 +338,11 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         model.isDisplayingItems = entries.isNotEmpty()
         model.setCurrentCollection("zooforzotero_my_publications")
         libraryListViewModel.setItems(entries)
+        showFilterSummary()
     }
 
     override fun openTrash() {
+        model.startListUpdate()
         if (!model.isLoaded()) {
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
@@ -337,6 +353,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         model.isDisplayingItems = entries.isNotEmpty()
         model.setCurrentCollection("zooforzotero_Trash")
         libraryListViewModel.setItems(entries)
+        showFilterSummary()
     }
 
     override fun uploadAttachment(item: Item) {
@@ -371,6 +388,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         }
 
         Log.d("zotero", "Got request to change collection to ${collectionKey}")
+        model.startListUpdate()
         model.setCurrentCollection(collectionKey, usePersonalLibrary = fromNavigationDrawer)
         if (collectionKey == "all" && !model.isUsingGroups()) {
             view.setTitle("My Library")
@@ -412,6 +430,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
         }
+        showFilterSummary()
     }
 
     override fun receiveCollections(collections: List<Collection>) {
