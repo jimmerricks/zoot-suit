@@ -42,7 +42,7 @@ fun WelcomeHeroSection() {
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Welcome to Zoo for Zotero",
+            text = "Welcome to Zoot Suit",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center

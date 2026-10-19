@@ -87,7 +87,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Using the above url, generate an api key for Zoo to use."
+            android:text="Using the above url, generate an api key for Zoot Suit to use."
             app:layout_constraintEnd_toEndOf="@+id/textView8"
             app:layout_constraintStart_toStartOf="@+id/textView_hint_zotero_keys"
             app:layout_constraintTop_toBottomOf="@+id/textView_hint_zotero_keys" />
@@ -121,7 +121,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="32dp"
             android:layout_marginEnd="16dp"
-            android:text="Failed to connect to zotero's authentication page. Please go to the zotero API key page yourself and generate an API key for Zoo to use. You may enter this key in the previous setup page."
+            android:text="Failed to connect to zotero's authentication page. Please go to the zotero API key page yourself and generate an API key for Zoot Suit to use. You may enter this key in the previous setup page."
             android:textSize="16dp"
             android:textStyle="normal"
             app:layout_constraintEnd_toEndOf="parent"

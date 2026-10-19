@@ -31,7 +31,7 @@ class ZooForZoteroApplication : Application() {
 
             dialog {
                 //required
-                text = "Zoo for Zotero crashed. Would you like to report it?"
+                text = "Zoot Suit crashed. Would you like to report it?"
                 //optional, enables the dialog title
                 title = "Crash Report"
                 //defaults to android.R.string.ok
@@ -49,7 +49,7 @@ class ZooForZoteroApplication : Application() {
                 //defaults to ACRA-report.stacktrace
                 reportFileName = "Crash.txt"
                 //defaults to "<applicationId> Crash Report"
-                subject = "Zoo for Zotero crash report"
+                subject = "Zoot Suit crash report"
             }
         }
     }
