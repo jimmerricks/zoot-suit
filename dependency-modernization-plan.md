@@ -83,7 +83,12 @@ file with its base (`EditedAttachmentFinder`, md5 cached by size+mtime) instead 
 ("N edits to sync", set in `onPrepareOptionsMenu` because `LibraryListFragment`
 re-inflates the menu) replaces the prompt on return from the viewer; each
 attachment shows `AttachmentLocalState` in the item view; deleting an edited
-local copy asks first.
+local copy asks first. Opening (and "Download to device") asks Zotero for the
+attachment's current md5 first when Android reports a network (5 s limit), so a
+version saved elsewhere since the last sync is fetched before opening; offline the
+local copy opens immediately. One long-press menu (`LibraryActivity.showAttachmentMenu`)
+serves the list's PDF icon and the item view; "Upload my changes" skips unchanged
+copies.
 
 This also starts the "attachment download/upload" slice of item 2: the upload half
 is now a self-contained pipeline inside the model, ready to move out with the
