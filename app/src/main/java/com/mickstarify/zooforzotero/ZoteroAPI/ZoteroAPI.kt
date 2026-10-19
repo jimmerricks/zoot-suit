@@ -337,8 +337,27 @@ class ZoteroAPI(
         })
     }
 
-    fun patchItem(item: Item, patch: JsonObject): Completable {
-        val lastModifiedVersion = item.getVersion()
+    /**
+     * The attachment item's current version and md5 on the server, md5 null if it
+     * has no file. Used to check for remote changes before uploading.
+     */
+    fun getAttachmentFileState(itemKey: String): Single<Pair<Int, String?>> {
+        return Single.fromObservable(service.getItem(userID, itemKey).map { response ->
+            if (response.code() != 200) {
+                throw Exception("Zotero server gave back code ${response.code()} for item $itemKey")
+            }
+            val root = Gson().fromJson(response.body()!!.string(), JsonObject::class.java)
+            val md5 = root.getAsJsonObject("data")?.get("md5")
+            Pair(root.get("version").asInt, if (md5 == null || md5.isJsonNull) null else md5.asString)
+        })
+    }
+
+    /** Hash in the attachment's .prop on the WebDAV server, null if there is none. */
+    fun getWebdavRemoteHash(attachment: Item, context: Context): String? {
+        return Webdav(PreferenceManager(context)).getRemoteHash(attachment)
+    }
+
+    fun patchItem(item: Item, patch: JsonObject, lastModifiedVersion: Int = item.getVersion()): Completable {
         val observable =
             service.patchItem(userID, item.itemKey, patch, lastModifiedVersion).map { response ->
                 if (response.code() == 200 || response.code() == 204) {

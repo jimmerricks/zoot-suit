@@ -44,6 +44,15 @@ class Webdav(
         return sardine.exists(address)
     }
 
+    /** Hash recorded in the attachment's KEY.prop, or null if the server has no .prop. */
+    fun getRemoteHash(attachment: Item): String? {
+        val propPath = address + "/${attachment.itemKey.uppercase()}.prop"
+        if (!sardine.exists(propPath)) {
+            return null
+        }
+        return WebdavProp(downloadPropToString(propPath)).hash
+    }
+
     fun downloadPropToString(webpath: String): String {
         val reader = sardine.get(webpath).source()
         val bufferedReader = reader.buffer()

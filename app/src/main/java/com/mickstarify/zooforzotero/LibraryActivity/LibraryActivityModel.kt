@@ -10,6 +10,9 @@ import com.google.gson.JsonObject
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.SyncSetup.AuthenticationStorage
 import com.mickstarify.zooforzotero.ZoteroAPI.AlreadyUploadedException
+import io.reactivex.rxjava3.core.Single
+import com.mickstarify.zooforzotero.ZoteroAPI.RemoteAttachmentChangedException
+import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploadPreflight
 import com.mickstarify.zooforzotero.ZoteroAPI.DeleteItemListener
 import com.mickstarify.zooforzotero.ZoteroAPI.DownloadProgress
 import com.mickstarify.zooforzotero.ZoteroAPI.ItemChangedSinceException
@@ -723,17 +726,30 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             mtime = attachment.getMtime()
         }
         if (preferences.isWebDAVEnabled()) {
-            zoteroAPI.uploadAttachmentWithWebdav(attachment, context).andThen(
-                Completable.fromAction {
-                    // TODO extract this complexity to some other class.
-                    if (preferences.isWebDAVEnabled()) {
+            // Check for remote changes BEFORE touching the WebDAV server: the upload
+            // replaces KEY.zip/.prop outright, and only the later metadata patch is
+            // version-checked by Zotero. See AttachmentUploadPreflight.
+            Single.fromCallable {
+                val (serverVersion, serverMd5) =
+                    zoteroAPI.getAttachmentFileState(attachment.itemKey).blockingGet()
+                val webdavHash = zoteroAPI.getWebdavRemoteHash(attachment, context)
+                AttachmentUploadPreflight.conflictReason(
+                    attachment.getMd5Key(), serverMd5, webdavHash
+                )?.let { throw RemoteAttachmentChangedException(it) }
+                serverVersion
+            }.flatMapCompletable { serverVersion ->
+                zoteroAPI.uploadAttachmentWithWebdav(attachment, context).andThen(
+                    Completable.fromAction {
                         val modificationJsonObject = JsonObject()
                         modificationJsonObject.addProperty("md5", md5Key)
                         modificationJsonObject.addProperty("mtime", mtime)
-                        zoteroAPI.patchItem(attachment, modificationJsonObject).blockingAwait()
+                        // the version just checked, so attachment edits that didn't touch
+                        // the file (e.g. a tag) don't fail the patch after the upload
+                        zoteroAPI.patchItem(attachment, modificationJsonObject, serverVersion)
+                            .blockingAwait()
                     }
-                }
-            )
+                )
+            }
                 .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(
                     object : CompletableObserver {
                         override fun onComplete() {
@@ -752,10 +768,19 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                         }
 
                         override fun onError(e: Throwable) {
-                            presenter.createErrorAlert(
-                                "Error uploading Attachment",
-                                e.toString(),
-                                {})
+                            if (e is RemoteAttachmentChangedException) {
+                                presenter.createErrorAlert(
+                                    "Upload stopped: newer version elsewhere",
+                                    "${e.message} Nothing was uploaded, so that version is safe. " +
+                                            "Your annotated copy is still on this device; save it " +
+                                            "elsewhere before syncing if you want to keep it.",
+                                    {})
+                            } else {
+                                presenter.createErrorAlert(
+                                    "Error uploading Attachment",
+                                    e.toString(),
+                                    {})
+                            }
                             Log.e("zotero", "got exception: $e")
                             presenter.stopUploadingAttachmentProgress()
                         }

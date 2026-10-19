@@ -154,6 +154,12 @@ interface ZoteroAPIService {
         @Body json: JsonArray
     ): Observable<Response<ResponseBody>>
 
+    @GET("users/{user}/items/{itemKey}")
+    fun getItem(
+        @Path("user") user: String,
+        @Path("itemKey") itemKey: String
+    ): Observable<Response<ResponseBody>>
+
     @PATCH("users/{user}/items/{itemKey}")
     fun patchItem(
         @Path("user") user: String,
