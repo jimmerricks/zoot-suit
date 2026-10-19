@@ -38,6 +38,7 @@ class Webdav(
 ) {
     private var sardine: OkHttpSardine
     private var uploader: WebdavUploader
+    private val backupBeforeReplace = preferenceManager.isWebDAVBackupBeforeUploadEnabled()
     var address: String
 
 
@@ -160,6 +161,9 @@ class Webdav(
             tempFile.delete()
 
             try {
+                if (backupBeforeReplace) {
+                    uploader.backupCurrent(attachment.itemKey)
+                }
                 uploader.replace(
                     attachment.itemKey, zipFile, WebdavProp(mtime, md5).serialize(), expected
                 )

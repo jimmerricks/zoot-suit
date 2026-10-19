@@ -7,6 +7,10 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 /** An attachment's KEY.prop as read from the WebDAV server before an upload. */
 data class RemoteProp(val hash: String, val etag: String?, val raw: String)
@@ -27,15 +31,21 @@ data class RemoteProp(val hash: String, val etag: String?, val raw: String)
  * 4. commit  PUT  KEY.prop  If-None-Match: *
  *            -> 412: another client re-created .prop meanwhile; report conflict
  *
+ * Optionally [backupCurrent] first keeps a copy of the zip being replaced.
+ *
  * The Zotero item's md5/mtime are patched by the caller afterwards, as desktop
  * does. WebDAV LOCK is deliberately not used: desktop doesn't use locks, and a lock
  * left by a crashed upload would block desktop until it expires.
  */
 class WebdavUploader(
     private val client: OkHttpClient,
-    address: String
+    address: String,
+    private val now: () -> Long = { System.currentTimeMillis() }
 ) {
     private val base = address.trimEnd('/')
+
+    /** Sibling of the Zotero folder; Zotero clients never read or clean it. */
+    val backupDir = base.substringBeforeLast('/') + "/zotero-backup"
 
     private fun url(name: String) = "$base/$name"
 
@@ -50,6 +60,31 @@ class WebdavUploader(
             val raw = response.body?.string() ?: ""
             return RemoteProp(WebdavProp(raw).hash, response.header("ETag"), raw)
         }
+    }
+
+    /**
+     * Copies the current KEY.zip to [backupDir] as KEY-<UTC timestamp>.zip, so a bad
+     * upload can be undone by hand. Does nothing if there is no remote zip.
+     * @return the backup's URL, or null if there was nothing to back up
+     */
+    fun backupCurrent(itemKey: String): String? {
+        val key = itemKey.uppercase()
+        if (!exists(url("$key.zip"))) return null
+        val mkcol = send(Request.Builder().url("$backupDir/").method("MKCOL", null).build())
+        if (mkcol !in 200..299 && mkcol != 405) { // 405: already exists
+            throw IOException("Couldn't create backup folder $backupDir (HTTP $mkcol); nothing was uploaded.")
+        }
+        val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US)
+            .apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date(now()))
+        val target = "$backupDir/$key-$stamp.zip"
+        val copy = send(
+            Request.Builder().url(url("$key.zip")).method("COPY", null)
+                .header("Destination", target).header("Overwrite", "F").build()
+        )
+        if (copy !in 200..299) {
+            throw IOException("Backup copy failed (HTTP $copy); nothing was uploaded.")
+        }
+        return target
     }
 
     /**
@@ -116,6 +151,13 @@ class WebdavUploader(
             )
         }
         requireOk("commit $propName", put)
+    }
+
+    private fun exists(url: String): Boolean {
+        val code = send(Request.Builder().url(url).head().build())
+        if (code == 404) return false
+        requireOk("HEAD $url", code)
+        return true
     }
 
     private fun send(request: Request): Int =

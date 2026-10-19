@@ -141,6 +141,44 @@ class WebdavUploaderTest {
         assertEquals("DELETE /dav/zotero/ABCD2345.prop", r[3].line())
     }
 
+    private fun backupUploader() =
+        // 2026-10-19 13:45:07 UTC
+        WebdavUploader(OkHttpClient(), server.url("/dav/zotero").toString(), now = { 1792417507000L })
+
+    @Test
+    fun `backup copies the current zip to a timestamped name outside the zotero folder`() {
+        respond(200, 201, 201) // HEAD zip, MKCOL, COPY
+        val target = backupUploader().backupCurrent("abcd2345")
+        val r = requests()
+        assertEquals(listOf("HEAD /dav/zotero/ABCD2345.zip", "MKCOL /dav/zotero-backup/", "COPY /dav/zotero/ABCD2345.zip"), r.map { it.line() })
+        assertTrue(r[2].getHeader("Destination")!!.endsWith("/dav/zotero-backup/ABCD2345-20261019-134507.zip"))
+        assertEquals("F", r[2].getHeader("Overwrite"))
+        assertTrue(target!!.endsWith("/dav/zotero-backup/ABCD2345-20261019-134507.zip"))
+    }
+
+    @Test
+    fun `backup accepts an existing backup folder`() {
+        respond(200, 405, 201)
+        backupUploader().backupCurrent("ABCD2345")
+    }
+
+    @Test
+    fun `backup does nothing when there is no remote zip yet`() {
+        respond(404)
+        assertNull(backupUploader().backupCurrent("ABCD2345"))
+        assertEquals(1, requests().size)
+    }
+
+    @Test
+    fun `a failed backup copy is an error, so the caller uploads nothing`() {
+        respond(200, 201, 507)
+        try {
+            backupUploader().backupCurrent("ABCD2345")
+            fail("expected an IOException")
+        } catch (e: IOException) {
+        }
+    }
+
     @Test
     fun `readProp returns hash and ETag, or null when absent`() {
         server.enqueue(MockResponse().setResponseCode(200).setBody(oldProp).setHeader("ETag", "\"e\""))

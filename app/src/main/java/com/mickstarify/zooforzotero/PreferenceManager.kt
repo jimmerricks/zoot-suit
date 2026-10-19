@@ -83,6 +83,11 @@ class PreferenceManager @Inject constructor(context: Context) {
 
     /** Off by default: group sync needs an API key with group access, and a key
      *  without it gets HTTP 403 on every group request. */
+    /** On by default: Zotero keeps no file history, so this is the only undo for an upload. */
+    fun isWebDAVBackupBeforeUploadEnabled(): Boolean {
+        return sharedPreferences.getBoolean("webdav_backup_before_upload", true)
+    }
+
     fun isGroupLibrarySyncEnabled(): Boolean {
         return sharedPreferences.getBoolean("group_library_sync_enabled", false)
     }

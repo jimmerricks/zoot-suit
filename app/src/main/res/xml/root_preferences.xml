@@ -46,6 +46,12 @@
             android:summary="Show and sync group libraries. Your API key needs read access to groups. Takes effect when the library is reopened."
             android:title="Group libraries" />
 
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="webdav_backup_before_upload"
+            android:summary="Before an annotated file replaces the one on your WebDAV server, keep a copy of the old one in zotero-backup next to the zotero folder. Zotero keeps no file history, so this is the only way to undo. Delete old copies there by hand."
+            android:title="Back up files before uploading (WebDAV)" />
+
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/library_header">
