@@ -29,7 +29,8 @@ interface ZoteroAPIService {
     fun getItems(
         @Header("If-Modified-Since-Version") ifModifiedSinceVersion: Int,
         @Path("user") user: String,
-        @Query("start") index: Int
+        @Query("start") index: Int,
+        @Query("limit") limit: Int
     ): Observable<Response<ResponseBody>>
 
     /* Gets items since last update. */
@@ -38,7 +39,8 @@ interface ZoteroAPIService {
         @Header("If-Modified-Since-Version") ifModifiedSinceVersion: Int,
         @Path("user") user: String,
         @Query("since") modificationSinceVersion: Int,
-        @Query("start") index: Int
+        @Query("start") index: Int,
+        @Query("limit") limit: Int
     ): Observable<Response<ResponseBody>>
 
 
@@ -52,7 +54,8 @@ interface ZoteroAPIService {
     fun getItemsForGroup(
         @Header("If-Modified-Since-Version") ifModifiedSinceVersion: Int,
         @Path("groupID") groupID: Int,
-        @Query("start") index: Int
+        @Query("start") index: Int,
+        @Query("limit") limit: Int
     ): Observable<Response<ResponseBody>>
 
     // get items for the group ID
@@ -61,7 +64,8 @@ interface ZoteroAPIService {
         @Header("If-Modified-Since-Version") ifModifiedSinceVersion: Int,
         @Path("groupID") groupID: Int,
         @Query("since") modificationSinceVersion: Int,
-        @Query("start") index: Int
+        @Query("start") index: Int,
+        @Query("limit") limit: Int
     ): Observable<Response<ResponseBody>>
 
     @GET("groups/{groupID}/collections")

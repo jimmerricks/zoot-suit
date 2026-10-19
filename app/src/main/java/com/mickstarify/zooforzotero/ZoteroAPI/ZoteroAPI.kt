@@ -54,6 +54,10 @@ class ItemLockedException(message: String) : RuntimeException(message)
 class ItemChangedSinceException(message: String) : RuntimeException(message)
 class ZoteroNotFoundException(message: String) : RuntimeException(message)
 
+// The Zotero Web API's maximum page size; it defaults to 25 when omitted.
+// Pagination advances by the number of items actually returned, so any value works.
+private const val ITEMS_PAGE_SIZE = 100
+
 class ZoteroAPI(
     val API_KEY: String,
     val userID: String,
@@ -355,21 +359,23 @@ class ZoteroAPI(
                     modificationSinceVersion,
                     groupID,
                     modificationSinceVersion,
-                    index
+                    index,
+                    ITEMS_PAGE_SIZE
                 )
             } else {
                 shortTimeoutService.getItemsSince(
                     modificationSinceVersion,
                     userID,
                     modificationSinceVersion,
-                    index
+                    index,
+                    ITEMS_PAGE_SIZE
                 )
             }
         } else {
             if (groupID != GroupInfo.NO_GROUP_ID) {
-                shortTimeoutService.getItemsForGroup(0, groupID, index)
+                shortTimeoutService.getItemsForGroup(0, groupID, index, ITEMS_PAGE_SIZE)
             } else {
-                shortTimeoutService.getItems(0, userID, index)
+                shortTimeoutService.getItems(0, userID, index, ITEMS_PAGE_SIZE)
             }
 
         }
