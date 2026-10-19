@@ -1,5 +1,6 @@
 package com.mickstarify.zooforzotero
 
+import com.mickstarify.zooforzotero.LibraryActivity.LibraryFilter
 import android.content.Context
 import android.util.Log
 import androidx.core.content.edit
@@ -71,6 +72,21 @@ class PreferenceManager @Inject constructor(context: Context) {
         val editor = sharedPreferences.edit()
         editor.putString("SORT_DIRECTION", direction)
         editor.apply()
+    }
+
+    /** The library list's filter (tags, device state); see LibraryFilter. */
+    fun getLibraryFilter(): LibraryFilter = LibraryFilter(
+        tags = sharedPreferences.getStringSet("library_filter_tags", null)?.toSet() ?: emptySet(),
+        onDevice = sharedPreferences.getBoolean("library_filter_on_device", false),
+        editedHere = sharedPreferences.getBoolean("library_filter_edited_here", false),
+    )
+
+    fun setLibraryFilter(filter: LibraryFilter) {
+        sharedPreferences.edit()
+            .putStringSet("library_filter_tags", HashSet(filter.tags))
+            .putBoolean("library_filter_on_device", filter.onDevice)
+            .putBoolean("library_filter_edited_here", filter.editedHere)
+            .apply()
     }
 
     fun getIsShowingOnlyPdfs(): Boolean {

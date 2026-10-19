@@ -136,13 +136,39 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     private fun filterItems(items: List<Item>): List<Item> {
-        return LibraryItemFilter.applyDisplayFilters(
+        val shown = LibraryItemFilter.applyDisplayFilters(
             items,
             onlyNotes = preferences.getIsShowingOnlyNotes(),
             onlyPdfs = preferences.getIsShowingOnlyPdfs(),
             attachmentsFor = ::getAttachments
         )
+        val filter = libraryFilter
+        val filtered = if (!filter.isActive) shown else shown.filter {
+            filter.matches(
+                it, { item -> getAttachments(item.itemKey).map { a -> a.itemKey } },
+                onDeviceKeys, editedKeys
+            )
+        }
+        lastFilteredItems = filtered
+        return filtered
     }
+
+    /** The list's filter, kept in preferences so it survives closing the dialog and the app. */
+    var libraryFilter: LibraryFilter
+        get() = savedFilter ?: preferences.getLibraryFilter().also { savedFilter = it }
+        set(value) {
+            savedFilter = value
+            preferences.setLibraryFilter(value)
+        }
+    private var savedFilter: LibraryFilter? = null // read lazily: preferences is set in init
+
+    /** The items the list showed last, after the filter: for counts in the filter dialog. */
+    var lastFilteredItems: List<Item> = emptyList()
+        private set
+
+    /** Attachment keys whose file is on this device / has edits to sync; see refreshPendingEdits. */
+    @Volatile private var onDeviceKeys: Set<String> = emptySet()
+    @Volatile private var editedKeys: Set<String> = emptySet()
 
     override fun getGroupByTitle(groupTitle: String): GroupInfo? {
         return this.groups?.filter { it.name == groupTitle }?.firstOrNull()
@@ -749,14 +775,35 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             })
     }
 
-    /** Counts edited attachments off the main thread and shows the number in the toolbar. */
+    /**
+     * Works out, off the main thread, which attachments are on the device and which have
+     * edits to sync; shows the edit count in the toolbar and redraws the list if the
+     * filter depends on either and they changed.
+     */
     fun refreshPendingEdits() {
-        Single.fromCallable { findEditedAttachments().size }
+        Single.fromCallable {
+            Pair(findOnDeviceAttachmentKeys(), findEditedAttachments().map { it.itemKey }.toSet())
+        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ presenter.showPendingEdits(it) }, { e ->
-                Log.e("zotero", "counting edited attachments failed: $e")
+            .subscribe({ (onDevice, edited) ->
+                val changed = onDevice != onDeviceKeys || edited != editedKeys
+                onDeviceKeys = onDevice
+                editedKeys = edited
+                presenter.showPendingEdits(edited.size)
+                if (changed && libraryFilter.needsDeviceState) presenter.redisplayItems()
+            }, { e ->
+                Log.e("zotero", "checking attachments on the device failed: $e")
             })
+    }
+
+    /** Keys of attachments whose file is on this device (non-empty). */
+    private fun findOnDeviceAttachmentKeys(): Set<String> {
+        if (!zoteroDB.isPopulated()) return emptySet()
+        return attachmentStorageManager.listDownloadedItemKeys().filter { key ->
+            val item = zoteroDB.getItemWithKey(key) ?: return@filter false
+            attachmentStorageManager.getFileSize(item).getOrDefault(0L) > 0
+        }.toSet()
     }
 
     /** "Upload edited attachments": lists every edited attachment to pick which to upload. */
