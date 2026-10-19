@@ -13,14 +13,14 @@ import com.mickstarify.zooforzotero.ZoteroAPI.AlreadyUploadedException
 import io.reactivex.rxjava3.core.Single
 import com.mickstarify.zooforzotero.ZoteroAPI.RemoteAttachmentChangedException
 import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentFileCheck
+import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploadBatch
+import com.mickstarify.zooforzotero.ZoteroAPI.DamagedAttachmentException
 import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploadPreflight
 import com.mickstarify.zooforzotero.ZoteroAPI.DeleteItemListener
 import com.mickstarify.zooforzotero.ZoteroAPI.DownloadProgress
 import com.mickstarify.zooforzotero.ZoteroAPI.ItemChangedSinceException
 import com.mickstarify.zooforzotero.ZoteroAPI.ItemLockedException
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
-import com.mickstarify.zooforzotero.ZoteroAPI.PreconditionFailedException
-import com.mickstarify.zooforzotero.ZoteroAPI.RequestEntityTooLarge
 import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.OnSyncChangeListener
 import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncManager
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
@@ -40,6 +40,7 @@ import dagger.hilt.android.EntryPointAccessors
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.CompletableObserver
 import io.reactivex.rxjava3.core.MaybeObserver
+import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Observer
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.Disposable
@@ -756,154 +757,114 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun uploadAttachment(attachment: Item) {
-        val md5Key: String
-        try {
-            md5Key = attachmentStorageManager.calculateMd5(attachment)
-        } catch (e: FileNotFoundException) {
-            presenter.makeToastAlert("Cannot upload attachment. File does not exist.")
-            return
-        }
-        fileCheckProblem(attachment)?.let { problem ->
-            presenter.createErrorAlert(
-                "Not uploaded",
-                "This copy wasn't uploaded because $problem. The version in Zotero is " +
-                        "unchanged. The file on this device may be damaged; reopen it in " +
-                        "your PDF viewer to check.",
-                {})
-            return
-        }
-        var mtime = attachmentStorageManager.getMtime(attachment)
+        uploadAttachments(listOf(attachment))
+    }
 
+    private var uploadDisposable: Disposable? = null
+
+    /**
+     * Uploads [attachments] one after another and reports once at the end. A file that is
+     * refused (changed elsewhere, damaged) or fails doesn't stop the others; it stays in
+     * RecentlyOpenedAttachment, so it is offered again.
+     */
+    fun uploadAttachments(attachments: List<Item>) {
+        if (attachments.isEmpty()) return
+        if (uploadDisposable?.isDisposed == false) {
+            presenter.makeToastAlert("Already uploading attachments.")
+            return
+        }
+        val total = attachments.size
+        uploadDisposable = Observable.fromIterable(attachments.withIndex())
+            .concatMapSingle { (index, attachment) ->
+                val name = attachment.data["filename"] ?: attachment.itemKey
+                Completable.fromAction {
+                    presenter.startUploadingAttachmentProgress(attachment, index + 1, total)
+                }.subscribeOn(AndroidSchedulers.mainThread())
+                    .andThen(uploadOne(attachment).subscribeOn(Schedulers.io()))
+                    .toSingleDefault(AttachmentUploadBatch.Outcome(name))
+                    .onErrorReturn { e ->
+                        Log.e("zotero", "upload of ${attachment.itemKey} failed: $e")
+                        AttachmentUploadBatch.Outcome(name, AttachmentUploadBatch.failureReason(e))
+                    }
+            }
+            .toList()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ outcomes ->
+                presenter.stopUploadingAttachmentProgress()
+                val (title, message) = AttachmentUploadBatch.summary(outcomes)
+                if (outcomes.all { it.failure == null }) {
+                    presenter.makeToastAlert(message)
+                } else {
+                    presenter.createErrorAlert(title, message, {})
+                }
+            }, { e ->
+                Log.e("zotero", "upload batch failed: $e")
+                presenter.stopUploadingAttachmentProgress()
+                presenter.createErrorAlert("Error uploading attachments", e.toString(), {})
+            })
+    }
+
+    /** Uploads one edited attachment and records it as synced. Subscribe on io. */
+    private fun uploadOne(attachment: Item): Completable = Completable.defer {
+        // throws FileNotFoundException if the copy is gone
+        val md5Key = attachmentStorageManager.calculateMd5(attachment)
+        fileCheckProblem(attachment)?.let { throw DamagedAttachmentException(it) }
+        var mtime = attachmentStorageManager.getMtime(attachment)
         if (mtime < attachment.getMtime()) {
             Log.e("zotero", "for some reason our mtime is older than the original???")
             mtime = attachment.getMtime()
         }
-        if (preferences.isWebDAVEnabled()) {
-            // Check for remote changes BEFORE touching the WebDAV server: the upload
-            // replaces KEY.zip/.prop outright, and only the later metadata patch is
-            // version-checked by Zotero. See AttachmentUploadPreflight.
-            Single.fromCallable {
-                val (serverVersion, serverMd5) =
-                    zoteroAPI.getAttachmentFileState(attachment.itemKey).blockingGet()
-                val remoteProp = zoteroAPI.getWebdavRemoteProp(attachment, context)
-                // the version this device's edits are based on; for copies downloaded
-                // before bases were recorded, the md5 as of the last sync (weaker)
-                val baseMd5 = attachmentBase(attachment) ?: attachment.getMd5Key()
-                AttachmentUploadPreflight.conflictReason(
-                    baseMd5, serverMd5, remoteProp?.hash
-                )?.let { throw RemoteAttachmentChangedException(it) }
-                Pair(serverVersion, remoteProp)
-            }.flatMapCompletable { (serverVersion, remoteProp) ->
-                // the .prop's ETag makes the WebDAV replace conditional; see WebdavUploader
-                zoteroAPI.uploadAttachmentWithWebdav(
-                    attachment, context, remoteProp, md5Key, mtime
-                ).andThen(
-                    Completable.fromAction {
-                        val modificationJsonObject = JsonObject()
-                        modificationJsonObject.addProperty("md5", md5Key)
-                        modificationJsonObject.addProperty("mtime", mtime)
-                        // the version just checked, so attachment edits that didn't touch
-                        // the file (e.g. a tag) don't fail the patch after the upload
-                        zoteroAPI.patchItem(attachment, modificationJsonObject, serverVersion)
-                            .blockingAwait()
-                    }
-                )
-            }
-                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(
-                    object : CompletableObserver {
-                        override fun onComplete() {
-                            presenter.stopUploadingAttachmentProgress()
-                            removeFromRecentlyViewed(attachment)
-                            recordBase(attachment, md5Key)
-                            zoteroDB.updateAttachmentMetadata(
-                                attachment.itemKey,
-                                attachmentStorageManager.calculateMd5(attachment),
-                                attachmentStorageManager.getMtime(attachment),
-                                AttachmentInfo.WEBDAV
-                            ).subscribeOn(Schedulers.io()).subscribe()
-                        }
-
-                        override fun onSubscribe(d: Disposable) {
-                            presenter.startUploadingAttachmentProgress(attachment)
-                        }
-
-                        override fun onError(e: Throwable) {
-                            if (e is RemoteAttachmentChangedException) {
-                                presenter.createErrorAlert(
-                                    "Upload stopped: newer version elsewhere",
-                                    "${e.message} Nothing was uploaded, so that version is safe. " +
-                                            "Your annotated copy is still on this device; save it " +
-                                            "elsewhere before syncing if you want to keep it.",
-                                    {})
-                            } else {
-                                presenter.createErrorAlert(
-                                    "Error uploading Attachment",
-                                    e.toString(),
-                                    {})
-                            }
-                            Log.e("zotero", "got exception: $e")
-                            presenter.stopUploadingAttachmentProgress()
-                        }
-                    })
-            return
+        val webdav = preferences.isWebDAVEnabled()
+        val upload = if (webdav) {
+            uploadWithWebdav(attachment, md5Key, mtime)
         } else {
-            zoteroAPI.updateAttachment(attachment)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(object :
-                    CompletableObserver {
-                    override fun onComplete() {
-                        presenter.stopUploadingAttachmentProgress()
-                        removeFromRecentlyViewed(attachment)
-                        recordBase(attachment, md5Key)
-                        zoteroDB.updateAttachmentMetadata(
-                            attachment.itemKey,
-                            attachmentStorageManager.calculateMd5(attachment),
-                            attachmentStorageManager.getMtime(attachment),
-                            AttachmentInfo.ZOTEROAPI
-                        ).subscribeOn(Schedulers.io()).subscribe()
-                    }
-
-                    override fun onSubscribe(d: Disposable) {
-                        presenter.startUploadingAttachmentProgress(attachment)
-                    }
-
-                    override fun onError(e: Throwable) {
-                        if (e is AlreadyUploadedException) {
-                            removeFromRecentlyViewed(attachment)
-                            recordBase(attachment, md5Key)
-                            zoteroDB.updateAttachmentMetadata(
-                                attachment.itemKey,
-                                attachmentStorageManager.calculateMd5(attachment),
-                                attachmentStorageManager.getMtime(attachment),
-                                AttachmentInfo.WEBDAV
-                            ).subscribeOn(Schedulers.io()).subscribe()
-                            presenter.makeToastAlert("Attachment already up to date.")
-                        } else if (e is PreconditionFailedException) {
-                            presenter.createErrorAlert(
-                                "Error uploading Attachment",
-                                "The server's copy of this attachment is newer than yours. " +
-                                        "Please sync your library again to get the up to date version. " +
-                                        "You will need to back up your annotated file first if you wish to keep this changes.",
-                                {})
-                        } else if (e is RequestEntityTooLarge) {
-                            presenter.createErrorAlert(
-                                "Error uploading Attachment",
-                                "You do not have enough storage quota to store this atttachment.",
-                                {})
-                        } else {
-                            presenter.createErrorAlert(
-                                "Error uploading Attachment",
-                                e.toString(),
-                                {})
-                            Log.e("zotero", "got exception: $e")
-                        }
-                        presenter.stopUploadingAttachmentProgress()
-                    }
-
-                })
+            zoteroAPI.updateAttachment(attachment).onErrorResumeNext { e ->
+                if (e is AlreadyUploadedException) Completable.complete() else Completable.error(e)
+            }
         }
+        upload.andThen(Completable.fromAction {
+            zoteroDatabase.deleteRecentlyOpenedAttachment(attachment.itemKey).blockingAwait()
+            recordBase(attachment, md5Key)
+            zoteroDB.updateAttachmentMetadata(
+                attachment.itemKey,
+                md5Key,
+                attachmentStorageManager.getMtime(attachment),
+                if (webdav) AttachmentInfo.WEBDAV else AttachmentInfo.ZOTEROAPI
+            ).blockingAwait()
+        })
     }
+
+    private fun uploadWithWebdav(attachment: Item, md5Key: String, mtime: Long): Completable =
+        // Check for remote changes BEFORE touching the WebDAV server: the upload
+        // replaces KEY.zip/.prop outright, and only the later metadata patch is
+        // version-checked by Zotero. See AttachmentUploadPreflight.
+        Single.fromCallable {
+            val (serverVersion, serverMd5) =
+                zoteroAPI.getAttachmentFileState(attachment.itemKey).blockingGet()
+            val remoteProp = zoteroAPI.getWebdavRemoteProp(attachment, context)
+            // the version this device's edits are based on; for copies downloaded
+            // before bases were recorded, the md5 as of the last sync (weaker)
+            val baseMd5 = attachmentBase(attachment) ?: attachment.getMd5Key()
+            AttachmentUploadPreflight.conflictReason(
+                baseMd5, serverMd5, remoteProp?.hash
+            )?.let { throw RemoteAttachmentChangedException(it) }
+            Pair(serverVersion, remoteProp)
+        }.flatMapCompletable { (serverVersion, remoteProp) ->
+            // the .prop's ETag makes the WebDAV replace conditional; see WebdavUploader
+            zoteroAPI.uploadAttachmentWithWebdav(
+                attachment, context, remoteProp, md5Key, mtime
+            ).andThen(
+                Completable.fromAction {
+                    val modificationJsonObject = JsonObject()
+                    modificationJsonObject.addProperty("md5", md5Key)
+                    modificationJsonObject.addProperty("mtime", mtime)
+                    // the version just checked, so attachment edits that didn't touch
+                    // the file (e.g. a tag) don't fail the patch after the upload
+                    zoteroAPI.patchItem(attachment, modificationJsonObject, serverVersion)
+                        .blockingAwait()
+                }
+            )
+        }
 
     /** md5 of the file this device last downloaded/uploaded for [item]; see AttachmentBase. */
     private fun attachmentBase(item: Item): String? =

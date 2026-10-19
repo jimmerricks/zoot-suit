@@ -33,7 +33,7 @@ interface Contract {
         fun hideLibraryContentDisplay()
         fun clearSidebar()
         fun closeItemView()
-        fun showAttachmentUploadProgress(attachment: Item)
+        fun showAttachmentUploadProgress(attachment: Item, position: Int, total: Int)
         fun hideAttachmentUploadProgress()
         fun createYesNoPrompt(
             title: String, message: String, yesText: String, noText: String, onYesClick: () -> Unit,
@@ -77,7 +77,7 @@ interface Contract {
         fun refreshItemView()
         fun displayGroupsOnActionBar(groups: List<GroupInfo>)
         fun openGroup(groupTitle: String)
-        fun startUploadingAttachmentProgress(attachment: Item)
+        fun startUploadingAttachmentProgress(attachment: Item, position: Int, total: Int)
         fun stopUploadingAttachmentProgress()
         fun onResume()
         fun createYesNoPrompt(

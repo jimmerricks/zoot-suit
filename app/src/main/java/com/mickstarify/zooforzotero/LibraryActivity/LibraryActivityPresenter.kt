@@ -42,13 +42,12 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
 
     }
 
-    override fun startUploadingAttachmentProgress(attachment: Item) {
-        view.showAttachmentUploadProgress(attachment)
+    override fun startUploadingAttachmentProgress(attachment: Item, position: Int, total: Int) {
+        view.showAttachmentUploadProgress(attachment, position, total)
     }
 
     override fun stopUploadingAttachmentProgress() {
         view.hideAttachmentUploadProgress()
-        view.makeToastAlert("Finished uploading attachment.")
     }
 
     override fun onResume() {

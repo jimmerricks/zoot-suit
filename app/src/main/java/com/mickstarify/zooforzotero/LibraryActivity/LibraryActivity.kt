@@ -468,19 +468,24 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     var uploadProgressDialog: ProgressDialog? = null
-    fun showAttachmentUploadProgress(attachment: Item) {
-        uploadProgressDialog = ProgressDialog(this)
-        uploadProgressDialog?.setTitle("Uploading Attachment")
+    fun showAttachmentUploadProgress(attachment: Item, position: Int, total: Int) {
+        if (uploadProgressDialog == null) {
+            uploadProgressDialog = ProgressDialog(this)
+            uploadProgressDialog?.isIndeterminate = true
+            uploadProgressDialog?.setCancelable(false)
+        }
+        uploadProgressDialog?.setTitle(
+            if (total == 1) "Uploading Attachment" else "Uploading $position of $total"
+        )
         uploadProgressDialog?.setMessage(
             "Uploading ${attachment.data["filename"]}. " +
                     "This may take a while, do not close the app."
         )
-        uploadProgressDialog?.isIndeterminate = true
         uploadProgressDialog?.show()
     }
 
     fun hideAttachmentUploadProgress() {
-        uploadProgressDialog?.hide()
+        uploadProgressDialog?.dismiss()
         uploadProgressDialog = null
     }
 
