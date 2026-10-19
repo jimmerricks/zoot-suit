@@ -1,6 +1,6 @@
 # Dependency & Architecture Modernization Plan
 
-_Last updated: 2026-10-14 (reflects the `cleanup/review-fixes` branch)._
+_Last updated: 2026-10-19 (reflects the `cleanup/review-fixes` branch)._
 
 This tracks the modernization of the Zoot Suit fork. The original upstream
 plan assumed a Kotlin 1.9 / RxJava2 / KAPT baseline; much of that work is now
@@ -18,7 +18,7 @@ done, so this document records the **current state** and what remains.
 | Room | 2.7.2 (runtime + rxjava3 + KSP compiler) |
 | UI (new screens) | Jetpack **Compose** (BOM 2025.06.01), Material3, Navigation3 |
 | UI (legacy screens) | Fragment/View + Navigation2 |
-| Unit test platform | JUnit Platform (Jupiter + Vintage), Turbine, mockito-kotlin — **now actually runs** (28 tests) |
+| Unit test platform | JUnit Platform (Jupiter + Vintage), Turbine, mockito-kotlin — **now actually runs** (41 tests) |
 
 ## Remaining work
 
@@ -36,6 +36,18 @@ simultaneously. `LibraryActivityModel` is a ~1100-line god class holding a
 injectable collaborators and a ViewModel, matching the `AttachmentManager`/
 `SyncSetup` pattern. High effort; do this before building major new features
 on the library screen.
+
+Slices done so far (each behavior-preserving, unit-tested where pure):
+- Activity coupling removed: `finish()` goes through `Presenter.finishLibrary()`.
+- `LibraryNavigator`: the back-stack of `LibraryModelState`s (6 tests).
+- `LibraryItemFilter`: notes/PDF display filters, item and collection search
+  (7 tests).
+
+Next, in rising order of risk: attachment download/upload (largest RxJava
+surface, can lose data), then sync staging (`finishLibrarySync`,
+`loadPriorState`), then the Presenter → ViewModel swap. Each of these needs
+a logged-in emulator with a disposable test library, not the real one: this
+code uploads attachments and creates/deletes notes.
 
 This work changes threading/lifecycle behavior (sync staging, back-navigation,
 group switching, the Presenter → ViewModel swap) and must be verified on-device,
