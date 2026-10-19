@@ -79,8 +79,12 @@ class ZoteroAPI(
         }
     }.build()
 
+    // shared by both API clients so a Backoff from one also delays the other
+    private val rateLimitInterceptor = ZoteroRateLimitInterceptor()
+
     private val zoteroHttpClient = baseHttpClient
         .newBuilder().apply {
+            addInterceptor(rateLimitInterceptor)
             writeTimeout(
                 preferencesManager.getHttpWriteTimeout(),
                 TimeUnit.MILLISECONDS
@@ -98,6 +102,7 @@ class ZoteroAPI(
 
     private val zoteroHttpClientShortTimeout = baseHttpClient
         .newBuilder().apply {
+            addInterceptor(rateLimitInterceptor)
             addInterceptor(object : Interceptor {
                 override fun intercept(chain: Interceptor.Chain): okhttp3.Response {
                     val request = chain.request().newBuilder()
