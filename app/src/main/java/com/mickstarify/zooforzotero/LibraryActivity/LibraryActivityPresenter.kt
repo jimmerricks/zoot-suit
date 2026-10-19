@@ -107,9 +107,13 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             view.navController.navigate(R.id.libraryLoadingScreen)
         }
 
-        libraryLoadingViewModel.setAmountOfDownloadedEntries(progress)
+        // total before progress: each observer rewrites the "Downloading X of Y" label,
+        // so the last one set wins. An empty message must not blank that label.
         libraryLoadingViewModel.setTotalAmountOfEntries(total)
-        libraryLoadingViewModel.setLoadingMessage(message)
+        libraryLoadingViewModel.setAmountOfDownloadedEntries(progress)
+        if (message.isNotEmpty()) {
+            libraryLoadingViewModel.setLoadingMessage(message)
+        }
 
 //        view.updateLibraryLoadingProgress(progress, total, message)
     }
@@ -235,7 +239,9 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
 //        view.showLoadingAnimation(showScreen = true)
         view.setTitle("Loading")
 
-        (view as LibraryActivity).navController.navigate(R.id.libraryLoadingScreen)
+        if (view.getCurrentScreen() != AvailableScreens.LIBRARY_LOADING_SCREEN) {
+            (view as LibraryActivity).navController.navigate(R.id.libraryLoadingScreen)
+        }
     }
 
     override fun hideLibraryLoadingAnimation() {
@@ -411,7 +417,9 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         if (model.isFirstSync()) {
             Log.d("zotero", "First sync - loading library from scratch")
             model.loadGroups()
-            this.requestLibraryRefresh()
+            // full loading screen with item counts, not the pull-to-refresh spinner:
+            // a first sync of a large library takes many minutes.
+            model.refreshLibrary(useSmallLoadingAnimation = false)
         } else if (model.shouldIUpdateLibrary()) {
             Log.d("zotero", "Updating library")
             model.loadGroups()
