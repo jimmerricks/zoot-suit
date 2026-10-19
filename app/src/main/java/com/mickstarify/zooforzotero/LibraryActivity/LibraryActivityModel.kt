@@ -3,6 +3,7 @@ package com.mickstarify.zooforzotero.LibraryActivity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Handler
 import android.util.Log
@@ -48,6 +49,7 @@ import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.io.FileNotFoundException
 import java.util.LinkedList
+import java.util.Optional
 import java.util.concurrent.TimeUnit
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection as ZoteroCollection
 
@@ -260,85 +262,124 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 checkMd5 = false
             )
         } catch (e: Exception) {
+            presenter.hideLoadingAlertDialog()
             presenter.makeToastAlert("could not open attachment, file not found.")
             return
         }
         if (attachmentExists) {
-            // Is the local copy based on Zotero's current version? See AttachmentOpenCheck.
-            val localMd5 = try {
-                attachmentStorageManager.calculateMd5(item)
-            } catch (e: Exception) {
-                ""
-            }
-            val base = attachmentBase(item)
-            when (AttachmentOpenCheck.decide(base, item.getMd5Key(), localMd5)) {
-                AttachmentOpenCheck.Action.REDOWNLOAD -> {
-                    presenter.makeToastAlert("Zotero has a newer version of this file. Downloading it.")
+            presenter.showLoadingAlertDialog("Checking for a newer version")
+            latestZoteroMd5(item)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ latest ->
                     presenter.hideLoadingAlertDialog()
-                    presenter.updateAttachmentDownloadProgress(0, -1)
-                    attachmentStorageManager.deleteAttachment(item)
-                    downloadAttachment(item)
-                    return
-                }
-                AttachmentOpenCheck.Action.ASK_EDITED_STALE -> {
-                    presenter.hideLoadingAlertDialog()
-                    presenter.createYesNoPrompt(
-                        "Newer version in Zotero",
-                        "This file was changed on another device after you downloaded it, and your " +
-                                "copy here has changes of its own. They can't be uploaded without " +
-                                "overwriting the newer version, so uploading this copy will be refused.\n\n" +
-                                "Download the newer version (your changes on this device are replaced), " +
-                                "or open your copy and save your annotations as a new file.",
-                        "Download newer", "Open my copy", {
-                            presenter.updateAttachmentDownloadProgress(0, -1)
-                            attachmentStorageManager.deleteAttachment(item)
-                            downloadAttachment(item)
-                        }, {
-                            openPDF(item)
-                        }
-                    )
-                    return
-                }
-                AttachmentOpenCheck.Action.RECORD_BASE_AND_OPEN -> recordBase(item, localMd5)
-                AttachmentOpenCheck.Action.OPEN -> {}
-            }
-            // check the validity of the attachment before opening. Only for copies without a
-            // base: with one, AttachmentOpenCheck already compared it with Zotero's version, and
-            // a difference that's left is this device's own edit waiting to be uploaded, which
-            // "redownload" would throw away.
-            presenter.showLoadingAlertDialog("Verifying MD5 Checksum")
-            if (base == null && preferences.shouldCheckMd5SumBeforeOpening() && zoteroDB.hasMd5Key(
-                    item,
-                    onlyWebdav = preferences.isWebDAVEnabled()
-                ) && !attachmentStorageManager.validateMd5ForItem(
-                    item,
-                    zoteroDB.getMd5Key(item)
-                )
-            ) {
-                presenter.createYesNoPrompt(
-                    "File conflict",
-                    "Your local copy is different to the server's. Would you like to redownload the server's copy?",
-                    "Yes", "No", {
-                        presenter.updateAttachmentDownloadProgress(0, -1)
-                        attachmentStorageManager.deleteAttachment(item)
-                        downloadAttachment(item)
-                    }, {
-                        presenter.hideLoadingAlertDialog()
+                    if (!latest.isPresent) {
+                        presenter.makeToastAlert("Offline: opening the copy on this device.")
                         openPDF(item)
+                    } else {
+                        openLocalCopy(item, latest.get())
                     }
-                )
-                return
-            } else {
-                presenter.hideLoadingAlertDialog()
-                openPDF(item)
-            }
-
+                }, { e ->
+                    presenter.hideLoadingAlertDialog()
+                    Log.e("zotero", "checking for a newer version failed: $e")
+                    openPDF(item)
+                })
         } else {
             presenter.hideLoadingAlertDialog()
             presenter.updateAttachmentDownloadProgress(0, -1)
             downloadAttachment(item)
         }
 
+    }
+
+    /**
+     * The attachment's md5 on Zotero's server now ("" if it has no file), or null if the
+     * server can't be asked: no network, a group library (the request is for My Library),
+     * or no answer within a few seconds. One API request.
+     */
+    private fun latestZoteroMd5(item: Item): Single<Optional<String>> =
+        if (state.isUsingGroup() || !hasNetwork()) {
+            Single.just(Optional.empty())
+        } else {
+            zoteroAPI.getAttachmentFileState(item.itemKey)
+                .map { (_, md5) -> Optional.of(md5 ?: "") }
+                .timeout(5, TimeUnit.SECONDS)
+                .onErrorReturn { e ->
+                    Log.d("zotero", "no latest md5 for ${item.itemKey}: $e")
+                    Optional.empty()
+                }
+                .subscribeOn(Schedulers.io())
+        }
+
+    /**
+     * Whether Android reports a connected network. Checked before asking the server so
+     * that offline opens are instant: a request on a dropped connection otherwise waits
+     * for the timeout.
+     */
+    @Suppress("DEPRECATION") // activeNetworkInfo is the API 24 way
+    private fun hasNetwork(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            ?: return true
+        return cm.activeNetworkInfo?.isConnected == true
+    }
+
+    /** Opens the local copy, first replacing it if Zotero's [latestMd5] moved on. */
+    private fun openLocalCopy(item: Item, latestMd5: String) {
+        // Is the local copy based on Zotero's current version? See AttachmentOpenCheck.
+        val localMd5 = try {
+            attachmentStorageManager.calculateMd5(item)
+        } catch (e: Exception) {
+            ""
+        }
+        val base = attachmentBase(item)
+        when (AttachmentOpenCheck.decide(base, latestMd5, localMd5)) {
+            AttachmentOpenCheck.Action.REDOWNLOAD -> {
+                presenter.makeToastAlert("Zotero has a newer version of this file. Downloading it.")
+                presenter.updateAttachmentDownloadProgress(0, -1)
+                attachmentStorageManager.deleteAttachment(item)
+                downloadAttachment(item)
+                return
+            }
+            AttachmentOpenCheck.Action.ASK_EDITED_STALE -> {
+                presenter.createYesNoPrompt(
+                    "Newer version in Zotero",
+                    "This file was changed on another device after you downloaded it, and your " +
+                            "copy here has changes of its own. They can't be uploaded without " +
+                            "overwriting the newer version, so uploading this copy will be refused.\n\n" +
+                            "Download the newer version (your changes on this device are replaced), " +
+                            "or open your copy and save your annotations as a new file.",
+                    "Download newer", "Open my copy", {
+                        presenter.updateAttachmentDownloadProgress(0, -1)
+                        attachmentStorageManager.deleteAttachment(item)
+                        downloadAttachment(item)
+                    }, {
+                        openPDF(item)
+                    }
+                )
+                return
+            }
+            AttachmentOpenCheck.Action.RECORD_BASE_AND_OPEN -> recordBase(item, localMd5)
+            AttachmentOpenCheck.Action.OPEN -> {}
+        }
+        // A copy without a base can't be judged by AttachmentOpenCheck; offer Zotero's
+        // version if it differs. With a base, a difference left here is this device's own
+        // edit waiting to be uploaded, which "redownload" would throw away.
+        if (base == null && latestMd5.isNotEmpty() && preferences.shouldCheckMd5SumBeforeOpening() &&
+            !localMd5.equals(latestMd5, ignoreCase = true)
+        ) {
+            presenter.createYesNoPrompt(
+                "File conflict",
+                "Your local copy is different to the server's. Would you like to redownload the server's copy?",
+                "Yes", "No", {
+                    presenter.updateAttachmentDownloadProgress(0, -1)
+                    attachmentStorageManager.deleteAttachment(item)
+                    downloadAttachment(item)
+                }, {
+                    openPDF(item)
+                }
+            )
+            return
+        }
+        openPDF(item)
     }
 
     override fun filterItems(query: String): List<Item> {
@@ -349,8 +390,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     /**
      * Puts [item]'s file on the device without opening it. A copy that's already there is
-     * kept, unless it's an unedited copy of an older version (replaced) or an edited copy
-     * of one (asks, as opening does).
+     * checked against Zotero's current version (when online) and kept, unless it's an
+     * unedited copy of an older version (replaced) or an edited copy of one (asks, as
+     * opening does).
      */
     fun downloadAttachmentOnly(item: Item) {
         if (item.data["linkMode"] == "linked_file" || item.data["linkMode"] == "linked_url") {
@@ -367,8 +409,20 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             downloadAttachment(item, openWhenDone = false)
             return
         }
+        latestZoteroMd5(item)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ latest ->
+                if (latest.isPresent) {
+                    downloadIfOutdated(item, latest.get())
+                } else {
+                    presenter.makeToastAlert("Offline: keeping the copy on this device.")
+                }
+            }, { e -> Log.e("zotero", "checking for a newer version failed: $e") })
+    }
+
+    private fun downloadIfOutdated(item: Item, latestMd5: String) {
         val localMd5 = runCatching { attachmentStorageManager.calculateMd5(item) }.getOrDefault("")
-        when (AttachmentOpenCheck.decide(attachmentBase(item), item.getMd5Key(), localMd5)) {
+        when (AttachmentOpenCheck.decide(attachmentBase(item), latestMd5, localMd5)) {
             AttachmentOpenCheck.Action.REDOWNLOAD -> {
                 attachmentStorageManager.deleteAttachment(item)
                 presenter.updateAttachmentDownloadProgress(0, -1)
@@ -900,7 +954,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     fun describeAttachment(item: Item, onState: (AttachmentLocalState) -> Unit) {
         Single.fromCallable {
             AttachmentLocalState.of(
-                editFinder.currentMd5(item.itemKey), attachmentBase(item), item.getMd5Key()
+                editFinder.currentMd5(item.itemKey), attachmentBase(item), zoteroDB.getMd5Key(item)
             )
         }
             .subscribeOn(Schedulers.io())
