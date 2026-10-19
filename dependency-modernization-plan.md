@@ -66,7 +66,8 @@ the emulator"). Proceed slice by slice, smoke-testing between steps.
 
 - **minSdk 24** (Galaxy Tab S2 / Android 7.0). Any new API must be guarded or
   available on API 24.
-- **Zotero Web API v10** compatibility must be preserved in `ZoteroAPI`.
+- **Zotero Web API v3** (`Zotero-API-Version: 3`) compatibility must be preserved in
+  `ZoteroAPI`. ("Zotero 10" is the desktop client and its local API, not a Web API version.)
 - Keep changes small and verifiable — build with
   `docker compose run --rm build` and run tests with
   `docker compose run --rm build ./gradlew testDebugUnitTest`. On-device
