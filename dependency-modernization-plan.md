@@ -18,7 +18,7 @@ done, so this document records the **current state** and what remains.
 | Room | 2.7.2 (runtime + rxjava3 + KSP compiler) |
 | UI (new screens) | Jetpack **Compose** (BOM 2025.06.01), Material3, Navigation3 |
 | UI (legacy screens) | Fragment/View + Navigation2 |
-| Unit test platform | JUnit Platform (Jupiter + Vintage), Turbine, mockito-kotlin — **now actually runs** (80 tests) |
+| Unit test platform | JUnit Platform (Jupiter + Vintage), Turbine, mockito-kotlin — **now actually runs** (87 tests) |
 
 ## Remaining work
 
@@ -64,16 +64,22 @@ note creation reads the per-object `failed` list; 429/Retry-After/Backoff are
 honoured. Verified end to end on the API 24 emulator against the real library and
 WebDAV server, with Zotero desktop picking up the annotation.
 
+Stale copies (fixed 2026-10-19): each attachment's base (md5 of the file the device
+last downloaded/uploaded) is kept in `AttachmentBase`, a table without the
+ItemInfo cascade that wipes `AttachmentInfo` on every sync of the item. The
+pre-upload check compares against the base; opening re-downloads a stale unedited
+copy and asks about a stale edited one (`AttachmentOpenCheck`). Copies from before
+the change are given a base at library load where possible. Verified on the
+emulator with a real desktop-side change.
+
 Open, in priority order:
-1. **Lost-update gap:** the pre-upload check uses the item's md5 from the last sync
-   as the base, not the md5 of the file the device actually downloaded/edited, and
-   opening doesn't md5-check by default. A stale local copy edited after desktop
-   changed the file can overwrite desktop's version (the backup keeps it). Track a
-   per-attachment base md5 at download/upload and use it in the check.
-2. Note deletion has no confirmation and is a permanent API DELETE.
-3. Zotero File Storage path (unused with WebDAV): optional `x-amz-security-token`
+1. Note deletion has no confirmation and is a permanent API DELETE.
+2. Zotero File Storage path (unused with WebDAV): optional `x-amz-security-token`
    modelled as non-null; `If-Match: *` for first uploads should be
    `If-None-Match: *`; a `421` check meant `412`.
+3. A copy edited *before* the AttachmentBase upgrade, whose AttachmentInfo row a
+   sync already deleted, still falls back to the synced md5 (only affects installs
+   upgraded from builds before `d8231b9`).
 
 ### 3. Minor dependency tidy-ups
 - Retrofit is pinned to 2.9.0; current is 2.11.x.
