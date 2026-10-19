@@ -10,6 +10,7 @@ import com.mickstarify.zooforzotero.SortMethod
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
+import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import java.util.LinkedList
 import java.util.Locale
@@ -489,6 +490,10 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             return this.sortedWith(sortMethod)
         }
         return this.sortedWith(sortMethod).reversed()
+    }
+
+    fun describeAttachment(attachment: Item, onState: (AttachmentLocalState) -> Unit) {
+        model.describeAttachment(attachment, onState)
     }
 
     fun downloadAttachmentOnly(attachment: Item) {

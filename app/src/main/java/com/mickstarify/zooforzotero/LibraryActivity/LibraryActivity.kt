@@ -45,6 +45,7 @@ import com.mickstarify.zooforzotero.SettingsActivity
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
+import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -563,6 +564,10 @@ class LibraryActivity : AppCompatActivity(),
 
     override fun forceUploadAttachmentListener(item: Item) {
         presenter.uploadAttachment(item)
+    }
+
+    override fun describeAttachment(item: Item, onState: (AttachmentLocalState) -> Unit) {
+        presenter.describeAttachment(item, onState)
     }
 
     override fun downloadAttachmentListener(item: Item) {

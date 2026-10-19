@@ -17,6 +17,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 private const val ARG_ATTACHMENT = "attachment"
@@ -56,6 +57,7 @@ class ItemAttachmentEntry(
             requireView().findViewById<ConstraintLayout>(R.id.constraintLayout_attachments_entry)
         val filename = requireView().findViewById<TextView>(R.id.textView_filename)
         val icon = requireView().findViewById<ImageView>(R.id.imageView_attachment_icon)
+        stateView = requireView().findViewById(R.id.textView_attachment_state)
 
         libraryViewModel.getOnItemClicked().observe(viewLifecycleOwner) { item ->
             attachment = item.attachments.filter { it.itemKey == itemKey }.firstOrNull()
@@ -67,6 +69,7 @@ class ItemAttachmentEntry(
             val linkMode = attachment?.getItemData("linkMode")
 
             filename.text = attachment?.data?.get("filename") ?: "unknown"
+            showState()
             if (linkMode == "linked_file") { // this variant uses title as a filename.
                 filename.text = "[Linked] ${attachment?.getItemData("title")}"
 
@@ -135,6 +138,26 @@ class ItemAttachmentEntry(
 
     }
 
+    private var stateView: TextView? = null
+
+    /** Shows whether the file is on the device, edited, or outdated; not for linked files. */
+    private fun showState() {
+        val target = attachment ?: return
+        val linkMode = target.getItemData("linkMode")
+        if (linkMode == "linked_file" || linkMode == "linked_url") return
+        fileOpenListener?.describeAttachment(target) { state ->
+            val view = stateView ?: return@describeAttachment
+            if (!isAdded) return@describeAttachment
+            view.text = state.label
+            view.visibility = View.VISIBLE
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showState() // the file may have been edited or downloaded meanwhile
+    }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnAttachmentFragmentInteractionListener) {
@@ -148,6 +171,7 @@ class ItemAttachmentEntry(
         fun openAttachmentFileListener(item: Item)
         fun forceUploadAttachmentListener(item: Item)
         fun downloadAttachmentListener(item: Item)
+        fun describeAttachment(item: Item, onState: (AttachmentLocalState) -> Unit)
         fun openLinkedAttachmentListener(item: Item)
         fun deleteLocalAttachment(item: Item)
     }

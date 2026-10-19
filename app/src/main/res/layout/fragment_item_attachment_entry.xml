@@ -23,6 +23,17 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Medium" android:id="@+id/textView_filename"
             app:layout_constraintStart_toEndOf="@+id/imageView_attachment_icon"
             app:layout_constraintTop_toTopOf="@+id/imageView_attachment_icon"
-            app:layout_constraintBottom_toBottomOf="@+id/imageView_attachment_icon" android:layout_marginStart="16dp"
+            app:layout_constraintBottom_toTopOf="@+id/textView_attachment_state"
+            app:layout_constraintVertical_chainStyle="packed" android:layout_marginStart="16dp"
             android:autoText="false" app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"/>
+    <TextView
+            android:id="@+id/textView_attachment_state"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="@+id/textView_filename"
+            app:layout_constraintEnd_toEndOf="@+id/textView_filename"
+            app:layout_constraintTop_toBottomOf="@+id/textView_filename"
+            app:layout_constraintBottom_toBottomOf="@+id/imageView_attachment_icon"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

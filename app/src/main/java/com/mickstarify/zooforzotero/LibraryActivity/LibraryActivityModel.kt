@@ -25,6 +25,7 @@ import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.OnSyncChangeListener
 import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncManager
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroNotFoundException
+import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentOpenCheck
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachmentFinder
@@ -893,6 +894,18 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             zoteroDatabase.getAttachmentBase(key, zoteroDB.groupID)?.let { bases[key] = it }
         }
         return editFinder.edited(bases).mapNotNull { zoteroDB.getItemWithKey(it) }
+    }
+
+    /** Where [item]'s file stands on this device; worked out off the main thread. */
+    fun describeAttachment(item: Item, onState: (AttachmentLocalState) -> Unit) {
+        Single.fromCallable {
+            AttachmentLocalState.of(
+                editFinder.currentMd5(item.itemKey), attachmentBase(item), item.getMd5Key()
+            )
+        }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ onState(it) }, { e -> Log.e("zotero", "describing ${item.itemKey} failed: $e") })
     }
 
     /** md5 of the file this device last downloaded/uploaded for [item]; see AttachmentBase. */
