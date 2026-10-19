@@ -1,6 +1,7 @@
 package com.mickstarify.zooforzotero.SyncSetup.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,11 +31,12 @@ fun WelcomeHeroSection() {
     ) {
         // App icon
         Image(
-            painter = painterResource(id = R.drawable.app_icon),
-            contentDescription = "Zoo for Zotero Logo",
+            painter = painterResource(id = R.drawable.icon_glyph),
+            contentDescription = "Zoot Suit logo",
             modifier = Modifier
                 .size(156.dp)
                 .clip(RoundedCornerShape(24.dp))
+                .background(colorResource(id = R.color.icon_background))
         )
 
         Spacer(modifier = Modifier.height(24.dp))

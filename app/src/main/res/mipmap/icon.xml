@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher icon before API 26 (adaptive icons are in mipmap-anydpi-v26). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/icon_background" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="2dp"
+        android:drawable="@drawable/icon_glyph"
+        android:left="2dp"
+        android:right="2dp"
+        android:top="2dp" />
+</layer-list>

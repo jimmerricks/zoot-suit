@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zoot Suit glyph: a jacket with wide shoulders and peaked lapels, a red tie
+     and pocket square. 72x72 viewport = the visible part of an adaptive icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <!-- jacket -->
+    <path
+        android:fillColor="@color/icon_jacket"
+        android:pathData="M10,17 L26,10 L36,44 L46,10 L62,17 L60,62 L12,62 Z" />
+    <!-- shirt -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M26,10 L46,10 L36,44 Z" />
+    <!-- lapels -->
+    <path
+        android:fillColor="@color/icon_lapel"
+        android:pathData="M26,10 L36,44 L26.5,30 L20,26 L23,21 Z" />
+    <path
+        android:fillColor="@color/icon_lapel"
+        android:pathData="M46,10 L36,44 L45.5,30 L52,26 L49,21 Z" />
+    <!-- tie -->
+    <path
+        android:fillColor="@color/icon_tie"
+        android:pathData="M33,11 L39,11 L38,16.5 L34,16.5 Z" />
+    <path
+        android:fillColor="@color/icon_tie"
+        android:pathData="M34,16.5 L38,16.5 L40.5,35 L36,40.5 L31.5,35 Z" />
+    <!-- pocket square -->
+    <path
+        android:fillColor="@color/icon_tie"
+        android:pathData="M46,38 L54,38 L53,34 L51,36 L49.5,33.5 L48,36 L46.5,34.5 Z" />
+    <!-- button -->
+    <path
+        android:fillColor="@color/icon_background"
+        android:pathData="M36,50.5 m-1.8,0 a1.8,1.8 0 1,0 3.6,0 a1.8,1.8 0 1,0 -3.6,0" />
+</vector>

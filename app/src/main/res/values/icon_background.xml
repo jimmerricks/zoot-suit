@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="icon_background">#DE282C</color>
+    <color name="icon_background">#2B2350</color>
+    <color name="icon_jacket">#F2E6CC</color>
+    <color name="icon_lapel">#D6C49C</color>
+    <color name="icon_tie">#C8102E</color>
 </resources>
