@@ -487,6 +487,10 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         return this.sortedWith(sortMethod).reversed()
     }
 
+    fun downloadAttachmentOnly(attachment: Item) {
+        model.downloadAttachmentOnly(attachment)
+    }
+
     fun deleteLocalAttachment(attachment: Item) {
         model.deleteLocalAttachment(attachment)
     }

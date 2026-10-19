@@ -543,6 +543,10 @@ class LibraryActivity : AppCompatActivity(),
         presenter.uploadAttachment(item)
     }
 
+    override fun downloadAttachmentListener(item: Item) {
+        presenter.downloadAttachmentOnly(item)
+    }
+
     override fun openLinkedAttachmentListener(item: Item) {
         presenter.openAttachment(item)
     }

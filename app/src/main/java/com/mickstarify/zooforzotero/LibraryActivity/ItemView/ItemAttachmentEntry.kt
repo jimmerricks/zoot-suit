@@ -3,7 +3,6 @@ package com.mickstarify.zooforzotero.LibraryActivity.ItemView
 
 import android.app.AlertDialog
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -112,29 +111,22 @@ class ItemAttachmentEntry(
                 }
 
                 layout.setOnLongClickListener {
+                    val target = attachment ?: throw Exception("No Attachment given.")
                     AlertDialog.Builder(context)
                         .setTitle("Attachment")
                         .setItems(
-                            arrayOf("Open", "Force Re-upload", "Delete local copy of attachment"),
-                            object : DialogInterface.OnClickListener {
-                                override fun onClick(dialog: DialogInterface?, item: Int) {
-                                    when (item) {
-                                        0 -> fileOpenListener?.openAttachmentFileListener(
-                                            attachment ?: throw Exception("No Attachment given.")
-                                        )
-                                        1 -> fileOpenListener?.forceUploadAttachmentListener(
-                                            attachment ?: throw Exception("No Attachment given.")
-                                        )
-                                        2 -> {
-                                            fileOpenListener?.deleteLocalAttachment(
-                                                attachment
-                                                    ?: throw Exception("No Attachment given.")
-                                            )
-                                        }
-                                    }
-                                }
-
-                            }).show()
+                            arrayOf(
+                                "Open", "Download to device", "Upload this file now",
+                                "Delete local copy of attachment"
+                            )
+                        ) { _, which ->
+                            when (which) {
+                                0 -> fileOpenListener?.openAttachmentFileListener(target)
+                                1 -> fileOpenListener?.downloadAttachmentListener(target)
+                                2 -> fileOpenListener?.forceUploadAttachmentListener(target)
+                                3 -> fileOpenListener?.deleteLocalAttachment(target)
+                            }
+                        }.show()
                     true
                 }
             }
@@ -155,6 +147,7 @@ class ItemAttachmentEntry(
     interface OnAttachmentFragmentInteractionListener {
         fun openAttachmentFileListener(item: Item)
         fun forceUploadAttachmentListener(item: Item)
+        fun downloadAttachmentListener(item: Item)
         fun openLinkedAttachmentListener(item: Item)
         fun deleteLocalAttachment(item: Item)
     }

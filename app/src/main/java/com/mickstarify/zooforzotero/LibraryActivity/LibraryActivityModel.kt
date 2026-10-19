@@ -343,7 +343,55 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     var downloadDisposable: Disposable? = null
 
-    override fun downloadAttachment(item: Item) {
+    /**
+     * Puts [item]'s file on the device without opening it. A copy that's already there is
+     * kept, unless it's an unedited copy of an older version (replaced) or an edited copy
+     * of one (asks, as opening does).
+     */
+    fun downloadAttachmentOnly(item: Item) {
+        if (item.data["linkMode"] == "linked_file" || item.data["linkMode"] == "linked_url") {
+            presenter.makeToastAlert("Linked attachments aren't stored in Zotero.")
+            return
+        }
+        val exists = try {
+            attachmentStorageManager.checkIfAttachmentExists(item, checkMd5 = false)
+        } catch (e: Exception) {
+            false
+        }
+        if (!exists) {
+            presenter.updateAttachmentDownloadProgress(0, -1)
+            downloadAttachment(item, openWhenDone = false)
+            return
+        }
+        val localMd5 = runCatching { attachmentStorageManager.calculateMd5(item) }.getOrDefault("")
+        when (AttachmentOpenCheck.decide(attachmentBase(item), item.getMd5Key(), localMd5)) {
+            AttachmentOpenCheck.Action.REDOWNLOAD -> {
+                attachmentStorageManager.deleteAttachment(item)
+                presenter.updateAttachmentDownloadProgress(0, -1)
+                downloadAttachment(item, openWhenDone = false)
+            }
+            AttachmentOpenCheck.Action.ASK_EDITED_STALE -> presenter.createYesNoPrompt(
+                "Newer version in Zotero",
+                "This file was changed on another device after you downloaded it, and your " +
+                        "copy here has changes of its own. Downloading the newer version " +
+                        "replaces your changes on this device.",
+                "Download newer", "Keep my copy", {
+                    attachmentStorageManager.deleteAttachment(item)
+                    presenter.updateAttachmentDownloadProgress(0, -1)
+                    downloadAttachment(item, openWhenDone = false)
+                }, {}
+            )
+            AttachmentOpenCheck.Action.RECORD_BASE_AND_OPEN -> {
+                recordBase(item, localMd5)
+                presenter.makeToastAlert("Already on this device.")
+            }
+            AttachmentOpenCheck.Action.OPEN -> presenter.makeToastAlert("Already on this device.")
+        }
+    }
+
+    override fun downloadAttachment(item: Item) = downloadAttachment(item, openWhenDone = true)
+
+    fun downloadAttachment(item: Item, openWhenDone: Boolean) {
         if (isDownloading) {
             Log.d("zotero", "not downloading ${item.getTitle()} because i am already downloading.")
             return
@@ -373,7 +421,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                         return
                     } else {
                         recordBase(item, attachmentStorageManager.calculateMd5(item))
-                        openPDF(item)
+                        if (openWhenDone) {
+                            openPDF(item)
+                        } else {
+                            presenter.makeToastAlert("Downloaded ${item.data["filename"] ?: item.getTitle()}.")
+                        }
                     }
                 }
 
