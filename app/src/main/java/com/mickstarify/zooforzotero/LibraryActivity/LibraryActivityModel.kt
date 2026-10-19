@@ -12,6 +12,7 @@ import com.mickstarify.zooforzotero.SyncSetup.AuthenticationStorage
 import com.mickstarify.zooforzotero.ZoteroAPI.AlreadyUploadedException
 import io.reactivex.rxjava3.core.Single
 import com.mickstarify.zooforzotero.ZoteroAPI.RemoteAttachmentChangedException
+import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentFileCheck
 import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploadPreflight
 import com.mickstarify.zooforzotero.ZoteroAPI.DeleteItemListener
 import com.mickstarify.zooforzotero.ZoteroAPI.DownloadProgress
@@ -719,6 +720,15 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             presenter.makeToastAlert("Cannot upload attachment. File does not exist.")
             return
         }
+        fileCheckProblem(attachment)?.let { problem ->
+            presenter.createErrorAlert(
+                "Not uploaded",
+                "This copy wasn't uploaded because $problem. The version in Zotero is " +
+                        "unchanged. The file on this device may be damaged; reopen it in " +
+                        "your PDF viewer to check.",
+                {})
+            return
+        }
         var mtime = attachmentStorageManager.getMtime(attachment)
 
         if (mtime < attachment.getMtime()) {
@@ -844,6 +854,37 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
                 })
         }
+    }
+
+    /** Reads the first and last few bytes and runs [AttachmentFileCheck]. */
+    private fun fileCheckProblem(attachment: Item): String? {
+        val window = AttachmentFileCheck.WINDOW
+        val size = attachmentStorageManager.getFileSize(
+            attachmentStorageManager.getAttachmentUri(attachment)
+        )
+        fun readUpTo(stream: java.io.InputStream, n: Int): ByteArray {
+            val buf = ByteArray(n)
+            var read = 0
+            while (read < n) {
+                val r = stream.read(buf, read, n - read)
+                if (r < 0) break
+                read += r
+            }
+            return buf.copyOf(read)
+        }
+        val head = attachmentStorageManager.getItemInputStream(attachment).use { readUpTo(it, window) }
+        val tail = attachmentStorageManager.getItemInputStream(attachment).use { stream ->
+            var toSkip = maxOf(0L, size - window)
+            while (toSkip > 0) {
+                val skipped = stream.skip(toSkip)
+                if (skipped <= 0) break
+                toSkip -= skipped
+            }
+            readUpTo(stream, window)
+        }
+        val isPdf = attachment.data["contentType"] == "application/pdf" ||
+                attachmentStorageManager.getFilenameForItem(attachment).endsWith(".pdf", ignoreCase = true)
+        return AttachmentFileCheck.problem(head, tail, size, isPdf)
     }
 
     override fun removeFromRecentlyViewed(attachment: Item) {
