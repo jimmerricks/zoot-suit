@@ -328,6 +328,12 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         model.uploadAttachment(item)
     }
 
+    override fun uploadEditedAttachments() {
+        if (model.isLoaded()) {
+            model.checkAllAttachmentsForModification(userRequested = true)
+        }
+    }
+
     override fun requestForceResync() {
         model.destroyLibrary()
     }

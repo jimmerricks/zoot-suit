@@ -292,6 +292,10 @@ class LibraryActivity : AppCompatActivity(),
                 TagPickerDialog(this, presenter.getAllTags()) { presenter.onTagOpen(it) }.show()
             }
 
+            R.id.upload_edited_attachments -> {
+                presenter.uploadEditedAttachments()
+            }
+
             R.id.settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)

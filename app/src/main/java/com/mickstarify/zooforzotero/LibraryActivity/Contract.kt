@@ -90,6 +90,7 @@ interface Contract {
         fun hideBasicSyncAnimation()
         fun openTrash()
         fun uploadAttachment(item: Item)
+        fun uploadEditedAttachments()
         fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit)
         fun requestForceResync()
         fun backButtonPressed()
