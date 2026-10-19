@@ -985,14 +985,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 this.usePersonalLibrary()
                 presenter.setCollection(state.currentCollection)
             }
-        } else if (oldState.currentCollection != state.currentCollection) {
-            presenter.setCollection(state.currentCollection)
-        } else if (oldState.filterText != state.filterText) {
-            if (state.filterText == "") {
-                presenter.closeQuery()
-            } else {
-                presenter.filterEntries(state.filterText)
-            }
+        } else if (oldState.currentCollection != state.currentCollection ||
+            oldState.filterText != state.filterText
+        ) {
+            // redraws the state we returned to, filter (e.g. a tag view) and title included
+            presenter.redisplayItems()
         } else {
             Log.e("zotero", "error unable to determine state differences!!")
         }
