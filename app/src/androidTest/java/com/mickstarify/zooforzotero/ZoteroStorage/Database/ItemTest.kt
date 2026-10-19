@@ -113,8 +113,8 @@ class ItemTest {
     @Test
     fun testAddItemPOJO(){
         Log.d("zotero", "inserting item POJO ${itemPOJO.ItemKey}")
-        zoteroDatabase.writeItem(-1, itemPOJO).blockingGet()
-        val items = zoteroDatabase.getItemsForGroup(-1).blockingGet()
+        zoteroDatabase.writeItem(-1, itemPOJO).blockingAwait()
+        val items = zoteroDatabase.getItemsForGroup(-1).blockingGet() ?: emptyList()
         assertTrue(items.isNotEmpty())
         val item = items.filter { it.itemKey == "KEGNWTKP" }.first()
         assertTrue(item.creators.first().firstName == "Ludwig")
@@ -124,8 +124,8 @@ class ItemTest {
 
     @Test
     fun parcelTest(){
-        zoteroDatabase.writeItem(-1, itemPOJO).blockingGet()
-        val items = zoteroDatabase.getItemsForGroup(-1).blockingGet()
+        zoteroDatabase.writeItem(-1, itemPOJO).blockingAwait()
+        val items = zoteroDatabase.getItemsForGroup(-1).blockingGet() ?: emptyList()
         assertTrue(items.isNotEmpty())
         val item = items.filter { it.itemKey == "KEGNWTKP" }.first()
 
