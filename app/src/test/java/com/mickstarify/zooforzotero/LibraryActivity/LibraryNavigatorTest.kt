@@ -38,11 +38,23 @@ class LibraryNavigatorTest {
     }
 
     @Test
-    fun `filter text carries over to the new state`() {
+    fun `re-opening the same collection from a filtered view clears the filter`() {
         val nav = LibraryNavigator()
-        nav.current.filterText = "kuhn"
         nav.setCollection("all")
-        assertEquals("kuhn", nav.current.filterText)
+        nav.current.filterText = "tag:to-read"
+        assertTrue(nav.setCollection("all"))
+        assertEquals("", nav.current.filterText)
+        assertEquals("all", nav.currentCollection())
+        assertEquals("tag:to-read", nav.states[nav.states.size - 2].filterText)
+    }
+
+    @Test
+    fun `opening a collection leaves the current filter behind`() {
+        val nav = LibraryNavigator()
+        nav.current.filterText = "tag:to-read"
+        nav.setCollection("all")
+        assertEquals("", nav.current.filterText)
+        assertEquals("tag:to-read", nav.states[nav.states.size - 2].filterText)
     }
 
     @Test

@@ -80,8 +80,12 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
     }
 
     override fun redisplayItems() {
+        // Redraws whatever the current state shows. Called after a sync finishes and
+        // after sort/filter changes, so it must keep a tag view a tag view.
         if (model.isLoaded()) {
-            if (model.getCurrentCollection() != "unset") {
+            if (model.state.filterText != "") {
+                showFilter(model.state.filterText)
+            } else if (model.getCurrentCollection() != "unset") {
                 setCollection(model.getCurrentCollection())
             }
         }
@@ -145,9 +149,16 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
     }
 
     override fun onTagOpen(tagName: String) {
-        this.filterEntries("tag:${tagName}")
         this.addFilterState("tag:${tagName}")
-        view.setTitle("Tag: $tagName")
+        showFilter("tag:${tagName}")
+    }
+
+    /** Shows the results for a filter state, e.g. "tag:to-read", with its title. */
+    private fun showFilter(filterText: String) {
+        this.filterEntries(filterText)
+        if (filterText.startsWith("tag:")) {
+            view.setTitle("Tag: ${filterText.removePrefix("tag:")}")
+        }
     }
 
     override fun showLoadingAlertDialog(message: String) {

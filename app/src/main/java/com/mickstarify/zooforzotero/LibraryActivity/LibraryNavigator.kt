@@ -25,11 +25,14 @@ class LibraryNavigator {
 
     /**
      * Pushes a new state for [collectionName]. The current group is carried
-     * over unless [usePersonalLibrary] is true. Does nothing (and returns
-     * false) if we are already viewing that collection.
+     * over unless [usePersonalLibrary] is true; the filter (e.g. a tag view)
+     * is not, since opening a collection leaves it. Does nothing (and returns
+     * false) if we are already viewing that collection unfiltered; re-opening
+     * the collection under a filter pushes an unfiltered state, so Back
+     * returns to the filtered view.
      */
     fun setCollection(collectionName: String, usePersonalLibrary: Boolean = true): Boolean {
-        if (current.currentCollection == collectionName) {
+        if (current.currentCollection == collectionName && current.filterText == "") {
             return false
         }
         val newState = LibraryModelState()
@@ -37,7 +40,6 @@ class LibraryNavigator {
             newState.currentGroup = current.currentGroup
         }
         newState.currentCollection = collectionName
-        newState.filterText = current.filterText
         states.push(newState)
         return true
     }
