@@ -287,10 +287,12 @@ class ZoteroAPI(
 
     fun uploadNote(note: Note): Completable {
         val observable = service.uploadNote(userID, note.asJsonArray()).map {
-            if (it.code() == 200 || it.code() == 204) {
-                // success
-            } else {
+            if (it.code() != 200) {
                 throw Exception("Wrong server response code. ${it.code()}")
+            }
+            // 200 doesn't mean saved: rejected objects are listed in the body.
+            WriteResponse.firstFailure(it.body()?.string() ?: "")?.let { failure ->
+                throw Exception("Zotero did not save the note ($failure)")
             }
             it
         }
