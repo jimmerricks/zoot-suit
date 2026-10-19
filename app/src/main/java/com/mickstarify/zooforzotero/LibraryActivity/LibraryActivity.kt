@@ -11,6 +11,7 @@ import android.os.PersistableBundle
 import android.util.Log
 import android.util.SparseArray
 import android.view.Menu
+import android.view.SubMenu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.WindowManager
@@ -153,7 +154,7 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     lateinit var collectionsMenu: Menu
-    lateinit var sharedCollections: Menu
+    lateinit var sharedCollections: SubMenu
 
     fun initUI() {
         setupActionbar()
@@ -191,6 +192,8 @@ class LibraryActivity : AppCompatActivity(),
             Menu.NONE,
             "Group Libraries"
         )
+        // hidden until a group is added, so there's no empty heading when groups are off
+        sharedCollections.item.isVisible = false
 
         navController.navigate(R.id.libraryListFragment)
     }
@@ -264,6 +267,7 @@ class LibraryActivity : AppCompatActivity(),
             groupInfo.name
         )
             .setIcon(R.drawable.ic_folder_black_24dp).isCheckable = true
+        sharedCollections.item.isVisible = true
     }
 
     fun clearSidebar() {

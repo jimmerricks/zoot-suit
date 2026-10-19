@@ -81,6 +81,12 @@ class PreferenceManager @Inject constructor(context: Context) {
         return sharedPreferences.getBoolean("is_showing_only_with_notes", false)
     }
 
+    /** Off by default: group sync needs an API key with group access, and a key
+     *  without it gets HTTP 403 on every group request. */
+    fun isGroupLibrarySyncEnabled(): Boolean {
+        return sharedPreferences.getBoolean("group_library_sync_enabled", false)
+    }
+
     fun setIsShowingOnlyPdfs(value: Boolean) {
         val editor = sharedPreferences.edit()
         editor.putBoolean("is_showing_only_with_pdfs", value)

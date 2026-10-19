@@ -558,6 +558,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     fun loadGroups() {
         /* This method loads a list of groups. It does not deal with getting items or catalogs. */
+        if (!preferences.isGroupLibrarySyncEnabled()) {
+            Log.d("zotero", "group library sync disabled in settings; not loading groups")
+            return
+        }
 
         val groupsObserver = zoteroAPI.getGroupInfo()
         groupsObserver.subscribeOn(Schedulers.io())
