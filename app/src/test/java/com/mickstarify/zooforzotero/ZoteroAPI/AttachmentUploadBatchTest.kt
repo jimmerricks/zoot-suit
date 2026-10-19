@@ -11,19 +11,19 @@ class AttachmentUploadBatchTest {
 
     @Test
     fun `all uploaded is a plain count`() {
-        val (title, message) = AttachmentUploadBatch.summary(listOf(Outcome("a.pdf"), Outcome("b.pdf")))
+        val (title, message, _) = AttachmentUploadBatch.summary(listOf(Outcome("a.pdf"), Outcome("b.pdf")))
         assertEquals("Upload finished", title)
         assertEquals("Uploaded 2 attachments.", message)
     }
 
     @Test
     fun `one uploaded is singular`() {
-        assertEquals("Uploaded 1 attachment.", AttachmentUploadBatch.summary(listOf(Outcome("a.pdf"))).second)
+        assertEquals("Uploaded 1 attachment.", AttachmentUploadBatch.summary(listOf(Outcome("a.pdf"))).message)
     }
 
     @Test
     fun `partial failure names each refused file and the count`() {
-        val (title, message) = AttachmentUploadBatch.summary(
+        val (title, message, _) = AttachmentUploadBatch.summary(
             listOf(Outcome("a.pdf"), Outcome("b.pdf", "changed elsewhere"), Outcome("c.pdf"))
         )
         assertEquals("Some files not uploaded", title)
@@ -34,9 +34,31 @@ class AttachmentUploadBatchTest {
 
     @Test
     fun `a single failure has no count line`() {
-        val (title, message) = AttachmentUploadBatch.summary(listOf(Outcome("a.pdf", "gone")))
+        val (title, message, _) = AttachmentUploadBatch.summary(listOf(Outcome("a.pdf", "gone")))
         assertEquals("Nothing uploaded", title)
         assertEquals("a.pdf: gone", message)
+    }
+
+    @Test
+    fun `offline failures are quiet and promise a retry`() {
+        val offline = AttachmentUploadBatch.outcome(
+            "b.pdf", RuntimeException(java.net.UnknownHostException("api.zotero.org"))
+        )
+        assertTrue(offline.offline)
+        val summary = AttachmentUploadBatch.summary(listOf(Outcome("a.pdf"), offline))
+        assertTrue(summary.quiet)
+        assertEquals("Uploaded 1 attachment. Offline: 1 attachment with edits will be uploaded at the next sync.", summary.message)
+    }
+
+    @Test
+    fun `a real refusal next to an offline failure needs a dialog`() {
+        val summary = AttachmentUploadBatch.summary(listOf(
+            AttachmentUploadBatch.outcome("a.pdf", java.net.ConnectException()),
+            AttachmentUploadBatch.outcome("b.pdf", DamagedAttachmentException("the file is empty"))
+        ))
+        assertFalse(summary.quiet)
+        assertTrue(summary.message.contains("next sync"))
+        assertTrue(summary.message.contains("the file is empty"))
     }
 
     @Test

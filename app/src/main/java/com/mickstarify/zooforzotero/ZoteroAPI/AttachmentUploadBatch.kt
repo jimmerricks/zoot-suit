@@ -9,11 +9,24 @@ class DamagedAttachmentException(message: String) : RuntimeException(message)
  */
 object AttachmentUploadBatch {
 
-    /** @param failure null if [filename] was uploaded, otherwise why not */
-    data class Outcome(val filename: String, val failure: String? = null)
+    /**
+     * @param failure null if [filename] was uploaded, otherwise why not
+     * @param offline the server couldn't be reached; the file is retried at the next sync
+     */
+    data class Outcome(val filename: String, val failure: String? = null, val offline: Boolean = false)
+
+    /** @param quiet nothing needs the user's attention: a toast is enough */
+    data class Summary(val title: String, val message: String, val quiet: Boolean)
+
+    fun outcome(filename: String, e: Throwable): Outcome =
+        Outcome(filename, failureReason(e), isOffline(e))
+
+    fun isOffline(e: Throwable): Boolean = NetworkErrors.isOffline(e)
 
     /** Why an upload failed, in words for the summary. */
-    fun failureReason(e: Throwable): String = when (e) {
+    fun failureReason(e: Throwable): String = if (isOffline(e)) {
+        "the server couldn't be reached (offline?). It will be uploaded at the next sync."
+    } else when (e) {
         is RemoteAttachmentChangedException ->
             "${e.message} Nothing was uploaded, so that version is safe; your annotated " +
                     "copy is still on this device."
@@ -35,16 +48,24 @@ object AttachmentUploadBatch {
         changedKeys.any { it !in alreadyOffered }
 
     /** Title and message summarising a finished batch. */
-    fun summary(outcomes: List<Outcome>): Pair<String, String> {
+    fun summary(outcomes: List<Outcome>): Summary {
         val failed = outcomes.filter { it.failure != null }
         val uploaded = outcomes.size - failed.size
+        fun files(n: Int) = if (n == 1) "1 attachment" else "$n attachments"
         if (failed.isEmpty()) {
-            val what = if (uploaded == 1) "1 attachment" else "$uploaded attachments"
-            return Pair("Upload finished", "Uploaded $what.")
+            return Summary("Upload finished", "Uploaded ${files(uploaded)}.", quiet = true)
+        }
+        if (failed.all { it.offline }) {
+            val done = if (uploaded > 0) "Uploaded ${files(uploaded)}. " else ""
+            return Summary(
+                "Offline",
+                "${done}Offline: ${files(failed.size)} with edits will be uploaded at the next sync.",
+                quiet = true
+            )
         }
         val title = if (uploaded == 0) "Nothing uploaded" else "Some files not uploaded"
         val lines = failed.joinToString("\n\n") { "${it.filename}: ${it.failure}" }
         val head = if (outcomes.size == 1) "" else "Uploaded $uploaded of ${outcomes.size}.\n\n"
-        return Pair(title, head + lines)
+        return Summary(title, head + lines, quiet = false)
     }
 }

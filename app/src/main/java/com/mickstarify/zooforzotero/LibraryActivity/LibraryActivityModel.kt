@@ -89,9 +89,29 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     private var performedCleanSync: Boolean = false
 
+    /**
+     * A sync sends this device's edits first, then fetches the library's changes. Edits
+     * that can't go up (offline, refused) stay on the device and are tried again at the
+     * next sync; the download half runs either way.
+     */
     override fun refreshLibrary(useSmallLoadingAnimation: Boolean) {
         if (!state.isUsingGroup()) {
-            downloadLibrary(doRefresh = true, useSmallLoadingAnimation = useSmallLoadingAnimation)
+            val pull = {
+                downloadLibrary(doRefresh = true, useSmallLoadingAnimation = useSmallLoadingAnimation)
+            }
+            if (isUploading()) {
+                pull()
+                return
+            }
+            Single.fromCallable { findEditedAttachments() }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ edited ->
+                    if (edited.isEmpty()) pull() else uploadAttachments(edited, onDone = pull)
+                }, { e ->
+                    Log.e("zotero", "looking for edited attachments failed: $e")
+                    pull()
+                })
         } else {
             this.startGroupSync(state.currentGroup, refresh = true)
         }
@@ -752,9 +772,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
      * refused (changed elsewhere, damaged) or fails doesn't stop the others; it stays in
      * RecentlyOpenedAttachment, so it is offered again.
      */
-    fun uploadAttachments(attachments: List<Item>) {
+    private fun isUploading() = uploadDisposable?.isDisposed == false
+
+    fun uploadAttachments(attachments: List<Item>, onDone: (() -> Unit)? = null) {
         if (attachments.isEmpty()) return
-        if (uploadDisposable?.isDisposed == false) {
+        if (isUploading()) {
             presenter.makeToastAlert("Already uploading attachments.")
             return
         }
@@ -769,23 +791,25 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                     .toSingleDefault(AttachmentUploadBatch.Outcome(name))
                     .onErrorReturn { e ->
                         Log.e("zotero", "upload of ${attachment.itemKey} failed: $e")
-                        AttachmentUploadBatch.Outcome(name, AttachmentUploadBatch.failureReason(e))
+                        AttachmentUploadBatch.outcome(name, e)
                     }
             }
             .toList()
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ outcomes ->
                 presenter.stopUploadingAttachmentProgress()
-                val (title, message) = AttachmentUploadBatch.summary(outcomes)
-                if (outcomes.all { it.failure == null }) {
-                    presenter.makeToastAlert(message)
+                val summary = AttachmentUploadBatch.summary(outcomes)
+                if (summary.quiet) {
+                    presenter.makeToastAlert(summary.message)
                 } else {
-                    presenter.createErrorAlert(title, message, {})
+                    presenter.createErrorAlert(summary.title, summary.message, {})
                 }
+                onDone?.invoke()
             }, { e ->
                 Log.e("zotero", "upload batch failed: $e")
                 presenter.stopUploadingAttachmentProgress()
                 presenter.createErrorAlert("Error uploading attachments", e.toString(), {})
+                onDone?.invoke()
             })
     }
 
@@ -874,7 +898,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
      * the main thread.
      */
     fun findEditedAttachments(): List<Item> {
-        if (state.isUsingGroup() || !preferences.isAttachmentUploadingEnabled()) return emptyList()
+        if (state.isUsingGroup() || !preferences.isAttachmentUploadingEnabled() ||
+            !zoteroDB.isPopulated()
+        ) return emptyList()
         val bases = HashMap<String, String>()
         for (key in attachmentStorageManager.listDownloadedItemKeys()) {
             if (zoteroDB.getItemWithKey(key) == null) continue

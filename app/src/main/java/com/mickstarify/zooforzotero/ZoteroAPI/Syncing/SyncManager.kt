@@ -1,11 +1,11 @@
 package com.mickstarify.zooforzotero.ZoteroAPI.Syncing
 
-import android.os.Bundle
 import android.util.Log
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.ZoteroAPI.APIKeyRevokedException
 import com.mickstarify.zooforzotero.ZoteroAPI.LibraryVersionMisMatchException
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.CollectionPOJO
+import com.mickstarify.zooforzotero.ZoteroAPI.NetworkErrors
 import com.mickstarify.zooforzotero.ZoteroAPI.UpToDateException
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPIItemsResponse
@@ -37,6 +37,22 @@ class SyncManager (
         return (loadingItems || loadingCollections || loadingTrash)
     }
 
+    /** Offline makes every request of a sync fail; say so once, as a toast. */
+    private var reportedOffline = false
+
+    private fun reportError(title: String, e: Throwable) {
+        if (NetworkErrors.isOffline(e)) {
+            if (!reportedOffline) {
+                reportedOffline = true
+                syncChangeListener.makeToastAlert(
+                    "Offline: library not synced. Edits stay on this device until the next sync."
+                )
+            }
+        } else {
+            syncChangeListener.createErrorAlert(title, "Message: $e") {}
+        }
+    }
+
     fun startCompleteSync(zoteroDB: ZoteroDB, useSmallLoadingAnimation: Boolean) {
         /*LIbrary loading will load in 3 stages,
         *
@@ -62,6 +78,7 @@ class SyncManager (
         }
 
 
+        reportedOffline = false
         // show our loading animation.
         syncChangeListener.startSyncAnimation(useSmallLoadingAnimation)
 
@@ -106,12 +123,7 @@ class SyncManager (
                                     "Then relogin."
                         ) {}
                     } else {
-                        val bundle = Bundle()
-                        bundle.putString("error_message", e.message)
-                        syncChangeListener.createErrorAlert(
-                            "Error downloading Collections",
-                            "Message: ${e}"
-                        ) {}
+                        reportError("Error downloading Collections", e)
                     }
                     finishGetCollections(db)
                 }
@@ -264,7 +276,7 @@ class SyncManager (
                         loadItems(db, useSmallLoadingAnimation = false)
                         return
                     } else {
-                        syncChangeListener.createErrorAlert("Error downloading items", "message: ${e}", {})
+                        reportError("Error downloading items", e)
                         Log.e("zotero", "${e}")
                         Log.e("zotero", "${e.stackTrace}")
                     }
@@ -315,10 +327,9 @@ class SyncManager (
 
                 override fun onError(e: Throwable) {
                 Log.e("zotero", "there was an error processing deleted Entries, ${e}")
-                syncChangeListener.createErrorAlert(
-                    "Error Updating Deleted Items",
-                    "message: ${e}",
-                    {})
+                reportError("Error Updating Deleted Items", e)
+                // finish anyway: it reloads what's stored and stops the sync animation
+                syncChangeListener.finishLibrarySync(db)
             }
         })
 
