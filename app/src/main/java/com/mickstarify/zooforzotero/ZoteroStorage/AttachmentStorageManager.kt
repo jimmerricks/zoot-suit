@@ -312,6 +312,20 @@ class AttachmentStorageManager @Inject constructor(
         testStorage()
     }
 
+    /** Keys (upper case) of attachments with a folder in storage, listed once. */
+    fun listDownloadedItemKeys(): Set<String> {
+        return when (storageMode) {
+            StorageMode.EXTERNAL_CACHE ->
+                context.externalCacheDir?.listFiles()?.filter { it.isDirectory }
+                    ?.map { it.name.uppercase() }?.toSet() ?: emptySet()
+            StorageMode.CUSTOM ->
+                DocumentFile.fromTreeUri(context, getCustomStorageTreeURI())?.listFiles()
+                    ?.filter { it.isDirectory }?.mapNotNull { it.name?.uppercase() }?.toSet()
+                    ?: emptySet()
+            else -> emptySet()
+        }
+    }
+
     fun getCustomStorageTreeURI(): Uri {
         return Uri.parse(preferenceManager.getCustomAttachmentStorageLocation())
     }

@@ -110,7 +110,12 @@ class ZoteroRepositoryImpl @Inject constructor(
                         close(error)
                     },
                     {
-                        // On complete
+                        // On complete: the downloaded file is the base for later edits
+                        runCatching {
+                            zoteroDatabase.setAttachmentBase(
+                                item.itemKey, groupId, attachmentStorageManager.calculateMd5(item)
+                            )
+                        }
                         close()
                     }
                 )

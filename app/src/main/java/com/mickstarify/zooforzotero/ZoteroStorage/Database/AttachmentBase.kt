@@ -32,4 +32,14 @@ interface AttachmentBaseDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun put(base: AttachmentBase)
+
+    /** Seeds missing bases from AttachmentInfo (download hash / uploaded md5) while it exists. */
+    @Query(
+        "INSERT OR IGNORE INTO AttachmentBase (itemKey, `group`, md5, recordedAt) " +
+                "SELECT itemKey, `group`, md5Key, 0 FROM AttachmentInfo WHERE md5Key != ''"
+    )
+    fun backfillFromAttachmentInfo()
+
+    @Query("SELECT itemKey FROM AttachmentBase WHERE `group`=:group")
+    fun keysWithBase(group: Int): List<String>
 }

@@ -25,6 +25,7 @@ import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.OnSyncChangeListener
 import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncManager
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroNotFoundException
+import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentOpenCheck
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.AttachmentInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
@@ -258,6 +259,43 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             return
         }
         if (attachmentExists) {
+            // Is the local copy based on Zotero's current version? See AttachmentOpenCheck.
+            val localMd5 = try {
+                attachmentStorageManager.calculateMd5(item)
+            } catch (e: Exception) {
+                ""
+            }
+            when (AttachmentOpenCheck.decide(attachmentBase(item), item.getMd5Key(), localMd5)) {
+                AttachmentOpenCheck.Action.REDOWNLOAD -> {
+                    presenter.makeToastAlert("Zotero has a newer version of this file. Downloading it.")
+                    presenter.hideLoadingAlertDialog()
+                    presenter.updateAttachmentDownloadProgress(0, -1)
+                    attachmentStorageManager.deleteAttachment(item)
+                    downloadAttachment(item)
+                    return
+                }
+                AttachmentOpenCheck.Action.ASK_EDITED_STALE -> {
+                    presenter.hideLoadingAlertDialog()
+                    presenter.createYesNoPrompt(
+                        "Newer version in Zotero",
+                        "This file was changed on another device after you downloaded it, and your " +
+                                "copy here has changes of its own. They can't be uploaded without " +
+                                "overwriting the newer version, so uploading this copy will be refused.\n\n" +
+                                "Download the newer version (your changes on this device are replaced), " +
+                                "or open your copy and save your annotations as a new file.",
+                        "Download newer", "Open my copy", {
+                            presenter.updateAttachmentDownloadProgress(0, -1)
+                            attachmentStorageManager.deleteAttachment(item)
+                            downloadAttachment(item)
+                        }, {
+                            openPDF(item)
+                        }
+                    )
+                    return
+                }
+                AttachmentOpenCheck.Action.RECORD_BASE_AND_OPEN -> recordBase(item, localMd5)
+                AttachmentOpenCheck.Action.OPEN -> {}
+            }
             // check the validity of the attachment before opening.
             presenter.showLoadingAlertDialog("Verifying MD5 Checksum")
             if (preferences.shouldCheckMd5SumBeforeOpening() && zoteroDB.hasMd5Key(
@@ -329,6 +367,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                         attachmentStorageManager.deleteAttachment(item)
                         return
                     } else {
+                        recordBase(item, attachmentStorageManager.calculateMd5(item))
                         openPDF(item)
                     }
                 }
@@ -743,8 +782,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 val (serverVersion, serverMd5) =
                     zoteroAPI.getAttachmentFileState(attachment.itemKey).blockingGet()
                 val remoteProp = zoteroAPI.getWebdavRemoteProp(attachment, context)
+                // the version this device's edits are based on; for copies downloaded
+                // before bases were recorded, the md5 as of the last sync (weaker)
+                val baseMd5 = attachmentBase(attachment) ?: attachment.getMd5Key()
                 AttachmentUploadPreflight.conflictReason(
-                    attachment.getMd5Key(), serverMd5, remoteProp?.hash
+                    baseMd5, serverMd5, remoteProp?.hash
                 )?.let { throw RemoteAttachmentChangedException(it) }
                 Pair(serverVersion, remoteProp)
             }.flatMapCompletable { (serverVersion, remoteProp) ->
@@ -768,6 +810,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                         override fun onComplete() {
                             presenter.stopUploadingAttachmentProgress()
                             removeFromRecentlyViewed(attachment)
+                            recordBase(attachment, md5Key)
                             zoteroDB.updateAttachmentMetadata(
                                 attachment.itemKey,
                                 attachmentStorageManager.calculateMd5(attachment),
@@ -808,6 +851,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                     override fun onComplete() {
                         presenter.stopUploadingAttachmentProgress()
                         removeFromRecentlyViewed(attachment)
+                        recordBase(attachment, md5Key)
                         zoteroDB.updateAttachmentMetadata(
                             attachment.itemKey,
                             attachmentStorageManager.calculateMd5(attachment),
@@ -823,6 +867,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                     override fun onError(e: Throwable) {
                         if (e is AlreadyUploadedException) {
                             removeFromRecentlyViewed(attachment)
+                            recordBase(attachment, md5Key)
                             zoteroDB.updateAttachmentMetadata(
                                 attachment.itemKey,
                                 attachmentStorageManager.calculateMd5(attachment),
@@ -854,6 +899,37 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
                 })
         }
+    }
+
+    /** md5 of the file this device last downloaded/uploaded for [item]; see AttachmentBase. */
+    private fun attachmentBase(item: Item): String? =
+        zoteroDatabase.getAttachmentBase(item.itemKey, zoteroDB.groupID)
+
+    private fun recordBase(item: Item, md5: String) {
+        if (md5.isNotEmpty()) zoteroDatabase.setAttachmentBase(item.itemKey, zoteroDB.groupID, md5)
+    }
+
+    /**
+     * Gives downloaded copies from before AttachmentBase existed a base: first from
+     * AttachmentInfo while it still has a row, then, for files still without one, Zotero's
+     * md5 if the file provably matches it. A copy that matches neither (edited before the
+     * upgrade, and its AttachmentInfo already wiped by a sync) stays without a base and
+     * falls back to the weaker check. Only files lacking a base are hashed.
+     */
+    private fun adoptAttachmentBases(db: ZoteroDB) {
+        zoteroDatabase.backfillAttachmentBases()
+        val withBase = zoteroDatabase.attachmentKeysWithBase(db.groupID)
+        val onDisk = attachmentStorageManager.listDownloadedItemKeys() - withBase
+        if (onDisk.isEmpty()) return
+        db.items?.filter { it.itemType == Item.ATTACHMENT_TYPE && it.itemKey.uppercase() in onDisk }
+            ?.forEach { item ->
+                val zoteroMd5 = item.getMd5Key()
+                if (zoteroMd5.isEmpty()) return@forEach
+                val local = runCatching { attachmentStorageManager.calculateMd5(item) }.getOrNull()
+                if (local != null && local.equals(zoteroMd5, ignoreCase = true)) {
+                    zoteroDatabase.setAttachmentBase(item.itemKey, db.groupID, local)
+                }
+            }
     }
 
     /** Reads the first and last few bytes and runs [AttachmentFileCheck]. */
@@ -995,6 +1071,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .observeOn(AndroidSchedulers.mainThread())
             .andThen(loadItems)
             .andThen(db.loadTrashItemsFromDB())
+            // before any sync can change Zotero's md5s (startup loads locally first)
+            .andThen(Completable.fromAction { adoptAttachmentBases(db) }
+                .subscribeOn(Schedulers.io())
+                .doOnError { Log.e(TAG, "adopting attachment bases failed: $it") }
+                .onErrorComplete())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnComplete {
                 presenter.hideBasicSyncAnimation()

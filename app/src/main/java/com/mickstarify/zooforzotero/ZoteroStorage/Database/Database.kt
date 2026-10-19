@@ -61,6 +61,11 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         db.attachmentBaseDao().put(AttachmentBase(itemKey, group, md5, System.currentTimeMillis()))
     }
 
+    fun backfillAttachmentBases() = db.attachmentBaseDao().backfillFromAttachmentInfo()
+
+    fun attachmentKeysWithBase(group: Int): Set<String> =
+        db.attachmentBaseDao().keysWithBase(group).toSet()
+
     fun addGroup(group: GroupInfo): Completable {
         return db.groupInfoDao().insertGroupInfos(group)
     }
