@@ -562,25 +562,37 @@ class LibraryActivity : AppCompatActivity(),
         presenter.openAttachment(item)
     }
 
-    override fun forceUploadAttachmentListener(item: Item) {
-        presenter.uploadAttachment(item)
-    }
 
     override fun describeAttachment(item: Item, onState: (AttachmentLocalState) -> Unit) {
         presenter.describeAttachment(item, onState)
     }
 
-    override fun downloadAttachmentListener(item: Item) {
-        presenter.downloadAttachmentOnly(item)
+    /**
+     * Long-press menu for an attachment, from the library list's PDF icon and from the
+     * item view. A plain tap opens it (fetching Zotero's latest version first).
+     */
+    override fun showAttachmentMenu(item: Item) {
+        val actions = listOf<Pair<String, () -> Unit>>(
+            "Open" to { presenter.openAttachment(item) },
+            "Download to device" to { presenter.downloadAttachmentOnly(item) },
+            "Upload my changes" to { presenter.uploadChanges(item) },
+            "Delete local copy" to { presenter.deleteLocalAttachment(item) },
+        )
+        try {
+            AlertDialog.Builder(this)
+                .setTitle(item.data["filename"] ?: item.getTitle())
+                .setItems(actions.map { it.first }.toTypedArray()) { _, which ->
+                    actions[which].second()
+                }.show()
+        } catch (exception: WindowManager.BadTokenException) {
+            Log.e("zotero", "cannot show attachment menu")
+        }
     }
 
     override fun openLinkedAttachmentListener(item: Item) {
         presenter.openAttachment(item)
     }
 
-    override fun deleteLocalAttachment(item: Item) {
-        presenter.deleteLocalAttachment(item)
-    }
 
     override fun onListFragmentInteraction(item: Item?) {
         Log.d("zotero", "got onListFragmentInteraction from item ${item?.itemKey}")

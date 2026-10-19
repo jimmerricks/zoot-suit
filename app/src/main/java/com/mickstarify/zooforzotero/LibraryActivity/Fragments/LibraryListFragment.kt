@@ -190,6 +190,10 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         viewModel.onAttachmentClicked(item)
     }
 
+    override fun onItemAttachmentMenu(item: Item) {
+        (requireActivity() as LibraryActivity).showAttachmentMenu(item)
+    }
+
     override fun onRefresh() {
         Log.d("Zotero", "got request for refresh")
         viewModel.onLibraryRefreshRequested()

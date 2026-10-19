@@ -114,22 +114,9 @@ class ItemAttachmentEntry(
                 }
 
                 layout.setOnLongClickListener {
-                    val target = attachment ?: throw Exception("No Attachment given.")
-                    AlertDialog.Builder(context)
-                        .setTitle("Attachment")
-                        .setItems(
-                            arrayOf(
-                                "Open", "Download to device", "Upload this file now",
-                                "Delete local copy of attachment"
-                            )
-                        ) { _, which ->
-                            when (which) {
-                                0 -> fileOpenListener?.openAttachmentFileListener(target)
-                                1 -> fileOpenListener?.downloadAttachmentListener(target)
-                                2 -> fileOpenListener?.forceUploadAttachmentListener(target)
-                                3 -> fileOpenListener?.deleteLocalAttachment(target)
-                            }
-                        }.show()
+                    fileOpenListener?.showAttachmentMenu(
+                        attachment ?: throw Exception("No Attachment given.")
+                    )
                     true
                 }
             }
@@ -169,11 +156,9 @@ class ItemAttachmentEntry(
 
     interface OnAttachmentFragmentInteractionListener {
         fun openAttachmentFileListener(item: Item)
-        fun forceUploadAttachmentListener(item: Item)
-        fun downloadAttachmentListener(item: Item)
+        fun showAttachmentMenu(item: Item)
         fun describeAttachment(item: Item, onState: (AttachmentLocalState) -> Unit)
         fun openLinkedAttachmentListener(item: Item)
-        fun deleteLocalAttachment(item: Item)
     }
 
     companion object {

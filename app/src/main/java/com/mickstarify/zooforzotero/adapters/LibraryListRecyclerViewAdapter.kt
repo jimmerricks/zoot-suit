@@ -55,6 +55,10 @@ class LibraryListRecyclerViewAdapter(
                     Log.d("zotero", "Open Attachment ${item.getTitle()}")
                     listener.onItemAttachmentOpen(pdfAttachment)
                 }
+                holder.pdfImage.setOnLongClickListener {
+                    listener.onItemAttachmentMenu(pdfAttachment)
+                    true
+                }
             } else {
                 holder.pdfImage.visibility = View.GONE
             }
@@ -199,4 +203,5 @@ interface LibraryListInteractionListener {
     fun onItemOpen(item: Item)
     fun onCollectionOpen(collection: Collection)
     fun onItemAttachmentOpen(item: Item)
+    fun onItemAttachmentMenu(item: Item)
 }

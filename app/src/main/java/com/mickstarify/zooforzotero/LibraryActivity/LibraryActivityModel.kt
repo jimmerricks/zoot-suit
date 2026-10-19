@@ -804,6 +804,32 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         uploadAttachments(listOf(attachment))
     }
 
+    /** "Upload my changes" for one attachment: uploads it only if it differs from its base. */
+    fun uploadChanges(item: Item) {
+        Single.fromCallable {
+            AttachmentLocalState.of(
+                editFinder.currentMd5(item.itemKey), attachmentBase(item), zoteroDB.getMd5Key(item)
+            )
+        }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ state ->
+                when (state) {
+                    AttachmentLocalState.NOT_DOWNLOADED ->
+                        presenter.makeToastAlert("This file isn't on this device.")
+                    AttachmentLocalState.ON_DEVICE, AttachmentLocalState.OUTDATED ->
+                        if (attachmentBase(item) != null) {
+                            presenter.makeToastAlert("No changes to upload.")
+                        } else {
+                            uploadAttachments(listOf(item)) // can't tell; upload as asked
+                        }
+                    // CONFLICT goes through too: the preflight refuses it and says why
+                    AttachmentLocalState.EDITED, AttachmentLocalState.CONFLICT ->
+                        uploadAttachments(listOf(item))
+                }
+            }, { e -> Log.e("zotero", "checking ${item.itemKey} for changes failed: $e") })
+    }
+
     private var uploadDisposable: Disposable? = null
 
     /**

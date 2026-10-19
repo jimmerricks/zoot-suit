@@ -496,6 +496,10 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         model.describeAttachment(attachment, onState)
     }
 
+    fun uploadChanges(attachment: Item) {
+        model.uploadChanges(attachment)
+    }
+
     fun downloadAttachmentOnly(attachment: Item) {
         model.downloadAttachmentOnly(attachment)
     }
