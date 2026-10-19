@@ -49,6 +49,12 @@ class LibraryFilterTest {
     }
 
     @Test
+    fun `has-PDF and has-notes make the filter active and are described`() {
+        assertTrue(LibraryFilter(hasPdf = true).isActive)
+        assertEquals("has PDF · has notes", LibraryFilter(hasPdf = true, hasNotes = true).describe())
+    }
+
+    @Test
     fun `description lists tags then device conditions`() {
         assertEquals(
             "method · Theory · on this device",

@@ -4,16 +4,19 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 /**
  * The library list's filter. Every condition that is set must hold (AND): an item must
- * carry all of [tags], and if [onDevice] / [editedHere] are set, have an attachment whose
- * PDF is on this device / has edits waiting to sync. An empty filter lets everything
- * through.
+ * carry all of [tags]; with [hasPdf] / [hasNotes], have a PDF attachment / notes (applied
+ * by LibraryItemFilter.applyDisplayFilters); with [onDevice] / [editedHere], have an
+ * attachment whose PDF is on this device / has edits waiting to sync. An empty filter
+ * lets everything through.
  */
 data class LibraryFilter(
     val tags: Set<String> = emptySet(),
     val onDevice: Boolean = false,
     val editedHere: Boolean = false,
+    val hasPdf: Boolean = false,
+    val hasNotes: Boolean = false,
 ) {
-    val isActive: Boolean get() = tags.isNotEmpty() || onDevice || editedHere
+    val isActive: Boolean get() = tags.isNotEmpty() || onDevice || editedHere || hasPdf || hasNotes
 
     val needsDeviceState: Boolean get() = onDevice || editedHere
 
@@ -32,6 +35,8 @@ data class LibraryFilter(
     /** Short description for the toolbar, e.g. "to-read, method · on this device". */
     fun describe(): String = (tags.sortedWith(String.CASE_INSENSITIVE_ORDER) +
             listOfNotNull(
+                "has PDF".takeIf { hasPdf },
+                "has notes".takeIf { hasNotes },
                 "on this device".takeIf { onDevice },
                 "edits to sync".takeIf { editedHere },
             )).joinToString(" · ")

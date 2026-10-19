@@ -38,6 +38,8 @@ class LibraryFilterDialog(
     fun show() {
         val view: View = LayoutInflater.from(context).inflate(R.layout.dialog_library_filter, null)
         val count = view.findViewById<TextView>(R.id.textView_filter_count)
+        val hasPdf = view.findViewById<CheckBox>(R.id.checkBox_filter_has_pdf)
+        val hasNotes = view.findViewById<CheckBox>(R.id.checkBox_filter_has_notes)
         val onDevice = view.findViewById<CheckBox>(R.id.checkBox_filter_on_device)
         val edited = view.findViewById<CheckBox>(R.id.checkBox_filter_edited)
         val search = view.findViewById<EditText>(R.id.editText_tag_search)
@@ -51,6 +53,8 @@ class LibraryFilterDialog(
                 1 -> "1 item matches"
                 else -> "${preview.itemCount} items match"
             }
+            hasPdf.isChecked = filter.hasPdf
+            hasNotes.isChecked = filter.hasNotes
             onDevice.isChecked = filter.onDevice
             edited.isChecked = filter.editedHere
             // tags in what the list shows now, plus the selected ones; selected first
@@ -71,6 +75,8 @@ class LibraryFilterDialog(
             render()
         }
 
+        hasPdf.setOnClickListener { update(filter.copy(hasPdf = hasPdf.isChecked)) }
+        hasNotes.setOnClickListener { update(filter.copy(hasNotes = hasNotes.isChecked)) }
         onDevice.setOnClickListener { update(filter.copy(onDevice = onDevice.isChecked)) }
         edited.setOnClickListener { update(filter.copy(editedHere = edited.isChecked)) }
         list.setOnItemClickListener { _, _, position, _ ->

@@ -52,19 +52,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <CheckBox
-        android:id="@+id/checkBox_show_only_pdf"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        android:text="Only show items with PDF Attachments" />
 
-    <CheckBox
-        android:id="@+id/checkBox_show_only_notes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        android:text="Only show items with notes" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"

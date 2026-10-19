@@ -138,8 +138,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     private fun filterItems(items: List<Item>): List<Item> {
         val shown = LibraryItemFilter.applyDisplayFilters(
             items,
-            onlyNotes = preferences.getIsShowingOnlyNotes(),
-            onlyPdfs = preferences.getIsShowingOnlyPdfs(),
+            onlyNotes = libraryFilter.hasNotes,
+            onlyPdfs = libraryFilter.hasPdf,
             attachmentsFor = ::getAttachments
         )
         return applyLibraryFilter(shown)

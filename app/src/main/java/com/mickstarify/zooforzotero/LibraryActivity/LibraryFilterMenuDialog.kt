@@ -8,7 +8,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.ImageButton
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.R
@@ -17,8 +16,6 @@ class LibraryFilterMenuDialog(val context: Context, val onFilterChange: (() -> (
     lateinit var preferences: PreferenceManager
 
     var selected_sorting_method = "UNSET"
-    var is_showing_pdf: Boolean = false
-    var is_showing_notes: Boolean = false
 
     fun setSortingMethod(index: Int) {
         try {
@@ -29,17 +26,8 @@ class LibraryFilterMenuDialog(val context: Context, val onFilterChange: (() -> (
         }
     }
 
-    private fun saveSettings(onlyNotes: Boolean, onlyPDFs: Boolean) {
-        preferences.setIsShowingOnlyPdfs(onlyPDFs)
-        preferences.setIsShowingOnlyNotes(onlyNotes)
-
+    private fun saveSettings() {
         preferences.setSortMethod(selected_sorting_method)
-
-        val params = Bundle().apply {
-            putBoolean("show_pdfs", onlyPDFs)
-            putBoolean("only_notes", onlyNotes)
-            putString("sort_method", selected_sorting_method)
-        }
         onFilterChange()
     }
 
@@ -76,13 +64,6 @@ class LibraryFilterMenuDialog(val context: Context, val onFilterChange: (() -> (
 
         val sortingMethodButton = dialogView.findViewById<Button>(R.id.button_sort_by)
         sortingMethodButton.text = this.getSortString(selected_sorting_method)
-        val checkbox_show_only_pdf = dialogView.findViewById<CheckBox>(R.id.checkBox_show_only_pdf)
-        val checkbox_show_only_notes =
-            dialogView.findViewById<CheckBox>(R.id.checkBox_show_only_notes)
-
-
-        checkbox_show_only_notes.isChecked = this.is_showing_notes
-        checkbox_show_only_pdf.isChecked = this.is_showing_pdf
 
         val builder = AlertDialog.Builder(context)
         builder.setTitle("Sorting Method")
@@ -104,7 +85,7 @@ class LibraryFilterMenuDialog(val context: Context, val onFilterChange: (() -> (
         }
 
         submitButton.setOnClickListener {
-            saveSettings(checkbox_show_only_notes.isChecked, checkbox_show_only_pdf.isChecked)
+            saveSettings()
             dialogBuilder.dismiss()
         }
 
@@ -140,8 +121,6 @@ class LibraryFilterMenuDialog(val context: Context, val onFilterChange: (() -> (
         preferences = PreferenceManager(context)
         selected_sorting_method =
             preferences.sortMethodToString(preferences.getSortMethod()) //terrible code, i know.
-        is_showing_pdf = preferences.getIsShowingOnlyPdfs()
-        is_showing_notes = preferences.getIsShowingOnlyNotes()
 
     }
 
