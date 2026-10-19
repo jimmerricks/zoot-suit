@@ -24,9 +24,10 @@ import javax.inject.Singleton
         Creator::class,
         ItemTag::class,
         ItemCollection::class,
-        AttachmentInfo::class
+        AttachmentInfo::class,
+        AttachmentBase::class
     ),
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class ZoteroRoomDatabase : RoomDatabase() {
@@ -35,6 +36,7 @@ abstract class ZoteroRoomDatabase : RoomDatabase() {
     abstract fun recentlyOpenedAttachmentsDao(): RecentlyOpenedAttachmentDao
     abstract fun itemDao(): ItemDao
     abstract fun AttachmentInfoDao(): AttachmentInfoDao
+    abstract fun attachmentBaseDao(): AttachmentBaseDao
 }
 
 @Singleton
@@ -48,7 +50,16 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         .addMigrations(MIGRATION_2_3)
         .addMigrations(MIGRATION_3_4)
         .addMigrations(MIGRATION_4_5)
-        .addMigrations(MIGRATION_5_6).build()
+        .addMigrations(MIGRATION_5_6)
+        .addMigrations(MIGRATION_6_7).build()
+
+    /** md5 of the file this device last downloaded/uploaded for the attachment, or null. */
+    fun getAttachmentBase(itemKey: String, group: Int): String? =
+        db.attachmentBaseDao().get(itemKey, group)?.md5
+
+    fun setAttachmentBase(itemKey: String, group: Int, md5: String) {
+        db.attachmentBaseDao().put(AttachmentBase(itemKey, group, md5, System.currentTimeMillis()))
+    }
 
     fun addGroup(group: GroupInfo): Completable {
         return db.groupInfoDao().insertGroupInfos(group)

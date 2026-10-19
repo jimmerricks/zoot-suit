@@ -73,3 +73,14 @@ val MIGRATION_5_6 = object: Migration(5,6){
         database.execSQL("ALTER TABLE ItemCreator_new RENAME TO ItemCreator")
     }
 }
+
+/** Adds AttachmentBase (see AttachmentBase.kt). No foreign key, on purpose. */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "CREATE TABLE IF NOT EXISTS `AttachmentBase` (`itemKey` TEXT NOT NULL, " +
+                    "`group` INTEGER NOT NULL, `md5` TEXT NOT NULL, `recordedAt` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`itemKey`, `group`))"
+        )
+    }
+}
