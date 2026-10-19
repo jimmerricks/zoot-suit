@@ -72,12 +72,33 @@ copy and asks about a stale edited one (`AttachmentOpenCheck`). Copies from befo
 the change are given a base at library load where possible. Verified on the
 emulator with a real desktop-side change.
 
+### 2c. Offline editing and batch sync-back (2026-10-19)
+Done, each in its own commit: uploads run through a sequential batch runner
+(`uploadAttachments`/`uploadOne`, summary text in `AttachmentUploadBatch`);
+"Download to device" without opening; edits found by comparing every downloaded
+file with its base (`EditedAttachmentFinder`, md5 cached by size+mtime) instead of
+`RecentlyOpenedAttachment` (table kept, unused; dropping it needs a migration);
+`refreshLibrary` uploads edits, then downloads; offline is a toast
+(`NetworkErrors.isOffline`) instead of per-request error dialogs; a toolbar counter
+("N edits to sync", set in `onPrepareOptionsMenu` because `LibraryListFragment`
+re-inflates the menu) replaces the prompt on return from the viewer; each
+attachment shows `AttachmentLocalState` in the item view; deleting an edited
+local copy asks first.
+
+This also starts the "attachment download/upload" slice of item 2: the upload half
+is now a self-contained pipeline inside the model, ready to move out with the
+download half.
+
 Open, in priority order:
 1. Note deletion has no confirmation and is a permanent API DELETE.
 2. Zotero File Storage path (unused with WebDAV): optional `x-amz-security-token`
    modelled as non-null; `If-Match: *` for first uploads should be
    `If-None-Match: *`; a `421` check meant `412`.
-3. A copy edited *before* the AttachmentBase upgrade, whose AttachmentInfo row a
+3. Edits are tracked for My Library only; group-library attachments are never
+   uploaded (unchanged from upstream).
+4. The library list's attachment icon doesn't show the local state yet (the item
+   view does).
+5. A copy edited *before* the AttachmentBase upgrade, whose AttachmentInfo row a
    sync already deleted, still falls back to the synced md5 (only affects installs
    upgraded from builds before `d8231b9`).
 

@@ -12,8 +12,13 @@ A personal fork of [Zoo for Zotero](https://github.com/mickstar/Zoo-For-Zotero) 
 
 | Change | Upstream | This fork |
 |---|---|---|
-| App name | Zoo for Zotero | Zoot Suit |
+| App name, icon, colours | Zoo for Zotero | Zoot Suit (vector icon, indigo/red) |
 | minSdkVersion | 26 (Android 8.0) | 24 (Android 7.0) |
+| Editing PDFs | Prompt after each viewer session, one file at a time | Edit any number of PDFs, online or offline; a sync uploads them all, then downloads |
+| Edit detection | Only files opened through the app | Every downloaded file, compared with the version last synced |
+| Download | Always opens the viewer | "Download to device" without opening; state shown per attachment |
+| WebDAV upload | Unconditional overwrite | Checks for newer remote versions first, conditional replace, optional backup |
+| Android 7 + Let's Encrypt | Fails TLS | ISRG Root X1 bundled |
 
 Planned divergences are tracked in [dependency-modernization-plan.md](dependency-modernization-plan.md).
 
@@ -23,7 +28,7 @@ Planned divergences are tracked in [dependency-modernization-plan.md](dependency
 
 - Browse and search your Zotero library
 - Collections and subcollections
-- Two-way attachment sync (Zotero file storage and WebDAV)
+- Two-way attachment sync (Zotero file storage and WebDAV; WebDAV is what this fork tests)
 - Group libraries
 - Create, edit, and delete notes
 - Barcode scanner for ISBN lookup
