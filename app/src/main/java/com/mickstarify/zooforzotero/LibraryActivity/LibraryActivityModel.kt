@@ -638,37 +638,51 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             })
     }
 
-    fun checkAllAttachmentsForModification() {
+    /** Keys of edited attachments already offered for upload since the app started. */
+    private val offeredUploadKeys = HashSet<String>()
+
+    /**
+     * Finds opened attachments whose file now differs from Zotero's and offers to upload
+     * them together. On its own (returning from the PDF viewer, library load) it only asks
+     * when a file has changed that wasn't offered yet; [userRequested] always asks.
+     */
+    fun checkAllAttachmentsForModification(userRequested: Boolean = false) {
         if (state.isUsingGroup()) {
             Log.d(
                 "zotero",
                 "not checking attachments because we do not support groups"
             )
+            if (userRequested) {
+                presenter.makeToastAlert("Uploading is only supported in My Library.")
+            }
             return
         }
 
         if (!preferences.isAttachmentUploadingEnabled()) {
             Log.d("zotero", "Not checking attachments, disabled by preferences")
+            if (userRequested) {
+                presenter.makeToastAlert("Attachment uploading is turned off in settings.")
+            }
             return
         }
 
         zoteroDatabase.getRecentlyOpenedAttachments()
+            .defaultIfEmpty(emptyList())
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread()).map { listOfRecently ->
-                val itemsToUpload: MutableList<Pair<Item, Int>> = LinkedList()
+            .map { listOfRecently ->
+                val changed: MutableList<Item> = LinkedList()
                 for (recentlyOpenedAttachment in listOfRecently) {
-                    Log.d("zotero", "RECENTLY OPENED ${recentlyOpenedAttachment.itemKey}")
                     val item = zoteroDB.getItemWithKey(recentlyOpenedAttachment.itemKey)
                     if (item != null) {
                         try {
                             val md5Key = zoteroDB.getMd5Key(item)
-                            if (md5Key != "" && attachmentStorageManager.validateMd5ForItem(
+                            if (md5Key != "" && !attachmentStorageManager.validateMd5ForItem(
                                     item,
                                     md5Key
-                                ) == false
+                                )
                             ) {
                                 // our attachment has been modified, we will offer to upload.
-                                itemsToUpload.add(Pair(item, recentlyOpenedAttachment.version))
+                                changed.add(item)
                                 Log.d(
                                     "zotero",
                                     "found change in ${item.getTitle()} ${item.itemKey}"
@@ -689,71 +703,42 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                         }
                     }
                 }
-                itemsToUpload
-            }.subscribe(object : MaybeObserver<MutableList<Pair<Item, Int>>> {
-                override fun onComplete() {
-                    // do nothing
+                changed.map { Pair(it, uploadChoiceLabel(it)) }
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ changed ->
+                val keys = changed.map { it.first.itemKey }
+                if (changed.isEmpty()) {
+                    if (userRequested) presenter.makeToastAlert("No edited attachments to upload.")
+                } else if (userRequested ||
+                    AttachmentUploadBatch.shouldOffer(keys, offeredUploadKeys)
+                ) {
+                    offeredUploadKeys.addAll(keys)
+                    askToUploadAttachments(changed)
                 }
-
-                override fun onSubscribe(d: Disposable) {
-                    // do nothing
-                }
-
-
-                override fun onError(e: Throwable) {
-                    Log.e("zotero", "validateMd5 observer got error $e")
-                }
-
-                override fun onSuccess(itemsToUpload: MutableList<Pair<Item, Int>>) {
-                    if (itemsToUpload.isNotEmpty()) {
-                        askToUploadAttachments(itemsToUpload)
-                    }
-                }
-
+            }, { e ->
+                Log.e("zotero", "validateMd5 observer got error $e")
             })
     }
 
-    fun askToUploadAttachments(changedAttachments: List<Pair<Item, Int>>) {
-        // for the sake of sanity I will only ask to upload 1 attachment.
-        // this is because of limitations of only having 1 upload occur concurrently
-        // and my unwillingness to implement a chaining mechanism for uploads for what i expect to
-        // be a niche power user.
-        val attachment = changedAttachments.first().first
-        val version = changedAttachments.first().second
-        val fileSizeBytes = attachmentStorageManager.getFileSize(
-            attachmentStorageManager.getAttachmentUri(attachment)
-        )
+    private fun uploadChoiceLabel(attachment: Item): String {
+        val name = attachment.data["filename"] ?: attachment.itemKey
+        val size = runCatching {
+            attachmentStorageManager.getFileSize(attachmentStorageManager.getAttachmentUri(attachment))
+        }.getOrDefault(0L)
+        return "$name (${size / 1000} KB)"
+    }
 
-        if (fileSizeBytes == 0L) {
-            Log.e("zotero", "avoiding uploading a garbage PDF")
-            attachmentStorageManager.deleteAttachment(attachment)
-            removeFromRecentlyViewed(attachment)
-            return
+    /**
+     * Lists every edited attachment, all ticked. Unticked ones, and all of them on "Later",
+     * stay pending: they're offered again via "Upload edited attachments" and whenever
+     * another file changes. The preflight in uploadOne refuses any whose remote file
+     * moved on, so no separate "outdated version" question is needed.
+     */
+    private fun askToUploadAttachments(changed: List<Pair<Item, String>>) {
+        presenter.chooseAttachmentsToUpload(changed.map { it.second }) { chosen ->
+            uploadAttachments(chosen.map { changed[it].first })
         }
-
-        val sizeKiloBytes = "${fileSizeBytes / 1000}KB"
-
-        val message =
-            "${attachment.data["filename"]!!} ($sizeKiloBytes) is different to Zotero's version. Would you like to upload this PDF to replace the remote version?"
-
-        presenter.createYesNoPrompt(
-            "Detected changes to attachment",
-            message,
-            "Upload",
-            "No",
-            {
-                if (version < attachment.getVersion()) {
-                    presenter.createYesNoPrompt("Outdated Version",
-                        "This local copy is older than the version on Zotero's server, are you sure you upload (this will irreversibly overwrite the server's copy)",
-                        "I am sure",
-                        "Cancel",
-                        { uploadAttachment(attachment) },
-                        { removeFromRecentlyViewed(attachment) })
-                } else {
-                    uploadAttachment(attachment)
-                }
-            },
-            { removeFromRecentlyViewed(attachment) })
     }
 
     override fun uploadAttachment(attachment: Item) {

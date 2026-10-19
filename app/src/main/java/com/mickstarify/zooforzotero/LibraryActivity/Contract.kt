@@ -40,6 +40,7 @@ interface Contract {
             onNoClick: () -> Unit
         )
 
+        fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit)
         fun showNote(note: Note)
         fun highlightMenuItem(state: LibraryModelState)
         fun showLoadingAlertDialog(message: String)
@@ -89,6 +90,7 @@ interface Contract {
         fun hideBasicSyncAnimation()
         fun openTrash()
         fun uploadAttachment(item: Item)
+        fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit)
         fun requestForceResync()
         fun backButtonPressed()
         fun addFilterState(query: String)

@@ -228,6 +228,10 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         view.createYesNoPrompt(title, message, yesText, noText, onYesClick, onNoClick)
     }
 
+    override fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit) {
+        view.chooseAttachmentsToUpload(labels, onUpload)
+    }
+
     override fun showBasicSyncAnimation() {
         libraryListViewModel.setIsShowingLoadingAnimation(true)
     }

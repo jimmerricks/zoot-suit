@@ -508,6 +508,28 @@ class LibraryActivity : AppCompatActivity(),
         }
     }
 
+    /** Edited attachments to upload, all ticked; [onUpload] gets the ticked indices. */
+    fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit) {
+        val checked = BooleanArray(labels.size) { true }
+        val alert = AlertDialog.Builder(this)
+        alert.setTitle(
+            if (labels.size == 1) "Upload your edited attachment?"
+            else "Upload ${labels.size} edited attachments?"
+        )
+        alert.setMultiChoiceItems(labels.toTypedArray(), checked) { _, which, isChecked ->
+            checked[which] = isChecked
+        }
+        alert.setPositiveButton("Upload") { _, _ ->
+            onUpload(checked.indices.filter { checked[it] })
+        }
+        alert.setNegativeButton("Later") { _, _ -> }
+        try {
+            alert.show()
+        } catch (exception: WindowManager.BadTokenException) {
+            Log.e("zotero", "cannot show upload dialog")
+        }
+    }
+
     /* Is called by the fragment when an attachment is openned by the user. */
     override fun openAttachmentFileListener(item: Item) {
         presenter.openAttachment(item)
