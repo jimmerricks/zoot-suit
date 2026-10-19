@@ -107,26 +107,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     private fun filterItems(items: List<Item>): List<Item> {
-        val onlyNotes = preferences.getIsShowingOnlyNotes()
-        val onlyPdfs = preferences.getIsShowingOnlyPdfs()
-
-        var newItems = items
-        if (onlyNotes) {
-            newItems =
-                newItems.filter { it.notes.size > 0 }
-        }
-        if (onlyPdfs) {
-            newItems = newItems.filter {
-                getAttachments(it.itemKey).fold(false, { acc, attachment ->
-                    var result = acc
-                    if (!result) {
-                        result = attachment.data["contentType"] == "application/pdf"
-                    }
-                    result
-                })
-            }
-        }
-        return newItems
+        return LibraryItemFilter.applyDisplayFilters(
+            items,
+            onlyNotes = preferences.getIsShowingOnlyNotes(),
+            onlyPdfs = preferences.getIsShowingOnlyPdfs(),
+            attachmentsFor = ::getAttachments
+        )
     }
 
     override fun getGroupByTitle(groupTitle: String): GroupInfo? {
@@ -179,10 +165,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun filterCollections(query: String): List<ZoteroCollection> {
-        val queryUpper = query.uppercase()
-        return zoteroDB.collections?.filter {
-            it.name.uppercase().contains(queryUpper)
-        } ?: LinkedList()
+        return LibraryItemFilter.collectionsMatching(zoteroDB.collections, query)
     }
 
     override fun openPDF(attachment: Item) {
@@ -308,12 +291,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun filterItems(query: String): List<Item> {
-        val items = zoteroDB.items?.filter {
-            it.query(query)
-
-        } ?: LinkedList<Item>()
-
-        return items
+        return LibraryItemFilter.matchingQuery(zoteroDB.items, query)
     }
 
     var downloadDisposable: Disposable? = null
