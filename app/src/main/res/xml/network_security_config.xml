@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Trust the system CA store plus ISRG Root X1 (Let's Encrypt's root, bundled in
+  res/raw). Android 7.0 (API 24, our minSdk) predates X1 being added to the
+  system store in 7.1.1, so HTTPS to Let's Encrypt servers (e.g. a WebDAV host)
+  otherwise fails with SSLHandshakeException. User-installed CAs stay untrusted.
+
+  Setting a network security config makes the platform ignore the manifest's
+  usesCleartextTraffic, so cleartext is allowed here instead (WebDAV servers are
+  configured at runtime and may be plain http).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/isrgrootx1" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
