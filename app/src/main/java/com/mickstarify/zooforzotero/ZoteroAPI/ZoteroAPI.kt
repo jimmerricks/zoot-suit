@@ -359,9 +359,9 @@ class ZoteroAPI(
         })
     }
 
-    /** Hash in the attachment's .prop on the WebDAV server, null if there is none. */
-    fun getWebdavRemoteHash(attachment: Item, context: Context): String? {
-        return Webdav(PreferenceManager(context)).getRemoteHash(attachment)
+    /** The attachment's .prop on the WebDAV server (with ETag), null if there is none. */
+    fun getWebdavRemoteProp(attachment: Item, context: Context): RemoteProp? {
+        return Webdav(PreferenceManager(context)).getRemoteProp(attachment)
     }
 
     fun patchItem(item: Item, patch: JsonObject, lastModifiedVersion: Int = item.getVersion()): Completable {
@@ -626,12 +626,15 @@ class ZoteroAPI(
         return observable
     }
 
-    fun uploadAttachmentWithWebdav(attachment: Item, context: Context): Completable {
-        val preferenceManager = PreferenceManager(context)
-        val webdav = Webdav(
-            preferenceManager
-        )
-        return webdav.uploadAttachment(attachment, attachmentStorageManager)
+    fun uploadAttachmentWithWebdav(
+        attachment: Item,
+        context: Context,
+        expected: RemoteProp?,
+        md5: String,
+        mtime: Long
+    ): Completable {
+        return Webdav(PreferenceManager(context))
+            .uploadAttachment(attachment, attachmentStorageManager, expected, md5, mtime)
     }
 
     fun updateAttachment(attachment: Item): Completable {

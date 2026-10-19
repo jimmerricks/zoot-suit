@@ -37,20 +37,12 @@ class Webdav(
     preferenceManager: PreferenceManager
 ) {
     private var sardine: OkHttpSardine
+    private var uploader: WebdavUploader
     var address: String
 
 
     fun testConnection(): Boolean {
         return sardine.exists(address)
-    }
-
-    /** Hash recorded in the attachment's KEY.prop, or null if the server has no .prop. */
-    fun getRemoteHash(attachment: Item): String? {
-        val propPath = address + "/${attachment.itemKey.uppercase()}.prop"
-        if (!sardine.exists(propPath)) {
-            return null
-        }
-        return WebdavProp(downloadPropToString(propPath)).hash
     }
 
     fun downloadPropToString(webpath: String): String {
@@ -139,19 +131,20 @@ class Webdav(
         return observable
     }
 
+    /**
+     * Zips the attachment and replaces it on the server via [WebdavUploader].
+     * [expected] is the .prop read for the pre-upload check; [md5]/[mtime] go into
+     * the new .prop and must be what the caller then patches onto the Zotero item.
+     */
     fun uploadAttachment(
         attachment: Item,
-        attachmentStorageManager: AttachmentStorageManager
+        attachmentStorageManager: AttachmentStorageManager,
+        expected: RemoteProp?,
+        md5: String,
+        mtime: Long
     ): Completable {
-        /*Uploading will take 3 steps,
-        * 1. Compress attachment into a ZIP file (using internal cache dir)
-        * 2. Create  F3FXJF_NEW.prop file.
-        * 3. Upload to webdav server F3FXJF_NEW.zip and F3FXJF_NEW.prop
-        * 4. send a delete request and  rename request to server so we have
-        *  F3FXJF.zip + F3FXJF.prop resulting*/
-
         return Completable.fromAction {
-            // STEP 1 CREATE ZIP
+            // zip the file under its real name, as Zotero does
             val fileInputStream =
                 attachmentStorageManager.getItemInputStream(attachment).source()
             val filename = attachmentStorageManager.getFilenameForItem(attachment)
@@ -163,54 +156,21 @@ class Webdav(
 
             val zipFile =
                 attachmentStorageManager.createTempFile("${attachment.itemKey.uppercase()}_NEW.zip")
-
             ZipFile(zipFile).addFile(tempFile)
             tempFile.delete()
-            // STEP 2 -- CREATE PROP
-            val propFile =
-                attachmentStorageManager.createTempFile("${attachment.itemKey.uppercase()}_NEW.prop")
-            val propContent = WebdavProp(
-                attachmentStorageManager.getMtime(attachment),
-                attachmentStorageManager.calculateMd5(attachment)
-            ).serialize()
-            val outputStream = propFile.outputStream()
-            outputStream.write(propContent.toByteArray(Charsets.UTF_8))
-            outputStream.close()
 
-            // STEP 3 -- UPLOAD ZIP AND PROP
-            val newZipPath = address + "/${attachment.itemKey.uppercase()}_NEW.zip"
-            val newPropPath = address + "/${attachment.itemKey.uppercase()}_NEW.prop"
-
-            // mostly useless step, delete any old _NEW.zip files that shouldn't exist
-            // but might incase of a failed update earlier.
-            if (sardine.exists(newZipPath)) {
-                sardine.delete(newZipPath)
+            try {
+                uploader.replace(
+                    attachment.itemKey, zipFile, WebdavProp(mtime, md5).serialize(), expected
+                )
+            } finally {
+                zipFile.delete()
             }
-            if (sardine.exists(newPropPath)) {
-                sardine.delete(newPropPath)
-            }
-
-            // upload files
-            sardine.put(newPropPath, propFile, "text/plain")
-            sardine.put(newZipPath, zipFile, "application/zip")
-
-            zipFile.delete()
-            propFile.delete()
-
-            // STEP 4 -- DELETE AND RENAME TO REPLACE OLD CONTENT.
-            val zipPath = address + "/${attachment.itemKey.uppercase()}.zip"
-            val propPath = address + "/${attachment.itemKey.uppercase()}.prop"
-
-            sardine.delete(propPath)
-            sardine.delete(zipPath)
-
-            sardine.move(newPropPath, propPath)
-            sardine.move(newZipPath, zipPath)
-
-            // DONE.
         }
-
     }
+
+    /** The attachment's .prop on the server (with its ETag), or null if none. */
+    fun getRemoteProp(attachment: Item): RemoteProp? = uploader.readProp(attachment.itemKey)
 
     val authCach: MutableMap<String, CachingAuthenticator> = HashMap()
 
@@ -278,9 +238,9 @@ class Webdav(
             clientBuilder.hostnameVerifier(HostnameVerifier { hostname, session -> true })
         }
 
-        sardine = OkHttpSardine(
-            clientBuilder.build()
-        )
+        val client = clientBuilder.build()
+        sardine = OkHttpSardine(client)
+        uploader = WebdavUploader(client, preferenceManager.getWebDAVAddress())
 
         this.address = preferenceManager.getWebDAVAddress()
     }

@@ -732,13 +732,16 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             Single.fromCallable {
                 val (serverVersion, serverMd5) =
                     zoteroAPI.getAttachmentFileState(attachment.itemKey).blockingGet()
-                val webdavHash = zoteroAPI.getWebdavRemoteHash(attachment, context)
+                val remoteProp = zoteroAPI.getWebdavRemoteProp(attachment, context)
                 AttachmentUploadPreflight.conflictReason(
-                    attachment.getMd5Key(), serverMd5, webdavHash
+                    attachment.getMd5Key(), serverMd5, remoteProp?.hash
                 )?.let { throw RemoteAttachmentChangedException(it) }
-                serverVersion
-            }.flatMapCompletable { serverVersion ->
-                zoteroAPI.uploadAttachmentWithWebdav(attachment, context).andThen(
+                Pair(serverVersion, remoteProp)
+            }.flatMapCompletable { (serverVersion, remoteProp) ->
+                // the .prop's ETag makes the WebDAV replace conditional; see WebdavUploader
+                zoteroAPI.uploadAttachmentWithWebdav(
+                    attachment, context, remoteProp, md5Key, mtime
+                ).andThen(
                     Completable.fromAction {
                         val modificationJsonObject = JsonObject()
                         modificationJsonObject.addProperty("md5", md5Key)
