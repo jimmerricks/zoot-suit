@@ -9,15 +9,15 @@
         app:showAsAction="always|withText" />
 
     <item
-        android:id="@+id/tag_filter"
-        android:icon="@drawable/baseline_label_white_24"
-        android:title="Filter by tag"
+        android:id="@+id/library_filter"
+        android:icon="@drawable/baseline_filter_list_white_24"
+        android:title="@string/filter"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/filter_menu"
-        android:icon="@drawable/baseline_filter_list_white_24"
-        android:title="@string/filter"
+        android:icon="@drawable/ic_sort_white_24"
+        android:title="@string/sort"
         app:showAsAction="collapseActionView|ifRoom" />
 
     <item

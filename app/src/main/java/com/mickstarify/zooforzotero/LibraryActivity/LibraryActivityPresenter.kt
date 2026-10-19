@@ -148,6 +148,16 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         return if (model.isLoaded()) model.getAllTags() else emptyList()
     }
 
+    fun getLibraryFilter(): LibraryFilter = model.libraryFilter
+
+    /** Sets the list's filter, redraws the list and reports what it now shows. */
+    fun previewLibraryFilter(filter: LibraryFilter): LibraryFilterDialog.Preview {
+        model.libraryFilter = filter
+        redisplayItems()
+        val shown = model.lastFilteredItems
+        return LibraryFilterDialog.Preview(shown.size, LibraryItemFilter.tagCounts(shown))
+    }
+
     override fun onTagOpen(tagName: String) {
         this.addFilterState("tag:${tagName}")
         showFilter("tag:${tagName}")

@@ -2,6 +2,7 @@
     <string name="app_name">Zoot Suit</string>
     <string name="upload_edited_attachments">Upload edited attachments</string>
     <string name="sync">Sync</string>
+    <string name="sort">Sort and display</string>
     <plurals name="pending_edits">
         <item quantity="one">%d edit to sync</item>
         <item quantity="other">%d edits to sync</item>
@@ -44,7 +45,7 @@
     <string name="setup_webdav">Setup WebDAV</string>
     <string name="zotero_save">Zotero Save</string>
     <string name="loading_your_library">Loading your library</string>
-    <string name="filter">Filter Menu</string>
+    <string name="filter">Filter</string>
     <string name="force_resync">Force Resync</string>
     <string name="app_frontpage_disclaimer">You must use the official Zotero Account syncing to use this app.</string>
     <string name="proceed">Proceed</string>

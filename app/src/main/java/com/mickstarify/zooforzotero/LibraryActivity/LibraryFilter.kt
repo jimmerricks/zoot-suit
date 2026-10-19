@@ -18,21 +18,14 @@ data class LibraryFilter(
     val needsDeviceState: Boolean get() = onDevice || editedHere
 
     /**
-     * @param attachmentKeys the item's child attachments' keys
-     * @param onDeviceKeys attachment keys whose file is on this device
-     * @param editedKeys attachment keys whose file has edits waiting to sync
+     * @param onDeviceItems keys of items with an attachment whose file is on this device
+     *   (the attachment's parent, or the attachment itself if it stands alone)
+     * @param editedItems the same for attachments with edits waiting to sync
      */
-    fun matches(
-        item: Item,
-        attachmentKeys: (Item) -> Collection<String>,
-        onDeviceKeys: Set<String>,
-        editedKeys: Set<String>,
-    ): Boolean {
+    fun matches(item: Item, onDeviceItems: Set<String>, editedItems: Set<String>): Boolean {
         if (tags.isNotEmpty() && !item.tags.map { it.tag }.toSet().containsAll(tags)) return false
-        if (!needsDeviceState) return true
-        val keys = attachmentKeys(item)
-        if (onDevice && keys.none { it in onDeviceKeys }) return false
-        if (editedHere && keys.none { it in editedKeys }) return false
+        if (onDevice && item.itemKey !in onDeviceItems) return false
+        if (editedHere && item.itemKey !in editedItems) return false
         return true
     }
 

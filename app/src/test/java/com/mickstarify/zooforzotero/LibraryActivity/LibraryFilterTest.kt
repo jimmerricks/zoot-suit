@@ -17,11 +17,8 @@ class LibraryFilterTest {
         collections = emptyList()
     }
 
-    private val attachments = mapOf("A" to listOf("A1"), "B" to listOf("B1", "B2"), "C" to emptyList())
-    private val keysOf: (Item) -> Collection<String> = { attachments[it.itemKey] ?: emptyList() }
-
     private fun LibraryFilter.keeps(item: Item, onDevice: Set<String> = emptySet(), edited: Set<String> = emptySet()) =
-        matches(item, keysOf, onDevice, edited)
+        matches(item, onDevice, edited)
 
     @Test
     fun `an empty filter keeps everything`() {
@@ -37,19 +34,18 @@ class LibraryFilterTest {
     }
 
     @Test
-    fun `on device means one of its attachments is on the device`() {
+    fun `on device means the item has an attachment on the device`() {
         val f = LibraryFilter(onDevice = true)
-        assertTrue(f.keeps(item("B"), onDevice = setOf("B2")))
-        assertFalse(f.keeps(item("B"), onDevice = setOf("A1")))
-        assertFalse(f.keeps(item("C"), onDevice = setOf("A1")))
+        assertTrue(f.keeps(item("B"), onDevice = setOf("B")))
+        assertFalse(f.keeps(item("B"), onDevice = setOf("A")))
     }
 
     @Test
     fun `tags and device state combine with AND`() {
         val f = LibraryFilter(tags = setOf("theory"), onDevice = true, editedHere = true)
-        assertTrue(f.keeps(item("A", "theory"), onDevice = setOf("A1"), edited = setOf("A1")))
-        assertFalse(f.keeps(item("A", "theory"), onDevice = setOf("A1")))
-        assertFalse(f.keeps(item("A"), onDevice = setOf("A1"), edited = setOf("A1")))
+        assertTrue(f.keeps(item("A", "theory"), onDevice = setOf("A"), edited = setOf("A")))
+        assertFalse(f.keeps(item("A", "theory"), onDevice = setOf("A")))
+        assertFalse(f.keeps(item("A"), onDevice = setOf("A"), edited = setOf("A")))
     }
 
     @Test

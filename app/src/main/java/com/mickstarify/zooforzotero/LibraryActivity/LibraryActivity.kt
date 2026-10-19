@@ -289,8 +289,10 @@ class LibraryActivity : AppCompatActivity(),
                 showFilterMenu()
             }
 
-            R.id.tag_filter -> {
-                TagPickerDialog(this, presenter.getAllTags()) { presenter.onTagOpen(it) }.show()
+            R.id.library_filter -> {
+                LibraryFilterDialog(this, presenter.getLibraryFilter()) {
+                    presenter.previewLibraryFilter(it)
+                }.show()
             }
 
             R.id.pending_edits -> {

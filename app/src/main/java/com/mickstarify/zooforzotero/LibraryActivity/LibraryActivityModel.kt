@@ -142,12 +142,16 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             onlyPdfs = preferences.getIsShowingOnlyPdfs(),
             attachmentsFor = ::getAttachments
         )
+        return applyLibraryFilter(shown)
+    }
+
+    /** Applies [libraryFilter]; every list view goes through here (also tag views, search). */
+    private fun applyLibraryFilter(items: List<Item>): List<Item> {
         val filter = libraryFilter
-        val filtered = if (!filter.isActive) shown else shown.filter {
-            filter.matches(
-                it, { item -> getAttachments(item.itemKey).map { a -> a.itemKey } },
-                onDeviceKeys, editedKeys
-            )
+        val filtered = if (!filter.isActive) items else {
+            val onDeviceItems = if (filter.onDevice) owningItems(onDeviceKeys) else emptySet()
+            val editedItems = if (filter.editedHere) owningItems(editedKeys) else emptySet()
+            items.filter { filter.matches(it, onDeviceItems, editedItems) }
         }
         lastFilteredItems = filtered
         return filtered
@@ -409,7 +413,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun filterItems(query: String): List<Item> {
-        return LibraryItemFilter.matchingQuery(zoteroDB.items, query)
+        return applyLibraryFilter(LibraryItemFilter.matchingQuery(zoteroDB.items, query))
     }
 
     var downloadDisposable: Disposable? = null
@@ -796,6 +800,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 Log.e("zotero", "checking attachments on the device failed: $e")
             })
     }
+
+    /** For attachment keys: their parent items' keys, plus their own (standalone attachments). */
+    private fun owningItems(attachmentKeys: Set<String>): Set<String> =
+        attachmentKeys.flatMap { key ->
+            listOfNotNull(key, zoteroDB.getItemWithKey(key)?.data?.get("parentItem"))
+        }.toSet()
 
     /** Keys of attachments whose file is on this device (non-empty). */
     private fun findOnDeviceAttachmentKeys(): Set<String> {
@@ -1280,7 +1290,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun getItemsForTag(tagName: String): List<Item> {
-        return zoteroDB.getItemsForTag(tagName)
+        return applyLibraryFilter(zoteroDB.getItemsForTag(tagName))
     }
 
     override fun deleteLocalAttachment(attachment: Item) {
