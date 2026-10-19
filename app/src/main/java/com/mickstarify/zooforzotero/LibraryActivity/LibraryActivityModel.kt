@@ -265,7 +265,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             } catch (e: Exception) {
                 ""
             }
-            when (AttachmentOpenCheck.decide(attachmentBase(item), item.getMd5Key(), localMd5)) {
+            val base = attachmentBase(item)
+            when (AttachmentOpenCheck.decide(base, item.getMd5Key(), localMd5)) {
                 AttachmentOpenCheck.Action.REDOWNLOAD -> {
                     presenter.makeToastAlert("Zotero has a newer version of this file. Downloading it.")
                     presenter.hideLoadingAlertDialog()
@@ -296,9 +297,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 AttachmentOpenCheck.Action.RECORD_BASE_AND_OPEN -> recordBase(item, localMd5)
                 AttachmentOpenCheck.Action.OPEN -> {}
             }
-            // check the validity of the attachment before opening.
+            // check the validity of the attachment before opening. Only for copies without a
+            // base: with one, AttachmentOpenCheck already compared it with Zotero's version, and
+            // a difference that's left is this device's own edit waiting to be uploaded, which
+            // "redownload" would throw away.
             presenter.showLoadingAlertDialog("Verifying MD5 Checksum")
-            if (preferences.shouldCheckMd5SumBeforeOpening() && zoteroDB.hasMd5Key(
+            if (base == null && preferences.shouldCheckMd5SumBeforeOpening() && zoteroDB.hasMd5Key(
                     item,
                     onlyWebdav = preferences.isWebDAVEnabled()
                 ) && !attachmentStorageManager.validateMd5ForItem(
