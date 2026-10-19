@@ -100,8 +100,10 @@ class ZoteroAPI(
                     return chain.proceed(request.build())
                 }
             })
+            // connect fails fast when offline; reads get longer because a 100-item page
+            // from a large library can take the server well over 5 s on a cold query.
             connectTimeout(5000, TimeUnit.MILLISECONDS)
-            readTimeout(5000, TimeUnit.MILLISECONDS)
+            readTimeout(30000, TimeUnit.MILLISECONDS)
             writeTimeout(5000, TimeUnit.MILLISECONDS)
         }
         .build()
