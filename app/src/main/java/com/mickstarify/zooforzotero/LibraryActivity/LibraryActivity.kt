@@ -553,7 +553,6 @@ class LibraryActivity : AppCompatActivity(),
 
     override fun deleteLocalAttachment(item: Item) {
         presenter.deleteLocalAttachment(item)
-        Toast.makeText(this, "Deleted attachment ${item.getTitle()}", Toast.LENGTH_SHORT).show()
     }
 
     override fun onListFragmentInteraction(item: Item?) {

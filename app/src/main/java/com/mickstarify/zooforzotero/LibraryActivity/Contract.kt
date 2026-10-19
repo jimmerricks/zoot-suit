@@ -131,7 +131,6 @@ interface Contract {
         fun startGroupSync(group: GroupInfo, refresh: Boolean = false)
         fun usePersonalLibrary()
         fun getGroupByTitle(groupTitle: String): GroupInfo?
-        fun removeFromRecentlyViewed(attachment: Item)
         fun loadPriorState()
         fun getItemsForTag(tagName: String): List<Item>
         fun getAllTags(): List<Pair<String, Int>>

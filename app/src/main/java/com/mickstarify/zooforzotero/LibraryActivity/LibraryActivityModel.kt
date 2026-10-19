@@ -27,10 +27,10 @@ import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroNotFoundException
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentOpenCheck
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
+import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachmentFinder
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.AttachmentInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.RecentlyOpenedAttachment
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
 import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ZoteroDB
 import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ZoteroDBPicker
@@ -177,18 +177,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     override fun openPDF(attachment: Item) {
         /* This method creates an intent to open a PDF for Android. */
 
-        Completable.fromAction {
-            // used to check attachments for filechanges.
-            if (preferences.isAttachmentUploadingEnabled()) {
-                zoteroDatabase.addRecentlyOpenedAttachments(
-                    RecentlyOpenedAttachment(
-                        attachment.itemKey,
-                        attachment.getVersion()
-                    )
-                )
-                    .blockingAwait()
-            }
-        }.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).doOnComplete {
+        run {
             try {
                 val intent = attachmentStorageManager.openAttachment(attachment)
                 context.startActivity(intent)
@@ -224,13 +213,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                             "Please redownload your file.",
                     {})
             }
-        }.doOnError {
-            if (it is FileNotFoundException) {
-                Log.d("zotero", "file not found")
-            } else {
-                throw it
-            }
-        }.subscribe()
+        }
     }
 
     override fun openAttachment(item: Item) {
@@ -718,45 +701,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             return
         }
 
-        zoteroDatabase.getRecentlyOpenedAttachments()
-            .defaultIfEmpty(emptyList())
+        Single.fromCallable {
+            findEditedAttachments().map { Pair(it, uploadChoiceLabel(it)) }
+        }
             .subscribeOn(Schedulers.io())
-            .map { listOfRecently ->
-                val changed: MutableList<Item> = LinkedList()
-                for (recentlyOpenedAttachment in listOfRecently) {
-                    val item = zoteroDB.getItemWithKey(recentlyOpenedAttachment.itemKey)
-                    if (item != null) {
-                        try {
-                            val md5Key = zoteroDB.getMd5Key(item)
-                            if (md5Key != "" && !attachmentStorageManager.validateMd5ForItem(
-                                    item,
-                                    md5Key
-                                )
-                            ) {
-                                // our attachment has been modified, we will offer to upload.
-                                changed.add(item)
-                                Log.d(
-                                    "zotero",
-                                    "found change in ${item.getTitle()} ${item.itemKey}"
-                                )
-                            } else {
-                                // the item hasnt changed.
-                                removeFromRecentlyViewed(item)
-                            }
-                        } catch (e: FileNotFoundException) {
-                            Log.d(
-                                "zotero",
-                                "could not find local attachment with itemKey ${item.itemKey}"
-                            )
-                            removeFromRecentlyViewed(item)
-                        } catch (e: Exception) {
-                            Log.e("zotero", "validateMd5 got error $e")
-                            removeFromRecentlyViewed(item)
-                        }
-                    }
-                }
-                changed.map { Pair(it, uploadChoiceLabel(it)) }
-            }
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ changed ->
                 val keys = changed.map { it.first.itemKey }
@@ -860,7 +808,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             }
         }
         upload.andThen(Completable.fromAction {
-            zoteroDatabase.deleteRecentlyOpenedAttachment(attachment.itemKey).blockingAwait()
             recordBase(attachment, md5Key)
             zoteroDB.updateAttachmentMetadata(
                 attachment.itemKey,
@@ -902,6 +849,39 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 }
             )
         }
+
+    private val editFinder = EditedAttachmentFinder(
+        stampOf = { key ->
+            zoteroDB.getItemWithKey(key)?.let { item ->
+                runCatching {
+                    Pair(
+                        attachmentStorageManager.getFileSize(item).getOrThrow(),
+                        attachmentStorageManager.getMtime(item)
+                    )
+                }.getOrNull()
+            }
+        },
+        md5Of = { key ->
+            attachmentStorageManager.calculateMd5(
+                zoteroDB.getItemWithKey(key) ?: throw FileNotFoundException(key)
+            )
+        }
+    )
+
+    /**
+     * Attachments in My Library edited on this device and not uploaded yet; see
+     * EditedAttachmentFinder. Hashes files whose size or mtime changed, so call it off
+     * the main thread.
+     */
+    fun findEditedAttachments(): List<Item> {
+        if (state.isUsingGroup() || !preferences.isAttachmentUploadingEnabled()) return emptyList()
+        val bases = HashMap<String, String>()
+        for (key in attachmentStorageManager.listDownloadedItemKeys()) {
+            if (zoteroDB.getItemWithKey(key) == null) continue
+            zoteroDatabase.getAttachmentBase(key, zoteroDB.groupID)?.let { bases[key] = it }
+        }
+        return editFinder.edited(bases).mapNotNull { zoteroDB.getItemWithKey(it) }
+    }
 
     /** md5 of the file this device last downloaded/uploaded for [item]; see AttachmentBase. */
     private fun attachmentBase(item: Item): String? =
@@ -965,10 +945,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return AttachmentFileCheck.problem(head, tail, size, isPdf)
     }
 
-    override fun removeFromRecentlyViewed(attachment: Item) {
-        zoteroDatabase.deleteRecentlyOpenedAttachment(attachment.itemKey)
-            .subscribeOn(Schedulers.io()).subscribe()
-    }
 
     override fun startGroupSync(group: GroupInfo, refresh: Boolean) {
         if (syncManager.isSyncing()) {
@@ -1156,7 +1132,22 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun deleteLocalAttachment(attachment: Item) {
-        attachmentStorageManager.deleteAttachment(attachment)
+        val delete = {
+            attachmentStorageManager.deleteAttachment(attachment)
+            presenter.makeToastAlert("Deleted the copy of ${attachment.getTitle()} on this device.")
+        }
+        val base = attachmentBase(attachment)
+        val edited = base != null &&
+                editFinder.currentMd5(attachment.itemKey)?.equals(base, ignoreCase = true) == false
+        if (edited) {
+            presenter.createYesNoPrompt(
+                "Delete your edits?",
+                "This copy has changes that haven't been uploaded yet. Deleting it loses them.",
+                "Delete", "Keep", delete, {}
+            )
+        } else {
+            delete()
+        }
     }
 
     init {
