@@ -94,6 +94,7 @@ interface Contract {
         fun addFilterState(query: String)
         fun openMyPublications()
         fun onTagOpen(tagName: String)
+        fun getAllTags(): List<Pair<String, Int>>
         fun showLoadingAlertDialog(message: String)
         fun hideLoadingAlertDialog()
         fun finishLibrary()
@@ -130,6 +131,7 @@ interface Contract {
         fun removeFromRecentlyViewed(attachment: Item)
         fun loadPriorState()
         fun getItemsForTag(tagName: String): List<Item>
+        fun getAllTags(): List<Pair<String, Int>>
         fun deleteLocalAttachment(attachment: Item)
         fun isFirstSync(): Boolean
     }

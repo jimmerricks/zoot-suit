@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="20dp">
+
+    <EditText
+        android:id="@+id/editText_tag_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Search tags"
+        android:imeOptions="actionDone"
+        android:inputType="text" />
+
+    <TextView
+        android:id="@+id/textView_no_tags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:text="No matching tags"
+        android:visibility="gone" />
+
+    <ListView
+        android:id="@+id/listView_tags"
+        android:layout_width="match_parent"
+        android:layout_height="400dp" />
+
+</LinearLayout>

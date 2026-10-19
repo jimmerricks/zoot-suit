@@ -140,6 +140,10 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         })
     }
 
+    override fun getAllTags(): List<Pair<String, Int>> {
+        return if (model.isLoaded()) model.getAllTags() else emptyList()
+    }
+
     override fun onTagOpen(tagName: String) {
         this.filterEntries("tag:${tagName}")
         this.addFilterState("tag:${tagName}")
@@ -163,7 +167,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
 
         if (query.startsWith("tag:")) {
             val tagName = query.substring(4) // remove tag:
-            val entries = model.getItemsForTag(tagName).map { ListEntry(it) }
+            val entries = model.getItemsForTag(tagName).sort().map { ListEntry(it) }
             libraryListViewModel.setItems(entries)
             return
         }

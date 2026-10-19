@@ -998,6 +998,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         }
     }
 
+    override fun getAllTags(): List<Pair<String, Int>> {
+        return LibraryItemFilter.tagCounts(zoteroDB.items)
+    }
+
     override fun getItemsForTag(tagName: String): List<Item> {
         return zoteroDB.getItemsForTag(tagName)
     }

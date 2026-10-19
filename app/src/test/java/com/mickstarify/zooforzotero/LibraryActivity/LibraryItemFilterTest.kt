@@ -93,6 +93,27 @@ class LibraryItemFilterTest {
     }
 
     @Test
+    fun `tag counts span the whole list, sorted by name ignoring case`() {
+        val items = listOf(
+            item("A", tags = listOf("reading-list", "STS")),
+            item("B", tags = listOf("reading-list")),
+            item("C", tags = listOf("archive")),
+            item("D")
+        )
+        assertEquals(
+            listOf("archive" to 1, "reading-list" to 2, "STS" to 1),
+            LibraryItemFilter.tagCounts(items)
+        )
+    }
+
+    @Test
+    fun `tag counts count an item once per tag and handle an unloaded library`() {
+        val items = listOf(item("A", tags = listOf("x", "x")))
+        assertEquals(listOf("x" to 1), LibraryItemFilter.tagCounts(items))
+        assertTrue(LibraryItemFilter.tagCounts(null).isEmpty())
+    }
+
+    @Test
     fun `collections match by name case-insensitively`() {
         val collections = listOf(
             ZoteroCollection("K1", 1, "Platform Governance", ""),

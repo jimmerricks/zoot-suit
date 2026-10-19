@@ -40,6 +40,21 @@ object LibraryItemFilter {
         return items?.filter { it.query(query) } ?: emptyList()
     }
 
+    /**
+     * Every tag in [items] with the number of items carrying it, sorted by name
+     * case-insensitively. An item tagged twice with the same tag counts once.
+     */
+    fun tagCounts(items: List<Item>?): List<Pair<String, Int>> {
+        if (items == null) return emptyList()
+        val counts = HashMap<String, Int>()
+        for (item in items) {
+            for (tag in item.tags.map { it.tag }.toSet()) {
+                counts[tag] = (counts[tag] ?: 0) + 1
+            }
+        }
+        return counts.toList().sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.first })
+    }
+
     /** Collections whose name contains [query], case-insensitively. */
     fun collectionsMatching(collections: List<ZoteroCollection>?, query: String): List<ZoteroCollection> {
         val queryUpper = query.uppercase()

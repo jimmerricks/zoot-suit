@@ -9,6 +9,12 @@
         app:showAsAction="collapseActionView|ifRoom" />
 
     <item
+        android:id="@+id/tag_filter"
+        android:icon="@drawable/baseline_label_white_24"
+        android:title="Filter by tag"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/search"
         android:icon="@drawable/baseline_search_white_24"
         android:title="@string/search_title"

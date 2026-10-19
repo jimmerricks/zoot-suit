@@ -288,6 +288,10 @@ class LibraryActivity : AppCompatActivity(),
                 showFilterMenu()
             }
 
+            R.id.tag_filter -> {
+                TagPickerDialog(this, presenter.getAllTags()) { presenter.onTagOpen(it) }.show()
+            }
+
             R.id.settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)
