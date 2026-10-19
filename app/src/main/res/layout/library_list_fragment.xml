@@ -66,6 +66,8 @@
         android:layout_alignParentLeft="true"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
+        app:fab_addButtonColorNormal="@color/colorAccent"
+        app:fab_addButtonColorPressed="@color/colorAccentPressed"
         app:fab_labelStyle="@style/menu_labels_style"
         app:fab_labelsPosition="left"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -76,6 +78,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:tint="#fff"
+            app:fab_colorNormal="@color/colorPrimary"
+            app:fab_colorPressed="@color/colorPrimaryPressed"
             app:fab_icon="@drawable/baseline_save_24"
             app:fab_title="Zotero Save" />
 
@@ -84,6 +88,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:tint="#fff"
+            app:fab_colorNormal="@color/colorPrimary"
+            app:fab_colorPressed="@color/colorPrimaryPressed"
             app:fab_icon="@drawable/baseline_photo_camera_24"
             app:fab_title="Scan ISBN" />
 

@@ -3,8 +3,8 @@ package com.mickstarify.zooforzotero.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Primary colors
-val ZoteroPrimary = Color(0xFF1F5582)
-val ZoteroPrimaryVariant = Color(0xFF0A3C66)
+val ZoteroPrimary = Color(0xFF3F3577)
+val ZoteroPrimaryVariant = Color(0xFF2B2350)
 val ZoteroOnPrimary = Color(0xFFFFFFFF)
 
 // Secondary colors
@@ -29,18 +29,18 @@ val ZoteroOnSurface = Color(0xFF1C1B1F)
 val ZoteroOnSurfaceVariant = Color(0xFF49454F)
 
 // Dark theme colors
-val ZoteroPrimaryDark = Color(0xFF9ECAFF)
-val ZoteroOnPrimaryDark = Color(0xFF003258)
-val ZoteroPrimaryContainerDark = Color(0xFF004881)
-val ZoteroOnPrimaryContainerDark = Color(0xFFCFE5FF)
+val ZoteroPrimaryDark = Color(0xFFC9BFFF)
+val ZoteroOnPrimaryDark = Color(0xFF2B2350)
+val ZoteroPrimaryContainerDark = Color(0xFF4A4185)
+val ZoteroOnPrimaryContainerDark = Color(0xFFE6DEFF)
 
 val ZoteroSecondaryDark = Color(0xFF81C784)
 val ZoteroOnSecondaryDark = Color(0xFF1B5E20)
 val ZoteroSecondaryContainerDark = Color(0xFF2E7D32)
 val ZoteroOnSecondaryContainerDark = Color(0xFFC8E6C9)
 
-val ZoteroBackgroundDark = Color(0xFF10131C)
-val ZoteroSurfaceDark = Color(0xFF10131C)
+val ZoteroBackgroundDark = Color(0xFF13111F)
+val ZoteroSurfaceDark = Color(0xFF13111F)
 val ZoteroSurfaceVariantDark = Color(0xFF49454F)
 
 val ZoteroOnBackgroundDark = Color(0xFFE6E1E5)
