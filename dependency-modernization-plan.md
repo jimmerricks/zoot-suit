@@ -37,6 +37,12 @@ injectable collaborators and a ViewModel, matching the `AttachmentManager`/
 `SyncSetup` pattern. High effort; do this before building major new features
 on the library screen.
 
+This work changes threading/lifecycle behavior (sync staging, back-navigation,
+group switching, the Presenter → ViewModel swap) and must be verified on-device,
+not just by an APK build. The dockerized Android emulator added in the repo root
+provides that path — see the project `README.md` ("Instrumented tests against
+the emulator"). Proceed slice by slice, smoke-testing between steps.
+
 ### 3. Minor dependency tidy-ups
 - Retrofit is pinned to 2.9.0; current is 2.11.x.
 - `com.getbase:floatingactionbutton:1.10.1` (2016, unmaintained) could be
@@ -51,7 +57,9 @@ on the library screen.
 - **Zotero Web API v10** compatibility must be preserved in `ZoteroAPI`.
 - Keep changes small and verifiable — build with
   `docker compose run --rm build` and run tests with
-  `docker compose run --rm build ./gradlew testDebugUnitTest`.
+  `docker compose run --rm build ./gradlew testDebugUnitTest`. On-device
+  verification (instrumented tests, visual smoke QA) runs against the dockerized
+  emulator; see the repo-root `README.md`.
 
 ## Explicitly deferred (not worth the complexity yet)
 
