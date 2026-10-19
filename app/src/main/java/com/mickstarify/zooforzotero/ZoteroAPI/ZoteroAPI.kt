@@ -58,6 +58,12 @@ class ZoteroNotFoundException(message: String) : RuntimeException(message)
 // Pagination advances by the number of items actually returned, so any value works.
 private const val ITEMS_PAGE_SIZE = 100
 
+// Item types the sync skips. The app never reads PDF annotations (Zotero 6+ stores
+// each highlight/note-on-PDF as its own child item), and in an annotated library they
+// can be a large share of all items. Also stored with resumable download progress:
+// an offset into a differently filtered listing is meaningless.
+const val SYNC_ITEM_TYPE_FILTER = "-annotation"
+
 class ZoteroAPI(
     val API_KEY: String,
     val userID: String,
@@ -362,7 +368,8 @@ class ZoteroAPI(
                     groupID,
                     modificationSinceVersion,
                     index,
-                    ITEMS_PAGE_SIZE
+                    ITEMS_PAGE_SIZE,
+                    SYNC_ITEM_TYPE_FILTER
                 )
             } else {
                 shortTimeoutService.getItemsSince(
@@ -370,14 +377,15 @@ class ZoteroAPI(
                     userID,
                     modificationSinceVersion,
                     index,
-                    ITEMS_PAGE_SIZE
+                    ITEMS_PAGE_SIZE,
+                    SYNC_ITEM_TYPE_FILTER
                 )
             }
         } else {
             if (groupID != GroupInfo.NO_GROUP_ID) {
-                shortTimeoutService.getItemsForGroup(0, groupID, index, ITEMS_PAGE_SIZE)
+                shortTimeoutService.getItemsForGroup(0, groupID, index, ITEMS_PAGE_SIZE, SYNC_ITEM_TYPE_FILTER)
             } else {
-                shortTimeoutService.getItems(0, userID, index, ITEMS_PAGE_SIZE)
+                shortTimeoutService.getItems(0, userID, index, ITEMS_PAGE_SIZE, SYNC_ITEM_TYPE_FILTER)
             }
 
         }
@@ -535,10 +543,10 @@ class ZoteroAPI(
     ): Observable<ZoteroAPIItemsResponse> {
         val call = when (groupID) {
             GroupInfo.NO_GROUP_ID -> {
-                service.getTrashedItemsForUser(sinceVersion, userID, sinceVersion, index)
+                service.getTrashedItemsForUser(sinceVersion, userID, sinceVersion, index, SYNC_ITEM_TYPE_FILTER)
             }
             else -> {
-                service.getTrashedItemsForGroup(sinceVersion, groupID, sinceVersion, index)
+                service.getTrashedItemsForGroup(sinceVersion, groupID, sinceVersion, index, SYNC_ITEM_TYPE_FILTER)
             }
         }
 

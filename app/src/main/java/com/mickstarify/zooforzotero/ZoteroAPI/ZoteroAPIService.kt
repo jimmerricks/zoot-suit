@@ -30,7 +30,8 @@ interface ZoteroAPIService {
         @Header("If-Modified-Since-Version") ifModifiedSinceVersion: Int,
         @Path("user") user: String,
         @Query("start") index: Int,
-        @Query("limit") limit: Int
+        @Query("limit") limit: Int,
+        @Query("itemType") itemType: String
     ): Observable<Response<ResponseBody>>
 
     /* Gets items since last update. */
@@ -40,7 +41,8 @@ interface ZoteroAPIService {
         @Path("user") user: String,
         @Query("since") modificationSinceVersion: Int,
         @Query("start") index: Int,
-        @Query("limit") limit: Int
+        @Query("limit") limit: Int,
+        @Query("itemType") itemType: String
     ): Observable<Response<ResponseBody>>
 
 
@@ -55,7 +57,8 @@ interface ZoteroAPIService {
         @Header("If-Modified-Since-Version") ifModifiedSinceVersion: Int,
         @Path("groupID") groupID: Int,
         @Query("start") index: Int,
-        @Query("limit") limit: Int
+        @Query("limit") limit: Int,
+        @Query("itemType") itemType: String
     ): Observable<Response<ResponseBody>>
 
     // get items for the group ID
@@ -65,7 +68,8 @@ interface ZoteroAPIService {
         @Path("groupID") groupID: Int,
         @Query("since") modificationSinceVersion: Int,
         @Query("start") index: Int,
-        @Query("limit") limit: Int
+        @Query("limit") limit: Int,
+        @Query("itemType") itemType: String
     ): Observable<Response<ResponseBody>>
 
     @GET("groups/{groupID}/collections")
@@ -104,7 +108,8 @@ interface ZoteroAPIService {
         @Header("If-Modified-Since-Version") ifModifiedSinceVersion: Int,
         @Path("user") user: String,
         @Query("since") since: Int,
-        @Query("start") index: Int
+        @Query("start") index: Int,
+        @Query("itemType") itemType: String
     ): Observable<Response<ResponseBody>>
 
     @GET("groups/{groupID}/items/trash")
@@ -112,7 +117,8 @@ interface ZoteroAPIService {
         @Header("If-Modified-Since-Version") ifModifiedSinceVersion: Int,
         @Path("groupID") groupID: Int,
         @Query("since") since: Int,
-        @Query("start") index: Int
+        @Query("start") index: Int,
+        @Query("itemType") itemType: String
     ): Observable<Response<ResponseBody>>
 
     @GET("users/{user}/collections")
