@@ -90,6 +90,12 @@ local copy opens immediately. One long-press menu (`LibraryActivity.showAttachme
 serves the list's PDF icon and the item view; "Upload my changes" skips unchanged
 copies.
 
+Filtering (2026-10-19): `LibraryFilter` (tags, has PDF/notes, on device, edited;
+AND; in preferences) is applied in the model's `applyLibraryFilter` to every list
+view; `LibraryFilterDialog` replaces `TagPickerDialog` and applies each tick live;
+the toolbar subtitle names an active filter. Device conditions use the snapshot from
+`refreshPendingEdits` resolved to owning item keys (~10 ms for 10k items).
+
 This also starts the "attachment download/upload" slice of item 2: the upload half
 is now a self-contained pipeline inside the model, ready to move out with the
 download half.
