@@ -2,7 +2,7 @@
     <string name="app_name">Zoot Suit</string>
     <string name="upload_edited_attachments">Upload edited attachments</string>
     <string name="sync">Sync</string>
-    <string name="sort">Sort and display</string>
+    <string name="sort">Sort</string>
     <plurals name="pending_edits">
         <item quantity="one">%d edit to sync</item>
         <item quantity="other">%d edits to sync</item>

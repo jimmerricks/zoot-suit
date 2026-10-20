@@ -3,4 +3,15 @@
         <item name="android:textColor">#FFFFFF</item>
         <item name="android:background">@drawable/fab_actiontext_background</item>
     </style>
+
+    <!-- Section headers inside the filter and sort dialogs, matching the settings categories. -->
+    <style name="DialogSectionHeader">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Small</item>
+        <item name="android:textColor">?attr/colorAccent</item>
+        <item name="android:textStyle">bold</item>
+    </style>
 </resources>

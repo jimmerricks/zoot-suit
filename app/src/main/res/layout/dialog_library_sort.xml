@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same layout as dialog_library_filter: section headers, then one choice per row. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingTop="4dp"
+    android:paddingEnd="20dp">
+
+    <TextView
+        style="@style/DialogSectionHeader"
+        android:text="Sort by" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup_sort_method"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/radioButton_sort_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:tag="TITLE"
+            android:text="Title" />
+
+        <RadioButton
+            android:id="@+id/radioButton_sort_author"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:tag="AUTHOR"
+            android:text="Author" />
+
+        <RadioButton
+            android:id="@+id/radioButton_sort_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:tag="DATE"
+            android:text="Date" />
+
+        <RadioButton
+            android:id="@+id/radioButton_sort_date_added"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:tag="DATE_ADDED"
+            android:text="Date added" />
+    </RadioGroup>
+
+    <TextView
+        style="@style/DialogSectionHeader"
+        android:text="Order" />
+
+    <RadioGroup
+        android:id="@+id/radioGroup_sort_order"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp">
+
+        <RadioButton
+            android:id="@+id/radioButton_sort_ascending"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ascending (A to Z, oldest first)" />
+
+        <RadioButton
+            android:id="@+id/radioButton_sort_descending"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Descending (Z to A, newest first)" />
+    </RadioGroup>
+
+</LinearLayout>

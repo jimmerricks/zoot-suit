@@ -279,7 +279,7 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     fun showFilterMenu() {
-        LibraryFilterMenuDialog(this, { presenter.redisplayItems() }).show()
+        LibrarySortDialog(this) { presenter.redisplayItems() }.show()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
