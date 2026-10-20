@@ -96,6 +96,14 @@ view; `LibraryFilterDialog` replaces `TagPickerDialog` and applies each tick liv
 the toolbar subtitle names an active filter. Device conditions use the snapshot from
 `refreshPendingEdits` resolved to owning item keys (~10 ms for 10k items).
 
+UI consistency (2026-10-20): every toolbar uses `Widget.ZooForZotero.Toolbar` (white
+icons, title, subtitle, search field; light overflow menu) and the status bar icons
+are light. `LibrarySortDialog` replaces `LibraryFilterMenuDialog` with the filter
+dialog's layout and behaviour (live, Cancel restores); both dialogs' headers use
+`DialogSectionHeader`, styled like the settings categories. The list's PDF icon
+shows the `refreshPendingEdits` snapshot as a badge (on device / edited here) via
+`LibraryListViewModel.getAttachmentStates()`.
+
 This also starts the "attachment download/upload" slice of item 2: the upload half
 is now a self-contained pipeline inside the model, ready to move out with the
 download half.
