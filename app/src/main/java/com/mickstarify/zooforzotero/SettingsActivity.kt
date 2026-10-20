@@ -2,13 +2,18 @@ package com.mickstarify.zooforzotero
 
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -28,13 +33,19 @@ class SettingsActivity : AppCompatActivity() {
     lateinit var myPreferenceManager: PreferenceManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        // white status bar icons: the toolbar colour shows through the status bar
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings_activity)
         
         setupToolbar()
-        
+        // the toolbar's AppBarLayout takes the status bar; keep the list above the nav bar
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.settings)) { view, insets ->
+            view.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom)
+            insets
+        }
+
         supportFragmentManager
             .beginTransaction()
             .replace(R.id.settings, SettingsFragment())
