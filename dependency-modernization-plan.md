@@ -104,6 +104,10 @@ dialog's layout and behaviour (live, Cancel restores); both dialogs' headers use
 shows the `refreshPendingEdits` snapshot as a badge (on device / edited here) via
 `LibraryListViewModel.getAttachmentStates()`.
 
+Adding items removed (2026-10-20): the + menu (Zotero Save, ISBN scan), the
+`ACTION_SEND` share target, `CAMERA`, zxing, the getbase FAB library and the unused
+`ItemTemplate`/`ZoteroItemTemplates`. The sidebar has no header any more.
+
 This also starts the "attachment download/upload" slice of item 2: the upload half
 is now a self-contained pipeline inside the model, ready to move out with the
 download half.
@@ -123,8 +127,8 @@ Open, in priority order:
 
 ### 3. Minor dependency tidy-ups
 - Retrofit is pinned to 2.9.0; current is 2.11.x.
-- `com.getbase:floatingactionbutton:1.10.1` (2016, unmaintained) could be
-  replaced with the Material3 FAB already on the classpath.
+- ~~`com.getbase:floatingactionbutton`~~ and zxing: removed with adding items
+  (2026-10-20).
 - `oauth.signpost` drags in Apache HttpComponents; a long-term goal is an
   OkHttp-based OAuth flow.
 
