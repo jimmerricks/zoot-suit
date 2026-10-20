@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.PersistableBundle
@@ -34,8 +33,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.google.android.material.navigation.NavigationView
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
 import com.mickstarify.zooforzotero.AttachmentManager.AttachmentManager
 import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemAttachmentEntry
 import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemViewFragment
@@ -116,34 +113,6 @@ class LibraryActivity : AppCompatActivity(),
                 }
             }
         }
-
-        libraryListViewModel.getOnBarcodeScanButtonPressed().observe(this) {
-            if (!it) {
-                return@observe
-            }
-            handleBarcodeScanRequest()
-        }
-    }
-
-    private val barcodeLauncher = registerForActivityResult(
-        ScanContract()
-    ) {
-        if (it.contents != null) {
-            Log.i(TAG, "scanned barcode: ${it.contents}")
-            libraryListViewModel.scannedBarcodeNumber(it.contents)
-        } else {
-            Log.e(TAG, "error scanning barcode.")
-        }
-    }
-
-    private fun handleBarcodeScanRequest() {
-        barcodeLauncher.launch(ScanOptions().apply {
-            setDesiredBarcodeFormats(ScanOptions.EAN_13)
-            setPrompt("Scan a barcode")
-            setBarcodeImageEnabled(true)
-            setBeepEnabled(true)
-            setOrientationLocked(false)
-        })
     }
 
     private fun libraryLoadingScreenShown() {
@@ -670,7 +639,6 @@ class LibraryActivity : AppCompatActivity(),
         const val ACTION_FILTER =
             "com.mickstarify.zooforzotero.intent.action.LIBRARY_FILTER_INTENT"
         const val EXTRA_QUERY = "com.mickstarify.zooforzotero.intent.EXTRA_QUERY_TEXT"
-        private const val ACTIVITY_RESULT_REQUEST_BARCODE_SCANNER_CODE = 10
     }
 
     override fun deleteNote(note: Note) {
@@ -703,13 +671,6 @@ class LibraryActivity : AppCompatActivity(),
             R.id.libraryLoadingScreen -> AvailableScreens.LIBRARY_LOADING_SCREEN
             else -> throw (Exception("Unknown current screen ${navController.currentDestination}"))
         }
-    }
-
-    fun openZoteroSaveForQuery(query: String) {
-        val url = "https://www.zotero.org/save?q=$query"
-        val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse(url)
-        startActivity(intent)
     }
 
     // this  lets keyboard close when clicked in backgroud

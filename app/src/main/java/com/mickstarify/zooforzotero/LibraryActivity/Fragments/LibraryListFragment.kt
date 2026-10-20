@@ -3,8 +3,6 @@ package com.mickstarify.zooforzotero.LibraryActivity.Fragments
 import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -24,8 +22,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import com.getbase.floatingactionbutton.FloatingActionButton
-import com.getbase.floatingactionbutton.FloatingActionsMenu
 import com.mickstarify.zooforzotero.LibraryActivity.LibraryActivity
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.PreferenceManager
@@ -46,8 +42,6 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
     }
 
     private lateinit var viewModel: LibraryListViewModel
-
-    private lateinit var fab: FloatingActionsMenu
 
     @Inject
     lateinit var preferenceManager: PreferenceManager
@@ -157,30 +151,8 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
             swipeRefresh.isRefreshing = it
         }
 
-        fab = requireView().findViewById<FloatingActionsMenu>(R.id.fab_add_item)
-
-        val fabZoteroSave =
-            requireView().findViewById<FloatingActionButton>(R.id.fab_action_zotero_save)
-        fabZoteroSave.setOnClickListener {
-            val url = "https://www.zotero.org/save"
-            val intent = Intent(Intent.ACTION_VIEW)
-            intent.data = Uri.parse(url)
-            startActivity(intent)
-        }
-        val fabISBNScanner =
-            requireView().findViewById<FloatingActionButton>(R.id.fab_action_barcode_scanner)
-        fabISBNScanner.setOnClickListener {
-            viewModel.onBarcodeScanButtonPressed()
-        }
-        
-        // Handle window insets for FAB positioning
+        // keep the list above the navigation bar
         setupWindowInsets()
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        fab.collapse()
     }
 
     override fun onItemOpen(item: Item) {

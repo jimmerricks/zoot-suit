@@ -508,9 +508,6 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         libraryListViewModel.getOnLibraryRefreshRequested().observe(view) {
             this.requestLibraryRefresh()
         }
-        libraryListViewModel.getScannedBarcode().observe(view) { barcodeNo ->
-            view.openZoteroSaveForQuery(barcodeNo)
-        }
         libraryListViewModel.getLibraryFilterText().observe(view) {
             Log.d("zotero", "got filter text $it")
             filterEntries(it)

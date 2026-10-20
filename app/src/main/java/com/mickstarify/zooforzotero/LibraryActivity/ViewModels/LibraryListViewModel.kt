@@ -44,13 +44,6 @@ class LibraryListViewModel : ViewModel() {
         this.collectionClicked.value = collection
     }
 
-    private val scannedBarcode = MutableLiveData<String>()
-    fun scannedBarcodeNumber(barcodeNo: String) {
-        scannedBarcode.value = barcodeNo
-    }
-
-    fun getScannedBarcode(): LiveData<String> = scannedBarcode
-
     private val isShowingLoadingAnimation = MutableLiveData<Boolean>(false)
     fun setIsShowingLoadingAnimation(value: Boolean) {
         if (isShowingLoadingAnimation.value != value) {
@@ -76,11 +69,4 @@ class LibraryListViewModel : ViewModel() {
         }
     }
 
-    private val _onBarcodeScanButtonPressed = MutableLiveData<Boolean>(false)
-    fun onBarcodeScanButtonPressed() {
-        Log.d("zotero", "barcode scan button pressed")
-        _onBarcodeScanButtonPressed.value = true
-        _onBarcodeScanButtonPressed.value = false
-    }
-    fun getOnBarcodeScanButtonPressed(): LiveData<Boolean> = _onBarcodeScanButtonPressed
 }
