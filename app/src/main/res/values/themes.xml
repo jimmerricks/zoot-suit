@@ -12,4 +12,21 @@
         <item name="windowNoTitle">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- Every toolbar: white title, subtitle, navigation/overflow icons and search field on
+         the primary colour; the overflow menu itself stays light. -->
+    <style name="Widget.ZooForZotero.Toolbar" parent="Widget.MaterialComponents.Toolbar.Primary">
+        <item name="android:theme">@style/ThemeOverlay.ZooForZotero.Toolbar</item>
+        <item name="popupTheme">@style/ThemeOverlay.MaterialComponents.Light</item>
+        <item name="titleTextColor">@android:color/white</item>
+        <item name="subtitleTextColor">@android:color/white</item>
+    </style>
+
+    <style name="ThemeOverlay.ZooForZotero.Toolbar" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        <item name="colorControlNormal">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">@android:color/white</item>
+        <item name="android:textColorHint">#B3FFFFFF</item>
+        <item name="actionMenuTextColor">@android:color/white</item>
+    </style>
 </resources>
