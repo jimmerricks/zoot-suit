@@ -256,6 +256,10 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         view.showPendingEdits(count)
     }
 
+    override fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>) {
+        view.showAttachmentStates(onDevice, edited)
+    }
+
     override fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit) {
         view.chooseAttachmentsToUpload(labels, onUpload)
     }

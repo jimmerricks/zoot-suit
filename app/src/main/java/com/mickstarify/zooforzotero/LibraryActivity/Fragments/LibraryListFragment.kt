@@ -145,6 +145,11 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
             }
         }
 
+        viewModel.getAttachmentStates().observe(viewLifecycleOwner) { states ->
+            adapter.attachmentStates = states
+            adapter.notifyDataSetChanged()
+        }
+
         val swipeRefresh =
             requireView().findViewById<SwipeRefreshLayout>(R.id.library_swipe_refresh)
         swipeRefresh.setOnRefreshListener(this)

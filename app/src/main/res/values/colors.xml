@@ -5,4 +5,7 @@
     <color name="colorAccent">#C8102E</color>
     <color name="colorAccentPressed">#9E0C24</color>
     <color name="colorPrimaryPressed">#2B2350</color>
+    <!-- badges on the library list's PDF icon -->
+    <color name="attachmentOnDevice">#2E7D32</color>
+    <color name="attachmentEdited">#E65100</color>
 </resources>

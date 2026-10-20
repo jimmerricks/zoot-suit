@@ -41,6 +41,7 @@ import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemAttachmentEntry
 import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemViewFragment
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListener
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteView
+import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.AttachmentStates
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.SettingsActivity
@@ -336,6 +337,11 @@ class LibraryActivity : AppCompatActivity(),
         if (count == pendingEdits) return
         pendingEdits = count
         invalidateOptionsMenu()
+    }
+
+    /** Attachment keys whose file is on this device / has edits to sync, for the list's PDF icons. */
+    fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>) {
+        libraryListViewModel.setAttachmentStates(AttachmentStates(onDevice, edited))
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

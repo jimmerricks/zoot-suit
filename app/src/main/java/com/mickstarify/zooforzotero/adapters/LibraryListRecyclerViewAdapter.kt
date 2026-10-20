@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.LibraryActivity.ListEntry
+import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.AttachmentStates
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -18,6 +19,9 @@ class LibraryListRecyclerViewAdapter(
     var items: List<ListEntry>,
     val listener: LibraryListInteractionListener
 ) : RecyclerView.Adapter<LibraryListRecyclerViewAdapter.ListEntryViewHolder>() {
+    /** Which PDFs are on this device or edited here; badges the PDF icon. */
+    var attachmentStates = AttachmentStates(emptySet(), emptySet())
+
     class ListEntryViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView = view.findViewById<ImageView>(R.id.imageView_library_list_image)
         val textView_title = view.findViewById<TextView>(R.id.TextView_library_list_title)
@@ -51,6 +55,21 @@ class LibraryListRecyclerViewAdapter(
             val pdfAttachment = item.getPdfAttachment()
             if (pdfAttachment != null) {
                 holder.pdfImage.visibility = View.VISIBLE
+                val key = pdfAttachment.itemKey
+                when (key) {
+                    in attachmentStates.edited -> {
+                        holder.pdfImage.setImageResource(R.drawable.pdf_edited)
+                        holder.pdfImage.contentDescription = "PDF, edited here, waiting to sync"
+                    }
+                    in attachmentStates.onDevice -> {
+                        holder.pdfImage.setImageResource(R.drawable.pdf_on_device)
+                        holder.pdfImage.contentDescription = "PDF, on this device"
+                    }
+                    else -> {
+                        holder.pdfImage.setImageResource(R.drawable.pdf_24dp)
+                        holder.pdfImage.contentDescription = "PDF"
+                    }
+                }
                 holder.pdfImage.setOnClickListener {
                     Log.d("zotero", "Open Attachment ${item.getTitle()}")
                     listener.onItemAttachmentOpen(pdfAttachment)

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The library list's PDF icon with a badge in its lower right corner. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/pdf_24dp" />
+    <item
+        android:width="14dp"
+        android:height="14dp"
+        android:drawable="@drawable/badge_attachment_on_device"
+        android:gravity="bottom|end" />
+</layer-list>

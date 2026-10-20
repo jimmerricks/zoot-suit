@@ -789,8 +789,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     /**
      * Works out, off the main thread, which attachments are on the device and which have
-     * edits to sync; shows the edit count in the toolbar and redraws the list if the
-     * filter depends on either and they changed.
+     * edits to sync; shows the edit count in the toolbar and both on the list's PDF icons,
+     * and redraws the list if the filter depends on either and they changed.
      */
     fun refreshPendingEdits() {
         Single.fromCallable {
@@ -803,6 +803,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 onDeviceKeys = onDevice
                 editedKeys = edited
                 presenter.showPendingEdits(edited.size)
+                presenter.showAttachmentStates(onDevice, edited)
                 if (changed && libraryFilter.needsDeviceState) presenter.redisplayItems()
             }, { e ->
                 Log.e("zotero", "checking attachments on the device failed: $e")

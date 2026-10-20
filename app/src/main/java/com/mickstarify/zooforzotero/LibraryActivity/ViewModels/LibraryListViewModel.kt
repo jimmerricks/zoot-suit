@@ -8,6 +8,9 @@ import com.mickstarify.zooforzotero.LibraryActivity.ListEntry
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
+/** Attachment keys whose file is on this device, and those of them with edits to sync. */
+data class AttachmentStates(val onDevice: Set<String>, val edited: Set<String>)
+
 class LibraryListViewModel : ViewModel() {
     private val items = MutableLiveData<List<ListEntry>>()
 
@@ -15,6 +18,12 @@ class LibraryListViewModel : ViewModel() {
     fun setItems(items: List<ListEntry>) {
         Log.d("zotero", "Setting items ${items.size}")
         this.items.value = items
+    }
+
+    private val attachmentStates = MutableLiveData(AttachmentStates(emptySet(), emptySet()))
+    fun getAttachmentStates(): LiveData<AttachmentStates> = attachmentStates
+    fun setAttachmentStates(states: AttachmentStates) {
+        if (attachmentStates.value != states) attachmentStates.value = states
     }
 
     private val itemClicked = MutableLiveData<Item>()

@@ -42,6 +42,7 @@ interface Contract {
 
         fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit)
         fun showPendingEdits(count: Int)
+        fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>)
         fun showNote(note: Note)
         fun highlightMenuItem(state: LibraryModelState)
         fun showLoadingAlertDialog(message: String)
@@ -93,6 +94,7 @@ interface Contract {
         fun uploadAttachment(item: Item)
         fun uploadEditedAttachments()
         fun showPendingEdits(count: Int)
+        fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>)
         fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit)
         fun requestForceResync()
         fun backButtonPressed()
