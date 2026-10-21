@@ -5,4 +5,6 @@ interface DeleteItemListener {
     fun failedItemLocked()
     fun failedItemChangedSince()
     fun failed(code: Int)
+    /** No answer from Zotero (offline, timeout). */
+    fun failedNoConnection(e: Throwable)
 }

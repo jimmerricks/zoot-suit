@@ -708,6 +708,13 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                     "Zotero answered with an error (HTTP $code). Try again later."
                 ) {}
             }
+
+            override fun failedNoConnection(e: Throwable) {
+                presenter.createErrorAlert(
+                    "Couldn't delete the note",
+                    "Couldn't reach Zotero. Check your connection and try again."
+                ) {}
+            }
         })
     }
 

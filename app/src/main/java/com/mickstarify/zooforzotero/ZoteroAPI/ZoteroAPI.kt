@@ -344,6 +344,7 @@ class ZoteroAPI(
             }
 
             override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                listener.failedNoConnection(t)
             }
         })
     }
