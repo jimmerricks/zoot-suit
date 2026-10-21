@@ -26,11 +26,13 @@ def localSetting = { String key ->
 android {
     compileSdkVersion 36
     defaultConfig {
-        applicationId "com.mickstarify.zooforzotero"
+        // our own id (namespace and Kotlin packages keep upstream's): installs beside
+        // Zoo for Zotero rather than over it. Versioning restarts with the new id.
+        applicationId "nu.n4.zootsuit"
         minSdkVersion 24
         targetSdkVersion 36
-        versionCode 53
-        versionName "4.0.0"
+        versionCode 1
+        versionName "0.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "zotero_api_key", localSetting("zotero_api_key"))
         buildConfigField("String", "zotero_api_secret", localSetting("zotero_api_secret"))
@@ -38,6 +40,11 @@ android {
         buildConfigField("String", "crash_report_email", localSetting("crash_report_email"))
     }
     buildTypes {
+        // beside a release build on the same device: different keys can't update each other
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
