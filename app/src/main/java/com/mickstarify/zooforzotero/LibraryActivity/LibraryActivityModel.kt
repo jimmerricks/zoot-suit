@@ -1293,6 +1293,21 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         presenter.redisplayItems()
     }
 
+    fun isSyncing(): Boolean = syncManager.isSyncing()
+
+    /**
+     * Continues an item download that stopped partway (offline, or cut off by Doze while
+     * the display slept) from the page it reached, and returns true; false if there is
+     * none or a sync is running. Downloads only: the sync that stopped sent this device's
+     * edits when it started.
+     */
+    fun resumeInterruptedSync(): Boolean {
+        if (!isLoaded() || syncManager.isSyncing() || zoteroDB.getDownloadProgress() == null) return false
+        Log.d(TAG, "resuming the interrupted item download for ${zoteroDB.groupID}")
+        downloadLibrary(doRefresh = true, useSmallLoadingAnimation = false)
+        return true
+    }
+
     /** Gives [item] the fields left out at startup, before it is shown in full. */
     fun completeItem(item: Item) = zoteroDB.completeItem(item)
 

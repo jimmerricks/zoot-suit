@@ -84,6 +84,14 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             }
             groupLibrariesShown = groupsOn
         }
+        // A sync that ended while the activity was stopped (display asleep) couldn't leave
+        // the loading screen: navigation is refused once the activity has saved its state.
+        // One that was cut off partway (Doze took the network) continues from its page.
+        if (model.isLoaded() && !model.isSyncing() && !model.resumeInterruptedSync() &&
+            view.getCurrentScreen() == AvailableScreens.LIBRARY_LOADING_SCREEN
+        ) {
+            view.navController.navigate(R.id.libraryListFragment)
+        }
     }
 
     override fun showGroups() {
