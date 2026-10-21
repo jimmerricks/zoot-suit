@@ -4,7 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.mickstarify.zooforzotero.LibraryActivity.LibraryActivity
-import com.mickstarify.zooforzotero.SyncSetup.AuthenticationStorage
+import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
 import com.mickstarify.zooforzotero.SyncSetup.SyncSetupActivity
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        val auth = AuthenticationStorage(this)
+        val auth = AuthenticationStorageImpl(this)
         val intent = if (auth.hasCredentials()) {
             Intent(this, LibraryActivity::class.java)
         } else {

@@ -10,7 +10,7 @@ import android.os.Looper
 import android.util.Log
 import com.google.gson.JsonObject
 import com.mickstarify.zooforzotero.PreferenceManager
-import com.mickstarify.zooforzotero.SyncSetup.AuthenticationStorage
+import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
 import com.mickstarify.zooforzotero.ZoteroAPI.AlreadyUploadedException
 import io.reactivex.rxjava3.core.Single
 import com.mickstarify.zooforzotero.ZoteroAPI.RemoteAttachmentChangedException
@@ -1465,7 +1465,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         attachmentStorageManager = hiltEntryPoint.getAttachmentStorageManager()
         preferences = hiltEntryPoint.getPreferences()
 
-        val auth = AuthenticationStorage(context)
+        val auth = AuthenticationStorageImpl(context)
         // the initial (root) library state is seeded by LibraryNavigator's init.
 
         if (auth.hasCredentials()) {

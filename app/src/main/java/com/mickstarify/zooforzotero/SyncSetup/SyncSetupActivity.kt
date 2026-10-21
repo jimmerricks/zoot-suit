@@ -1,5 +1,6 @@
 package com.mickstarify.zooforzotero.SyncSetup
 
+import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -39,7 +40,7 @@ class SyncSetupActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // Check if sync is already set up and finish if it is
-        val auth = AuthenticationStorage(this)
+        val auth = AuthenticationStorageImpl(this)
         if (auth.hasCredentials()) {
             navigateToLibrary()
         }

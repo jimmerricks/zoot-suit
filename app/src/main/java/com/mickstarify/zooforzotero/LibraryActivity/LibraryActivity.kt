@@ -16,7 +16,7 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
-import com.mickstarify.zooforzotero.SyncSetup.AuthenticationStorage
+import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
 import com.mickstarify.zooforzotero.SyncSetup.SyncSetupActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
@@ -77,7 +77,7 @@ class LibraryActivity : AppCompatActivity(),
         // Without a stored login the library can't be built (LibraryActivityModel needs
         // the API key). MainActivity checks this, but the activity is also reachable
         // from recents or its exported filter intent after the login was removed.
-        if (!AuthenticationStorage(this).hasCredentials()) {
+        if (!AuthenticationStorageImpl(this).hasCredentials()) {
             startActivity(Intent(this, SyncSetupActivity::class.java))
             finish()
             return
