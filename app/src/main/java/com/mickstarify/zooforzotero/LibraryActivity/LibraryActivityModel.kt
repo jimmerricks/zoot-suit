@@ -316,14 +316,16 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         if (attachmentExists) {
             presenter.showLoadingAlertDialog("Checking for a newer version…")
             latestZoteroMd5(item)
+                .observeOn(Schedulers.io())
+                .map { latest -> Pair(latest, if (latest.isPresent) localCopyState(item) else null) }
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ latest ->
+                .subscribe({ (latest, local) ->
                     presenter.hideLoadingAlertDialog()
-                    if (!latest.isPresent) {
+                    if (!latest.isPresent || local == null) {
                         presenter.makeToastAlert("Offline: opening the copy on this device.")
                         openPDF(item)
                     } else {
-                        openLocalCopy(item, latest.get())
+                        openLocalCopy(item, latest.get(), local)
                     }
                 }, { e ->
                     presenter.hideLoadingAlertDialog()
@@ -369,15 +371,19 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return cm.activeNetworkInfo?.isConnected == true
     }
 
+    /** The local copy's md5 ("" if unreadable) and its base; hashes the file, so not on main. */
+    private data class LocalCopyState(val md5: String, val base: String?)
+
+    private fun localCopyState(item: Item) = LocalCopyState(
+        runCatching { attachmentStorageManager.calculateMd5(item) }.getOrDefault(""),
+        attachmentBase(item)
+    )
+
     /** Opens the local copy, first replacing it if Zotero's [latestMd5] moved on. */
-    private fun openLocalCopy(item: Item, latestMd5: String) {
+    private fun openLocalCopy(item: Item, latestMd5: String, local: LocalCopyState) {
         // Is the local copy based on Zotero's current version? See AttachmentOpenCheck.
-        val localMd5 = try {
-            attachmentStorageManager.calculateMd5(item)
-        } catch (e: Exception) {
-            ""
-        }
-        val base = attachmentBase(item)
+        val localMd5 = local.md5
+        val base = local.base
         when (AttachmentOpenCheck.decide(base, latestMd5, localMd5)) {
             AttachmentOpenCheck.Action.REDOWNLOAD -> {
                 presenter.makeToastAlert("Zotero has a newer version of this file. Downloading it.")
@@ -456,19 +462,21 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             return
         }
         latestZoteroMd5(item)
+            .observeOn(Schedulers.io())
+            .map { latest -> Pair(latest, if (latest.isPresent) localCopyState(item) else null) }
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ latest ->
-                if (latest.isPresent) {
-                    downloadIfOutdated(item, latest.get())
+            .subscribe({ (latest, local) ->
+                if (latest.isPresent && local != null) {
+                    downloadIfOutdated(item, latest.get(), local)
                 } else {
                     presenter.makeToastAlert("Offline: keeping the copy on this device.")
                 }
             }, { e -> Log.e("zotero", "checking for a newer version failed: $e") })
     }
 
-    private fun downloadIfOutdated(item: Item, latestMd5: String) {
-        val localMd5 = runCatching { attachmentStorageManager.calculateMd5(item) }.getOrDefault("")
-        when (AttachmentOpenCheck.decide(attachmentBase(item), latestMd5, localMd5)) {
+    private fun downloadIfOutdated(item: Item, latestMd5: String, local: LocalCopyState) {
+        val localMd5 = local.md5
+        when (AttachmentOpenCheck.decide(local.base, latestMd5, localMd5)) {
             AttachmentOpenCheck.Action.REDOWNLOAD -> {
                 attachmentStorageManager.deleteAttachment(item)
                 presenter.updateAttachmentDownloadProgress(0, -1)
@@ -510,28 +518,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 override fun onComplete() {
                     isDownloading = false
                     presenter.finishDownloadingAttachment()
-
-                    if (zoteroDB.hasMd5Key(item) && !attachmentStorageManager.validateMd5ForItem(
-                            item, zoteroDB.getMd5Key(item)
-                        )
-                    ) {
-                        Log.d("zotero", "md5 error on attachment ${zoteroDB.getMd5Key(item)}")
-                        presenter.createErrorAlert(
-                            "Download damaged",
-                            "The downloaded file doesn't match Zotero's checksum, so it was " +
-                                    "deleted. Try again.",
-                            {})
-                        attachmentStorageManager.deleteAttachment(item)
-                        return
-                    } else {
-                        recordBase(item, attachmentStorageManager.calculateMd5(item))
-                        refreshPendingEdits()
-                        if (openWhenDone) {
-                            openPDF(item)
-                        } else {
-                            presenter.makeToastAlert("Downloaded ${item.data["filename"] ?: item.getTitle()}.")
-                        }
-                    }
+                    verifyDownload(item, openWhenDone)
                 }
 
                 override fun onSubscribe(d: Disposable) {
@@ -573,6 +560,43 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             })
     }
 
+
+    /**
+     * Checks a finished download against Zotero's md5 and records it as the copy's base,
+     * hashing the file once, off the main thread; then opens it or says it's there.
+     */
+    private fun verifyDownload(item: Item, openWhenDone: Boolean) {
+        val expected = zoteroDB.getMd5Key(item)
+        Single.fromCallable {
+            val md5 = attachmentStorageManager.calculateMd5(item)
+            val intact = expected.isEmpty() || md5.equals(expected, ignoreCase = true)
+            if (intact) recordBase(item, md5)
+            intact
+        }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ intact ->
+                if (!intact) {
+                    Log.d("zotero", "md5 error on attachment $expected")
+                    attachmentStorageManager.deleteAttachment(item)
+                    presenter.createErrorAlert(
+                        "Download damaged",
+                        "The downloaded file doesn't match Zotero's checksum, so it was " +
+                                "deleted. Try again.",
+                        {})
+                    return@subscribe
+                }
+                refreshPendingEdits()
+                if (openWhenDone) {
+                    openPDF(item)
+                } else {
+                    presenter.makeToastAlert("Downloaded ${item.data["filename"] ?: item.getTitle()}.")
+                }
+            }, { e ->
+                Log.e("zotero", "checking the download of ${item.itemKey} failed: $e")
+                presenter.attachmentDownloadError("The downloaded file can't be read.\n\nDetails: ${e.message}")
+            })
+    }
 
     override fun cancelAttachmentDownload() {
         Log.d("zotero", "cancelling download")
@@ -1412,18 +1436,24 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             refreshPendingEdits()
             presenter.makeToastAlert("Deleted from this device: ${attachment.getTitle()}")
         }
-        val base = attachmentBase(attachment)
-        val edited = base != null &&
-                editFinder.currentMd5(attachment.itemKey)?.equals(base, ignoreCase = true) == false
-        if (edited) {
-            presenter.createYesNoPrompt(
-                "Delete your edits?",
-                "This copy has edits that haven't been uploaded. Deleting it loses them.",
-                "Delete", "Keep", delete, {}
-            )
-        } else {
-            delete()
+        Single.fromCallable {
+            val base = attachmentBase(attachment)
+            base != null &&
+                    editFinder.currentMd5(attachment.itemKey)?.equals(base, ignoreCase = true) == false
         }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ edited ->
+                if (edited) {
+                    presenter.createYesNoPrompt(
+                        "Delete your edits?",
+                        "This copy has edits that haven't been uploaded. Deleting it loses them.",
+                        "Delete", "Keep", delete, {}
+                    )
+                } else {
+                    delete()
+                }
+            }, { e -> Log.e("zotero", "checking ${attachment.itemKey} for edits failed: $e") })
     }
 
     init {

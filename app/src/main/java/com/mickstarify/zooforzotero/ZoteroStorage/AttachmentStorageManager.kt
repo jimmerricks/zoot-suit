@@ -11,7 +11,6 @@ import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
-import okhttp3.internal.toHexString
 import okio.buffer
 import okio.sink
 import okio.source
@@ -59,21 +58,6 @@ class AttachmentStorageManager @Inject constructor(
 
     fun getFilenameForItem(item: Item): String {
         return item.data.get("filename") ?: "unknown.pdf"
-    }
-
-    fun validateMd5ForItem(
-        item: Item,
-        md5Key: String
-    ): Boolean {
-        if (item.itemType != Item.ATTACHMENT_TYPE) {
-            throw (Exception("error invalid item ${item.itemKey}: ${item.itemType} cannot calculate md5."))
-        }
-        if (md5Key == "") {
-            Log.d("zotero", "error cannot check MD5, no MD5 Available")
-            return true
-        }
-        val calculatedMd5Key = calculateMd5(item)
-        return (calculatedMd5Key == md5Key)
     }
 
     fun checkIfAttachmentExists(item: Item, checkMd5: Boolean = true): Boolean {
@@ -133,26 +117,19 @@ class AttachmentStorageManager @Inject constructor(
         return calculateMd5(attachmentInputStream)
     }
 
+    /** Lower-case hex md5 of the stream, which it closes. Reads it all: not on the main thread. */
     fun calculateMd5(inputStream: InputStream): String {
-        val buffer = ByteArray(1024)
-        val complete: MessageDigest = MessageDigest.getInstance("MD5")
-        var numRead: Int
-
-        do {
-            numRead = inputStream.read(buffer)
-            if (numRead > 0) {
-                complete.update(buffer, 0, numRead)
+        val digest = MessageDigest.getInstance("MD5")
+        inputStream.use { stream ->
+            // 64 KB: through a Custom Path folder each read is a binder call
+            val buffer = ByteArray(65536)
+            while (true) {
+                val n = stream.read(buffer)
+                if (n < 0) break
+                digest.update(buffer, 0, n)
             }
-        } while (numRead != -1)
-
-        inputStream.close()
-        var result = ""
-        val checksumByteArray = complete.digest()
-        for (i in 0 until checksumByteArray.size) {
-            result += ((checksumByteArray.get(i).toInt() and 0xff) + 0x100).toHexString()
-                .substring(1)
         }
-        return result
+        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
     }
 
     fun getItemOutputStream(item: Item): OutputStream {
