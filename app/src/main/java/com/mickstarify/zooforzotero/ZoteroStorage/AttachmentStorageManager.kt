@@ -171,7 +171,9 @@ class AttachmentStorageManager @Inject constructor(
             if (itemFile == null || !itemFile.exists()) {
                 itemFile = directory.createFile(mimeType, filename)
             }
-            return context.contentResolver.openOutputStream(itemFile!!.uri)!!
+            // "wt", not the default "w": on several providers "w" doesn't truncate, so a
+            // smaller file written over a larger one kept the old tail (and failed its md5)
+            return context.contentResolver.openOutputStream(itemFile!!.uri, "wt")!!
         }
         throw Exception("not implemented")
     }
