@@ -6,7 +6,6 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
-import android.os.Handler
 import android.os.PersistableBundle
 import android.util.Log
 import android.view.Menu
@@ -17,6 +16,7 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -73,6 +73,20 @@ class LibraryActivity : AppCompatActivity(),
         super.onCreate(savedInstanceState)
         
         setContentView(R.layout.activity_library)
+
+        // Back closes the sidebar, else steps back through the library (Back twice at
+        // the top exits). A callback rather than onBackPressed(): with targetSdk 36,
+        // Android 16 no longer calls onBackPressed() and Back would just close the app.
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val drawer = findViewById<DrawerLayout>(R.id.drawerlayout_library)
+                if (drawer.isDrawerOpen(GravityCompat.START)) {
+                    drawer.closeDrawer(GravityCompat.START)
+                } else {
+                    presenter.backButtonPressed()
+                }
+            }
+        })
 
         setupToolbar()
 
@@ -245,7 +259,7 @@ class LibraryActivity : AppCompatActivity(),
             }
 
             android.R.id.home -> {
-                onBackPressed()
+                onBackPressedDispatcher.onBackPressed()
             }
 
         }
@@ -540,17 +554,6 @@ class LibraryActivity : AppCompatActivity(),
 
     override fun onNoteDelete(note: Note) {
         presenter.deleteNote(note)
-    }
-
-    private var doubleBackToExitPressedOnce = false
-    override fun onBackPressed() {
-        val drawer = findViewById<DrawerLayout>(R.id.drawerlayout_library)
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START)
-            return
-        }
-        presenter.backButtonPressed()
-        Handler().postDelayed(Runnable { doubleBackToExitPressedOnce = false }, 2000)
     }
 
     companion object {

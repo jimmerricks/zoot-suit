@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.google.gson.JsonObject
 import com.mickstarify.zooforzotero.PreferenceManager
@@ -1398,7 +1399,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
             this.doubleBackToExitPressedOnce = true
             presenter.makeToastAlert("Press Back again to exit.")
-            Handler().postDelayed(Runnable { doubleBackToExitPressedOnce = false }, 2000)
+            Handler(Looper.getMainLooper()).postDelayed({ doubleBackToExitPressedOnce = false }, 2000)
             return
         }
         val oldState = states.peek()
