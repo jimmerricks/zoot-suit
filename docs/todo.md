@@ -4,8 +4,8 @@ Release identity: see `release-identity.md`. Test environment:
 `../../.claude/reference/test-environment.md`.
 
 ## Before release
-- **Push and publish** (Jim's go-ahead): push `master` to `origin`, turn on GitHub
-  Pages (root of `master`) and issues, attach the release-signed APK to a release.
+- ~~Push and publish~~: `master` pushed, Pages (root of `master`) and issues on,
+  v0.1.0 released with the release-signed APK (2026-10-21).
 - **OAuth sign-in end to end**: request token and login page work on API 24; finishing
   needs the scratch account's password (see release-identity.md §1).
 - **Android 16**: Back moved to `OnBackPressedCallback` (`4771fd2`). With targetSdk 36,

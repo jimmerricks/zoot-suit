@@ -15,7 +15,9 @@ by Michael Johnston, forked at v4.0.0 (commit `0261040`) in October 2026.
 
 Early test releases. Tested on Android 7.0 (Samsung Galaxy Tab S2) and Android 14,
 with attachments stored on WebDAV. Zotero File Storage works but has had less testing.
-Android 15 and 16 have not been tested yet.
+Android 16 has been checked on an emulator (library, search, filter, sort, sync);
+Android 15 not yet. Signing in with an API key is tested; signing in with your Zotero
+account (OAuth) has not been tested to the end yet.
 
 ## Install
 
@@ -37,8 +39,11 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
 
 - Browse and search your library and group libraries, online or offline.
 - Sidebar with the full collection tree; each group has its own collections.
-- One filter for tags, PDFs, notes, files on the device and unsynced edits. Filter
-  and sort are kept per library.
+- Search titles, creators and years, or the fields you choose (publication, abstract,
+  tags, notes, other fields); every word must match, accents are ignored.
+- One filter for tags, PDFs, notes, files on the device and unsynced edits. Search and
+  filter narrow the list on screen and clear when you open another collection, or stay
+  (for each library) if you choose so in Settings. Sort is kept per library.
 - Edit any number of PDFs, online or offline. The next sync uploads them, then
   downloads what changed elsewhere.
 - Detects edits to every downloaded file, not just files opened through the app.
@@ -48,6 +53,8 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
   local copy.
 - Create, edit and delete notes.
 - Works on Android 7 with Let's Encrypt servers (the root certificate is bundled).
+- A first sync of a large library keeps the display on while it downloads, and picks up
+  where it stopped if the device slept anyway.
 
 ## Known limitations
 
@@ -65,6 +72,7 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
 | Edit detection | Files opened through the app | Every downloaded file |
 | Opening a PDF | Uses the version from the last library sync | Fetches the latest version first when online |
 | Upload | Overwrites the server copy | Checks for a newer server version first |
+| Search | Every field, on each keystroke | Chosen fields (title, creators, year by default), indexed; runs on Search |
 | Filtering | One tag at a time | Several tags plus attachment and edit filters |
 | Sidebar | Top-level collections; groups in a flat list | Collection tree; groups with their own collections |
 | Rotation and restart | Reloads the library; restarts in My Library | Keeps your place |
