@@ -55,10 +55,17 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         view.hideAttachmentUploadProgress()
     }
 
+    // the setting as the list last showed it; Settings is another activity
+    private var subcollectionItemsShown: Boolean? = null
+
     override fun onResume() {
         if (model.isLoaded()) {
             model.checkAttachmentStorageAccess()
             model.refreshPendingEdits()
+            val shown = subcollectionItemsShown
+            if (shown != null && shown != model.preferences.showSubcollectionItems()) {
+                redisplayItems()
+            }
         }
     }
 
@@ -424,6 +431,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             return
         }
         Log.d("zotero", "Got request to change collection to ${collectionKey}")
+        subcollectionItemsShown = model.preferences.showSubcollectionItems()
         model.startListUpdate()
         model.setCurrentCollection(collectionKey)
         if (collectionKey == "all" && !model.isUsingGroups()) {

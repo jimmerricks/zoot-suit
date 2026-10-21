@@ -104,6 +104,10 @@ class PreferenceManager @Inject constructor(context: Context) {
             .putStringSet("sidebar_expanded_collections_$groupId", HashSet(keys)).apply()
     }
 
+    /** Like Zotero's View → "Show Items from Subcollections"; off by default, as there. */
+    fun showSubcollectionItems(): Boolean =
+        sharedPreferences.getBoolean("show_subcollection_items", false)
+
     /** Whether the sidebar's Group Libraries heading is open. */
     fun isSidebarGroupsExpanded(): Boolean =
         sharedPreferences.getBoolean("sidebar_groups_expanded", true)

@@ -208,8 +208,14 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return filteredItems
     }
 
+    /** A collection's items; with the setting on, also its subcollections' (each item once). */
     override fun getItemsFromCollection(collectionKey: String): List<Item> {
-        val items = zoteroDB.getItemsFromCollection(collectionKey)
+        val items = if (preferences.showSubcollectionItems()) {
+            CollectionTree(getCollections())
+                .itemsIncludingSubcollections(collectionKey, zoteroDB::getItemsFromCollection)
+        } else {
+            zoteroDB.getItemsFromCollection(collectionKey)
+        }
         Log.d(TAG, "getItemsFromCollection($collectionKey) - got ${items.size} items from zoteroDB")
         val filteredItems = filterItems(items)
         Log.d(TAG, "getItemsFromCollection($collectionKey) - after filtering: ${filteredItems.size} items")
