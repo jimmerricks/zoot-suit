@@ -22,7 +22,9 @@ class SearchResultsActivity : AppCompatActivity() {
         if (intent.action == Intent.ACTION_SEARCH) {
             val query = intent.getStringExtra(SearchManager.QUERY)
             Log.d(packageName, "got query $query")
-            val myIntent = Intent(LibraryActivity.ACTION_FILTER)
+            // explicit: another app declaring the same action must not receive the query
+            val myIntent = Intent(this, LibraryActivity::class.java)
+                .setAction(LibraryActivity.ACTION_FILTER)
             myIntent.putExtra(LibraryActivity.EXTRA_QUERY, query)
             myIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
             startActivity(myIntent)

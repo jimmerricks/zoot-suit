@@ -69,15 +69,10 @@
             android:label="@string/title_activity_library"
             android:launchMode="singleInstance"
             android:theme="@style/Theme.ZooForZotero.NoActionBar"
-            android:exported="true">
+            android:exported="false">
             <meta-data
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
-
-            <intent-filter>
-                <action android:name="com.mickstarify.zooforzotero.intent.action.LIBRARY_FILTER_INTENT" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".SyncSetup.SyncSetupActivity"
