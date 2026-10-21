@@ -91,6 +91,22 @@ fun ZoteroTheme(
         content = content
     )
 }
+/**
+ * Status bar icons for a screen: [dark] over a light background without a top bar,
+ * otherwise white (ZoteroTheme's default, for the indigo top bar). Each screen sets its
+ * own: during a navigation transition both screens are composed, so restoring on
+ * dispose could undo the new screen's choice.
+ */
+@Composable
+fun StatusBarIcons(dark: Boolean) {
+    val view = LocalView.current
+    if (view.isInEditMode) return
+    SideEffect {
+        val window = (view.context as Activity).window
+        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = dark
+    }
+}
+
 /** The app's toolbar look (Widget.ZooForZotero.Toolbar): indigo with white title and icons. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

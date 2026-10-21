@@ -1,5 +1,6 @@
 package com.mickstarify.zooforzotero.SyncSetup.ui
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -18,6 +19,7 @@ import com.mickstarify.zooforzotero.SyncSetup.ui.screens.SyncSetupLandingScreen
 import com.mickstarify.zooforzotero.SyncSetup.ui.screens.SyncSetupWebViewScreen
 import com.mickstarify.zooforzotero.SyncSetup.viewmodels.SyncSetupViewModel
 import com.mickstarify.zooforzotero.common.provides
+import com.mickstarify.zooforzotero.ui.theme.StatusBarIcons
 import com.mickstarify.zooforzotero.ui.theme.ZoteroTheme
 
 // Navigation Routes
@@ -61,7 +63,9 @@ fun SyncSetupScreen(
             startDestination = SyncSetupRoutes.LANDING,
             modifier = Modifier.padding(paddingValues)
         ) {
+            // landing and API key screens have no top bar: dark icons on the light page
             composable(SyncSetupRoutes.LANDING) {
+                StatusBarIcons(dark = !isSystemInDarkTheme())
                 SyncSetupLandingScreen(
                     state = state,
                     onEvent = dispatch
@@ -69,6 +73,7 @@ fun SyncSetupScreen(
             }
 
             composable(SyncSetupRoutes.WEBVIEW_AUTH) {
+                StatusBarIcons(dark = false)
                 SyncSetupWebViewScreen(
                     onNavigateBack = {
                         navController.popBackStack()
@@ -80,6 +85,7 @@ fun SyncSetupScreen(
             }
 
             composable(SyncSetupRoutes.API_KEY_ENTRY) {
+                StatusBarIcons(dark = !isSystemInDarkTheme())
                 SyncSetupApiKeyScreen(
                     onNavigateBack = {
                         navController.popBackStack()
