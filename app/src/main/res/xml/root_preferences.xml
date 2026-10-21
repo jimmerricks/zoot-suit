@@ -38,7 +38,8 @@
         <SwitchPreference
             android:defaultValue="true"
             android:key="attachments_uploading_enabled"
-            android:title="Offer to upload attachments" />
+            android:summary="PDFs you annotate on this device are uploaded to Zotero when you sync (My Library only)"
+            android:title="Upload edited attachments" />
 
         <SwitchPreference
             android:defaultValue="false"
@@ -49,7 +50,7 @@
         <SwitchPreference
             android:defaultValue="true"
             android:key="webdav_backup_before_upload"
-            android:summary="Before an annotated file replaces the one on your WebDAV server, keep a copy of the old one in zotero-backup next to the zotero folder. Zotero keeps no file history, so this is the only way to undo. Delete old copies there by hand."
+            android:summary="Before an upload replaces a file on your WebDAV server, keep the old one in zotero-backup next to the zotero folder. Zotero keeps no file history, so this is your only undo. Old copies are not deleted for you."
             android:title="Back up files before uploading (WebDAV)" />
 
     </PreferenceCategory>
@@ -64,37 +65,37 @@
         <SwitchPreference
             android:defaultValue="true"
             android:key="should_live_search"
-            android:summary="Turn off if your search is too slow"
+            android:summary="Turn off if searching is slow"
             android:title="Search as you type" />
         <SwitchPreference
             android:defaultValue="false"
             android:key="check_md5sum_before_attachment_open"
-            android:summary="Enabling this may slow down the opening of large attachments"
-            android:title="Verify attachment integrity before opening" />
+            android:summary="Compare a file with Zotero's checksum before opening it. Slower for large files."
+            android:title="Check files before opening" />
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Web DAV">
+    <PreferenceCategory android:title="WebDAV">
         <SwitchPreference
             android:defaultValue="false"
             android:enabled="true"
             app:enabled="true"
             android:key="use_webdav"
-            android:title="Use webdav to access attachments" />
+            android:title="Use WebDAV for attachments" />
 
         <Preference
             android:enabled="true"
             android:key="configure_webdav"
-            android:title="Configure Webdav" />
+            android:title="WebDAV server" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Advanced">
         <EditTextPreference
             android:enabled="true"
             android:key="http_write_timeout"
-            android:title="HTTP Upload timeout (ms)"
+            android:title="Upload timeout (ms)"
             android:defaultValue="60000"
-            android:summary="This is the amount of time to wait for an upload to complete before timing out. Use 0 for indefinite."
+            android:summary="How long an upload may take before it is given up. 0 waits forever."
             android:inputType="number" />
 <!--        <Preference-->
 <!--            android:enabled="true"-->

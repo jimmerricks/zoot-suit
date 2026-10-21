@@ -139,11 +139,11 @@ class WebDAVSetup : AppCompatActivity() {
         try {
             connectTimeout = textInputLayout_connectTimeout.editText!!.text.toString().toLong()
             if (connectTimeout < 0) {
-                throw(NumberFormatException("Must be positive"))
+                throw(NumberFormatException())
             }
         } catch (e: NumberFormatException) {
-            textInputLayout_connectTimeout.error = "Error invalid number. ${e.message}"
-            Toast.makeText(this, "Error invalid config.", Toast.LENGTH_SHORT).show()
+            textInputLayout_connectTimeout.error = "Enter a whole number of milliseconds, 0 or more."
+            Toast.makeText(this, "Check the highlighted field.", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -151,11 +151,11 @@ class WebDAVSetup : AppCompatActivity() {
         try {
             readTimeout = textInputLayout_readTimeout.editText!!.text.toString().toLong()
             if (readTimeout < 0L) {
-                throw(NumberFormatException("Must be positive"))
+                throw(NumberFormatException())
             }
         } catch (e: NumberFormatException) {
-            textInputLayout_readTimeout.error = "Error invalid number. ${e.message}"
-            Toast.makeText(this, "Error invalid config.", Toast.LENGTH_SHORT).show()
+            textInputLayout_readTimeout.error = "Enter a whole number of milliseconds, 0 or more."
+            Toast.makeText(this, "Check the highlighted field.", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -163,11 +163,11 @@ class WebDAVSetup : AppCompatActivity() {
         try {
             writeTimeout = textInputLayout_writeTimeout.editText!!.text.toString().toLong()
             if (writeTimeout < 0) {
-                throw(NumberFormatException("Must be positive"))
+                throw(NumberFormatException())
             }
         } catch (e: NumberFormatException) {
-            textInputLayout_writeTimeout.error = "Error invalid number. ${e.message}"
-            Toast.makeText(this, "Error invalid config.", Toast.LENGTH_SHORT).show()
+            textInputLayout_writeTimeout.error = "Enter a whole number of milliseconds, 0 or more."
+            Toast.makeText(this, "Check the highlighted field.", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -265,7 +265,7 @@ class WebDAVSetup : AppCompatActivity() {
                 }
 
                 override fun onError(e: Throwable) {
-                    notifyFailed("Error setting up webdav, message: $e")
+                    notifyFailed("Check the address, username and password.\n\nDetails: ${e.message ?: e}")
                     hideProgressDialog()
                 }
 
@@ -277,8 +277,8 @@ class WebDAVSetup : AppCompatActivity() {
         if (progressDialog == null) {
             progressDialog = ProgressDialog(this)
         }
-        progressDialog?.setTitle("Connecting to WebDAV Server")
-        progressDialog?.setMessage("We are testing your connection to the WebDAV Server.")
+        progressDialog?.setTitle("Connecting")
+        progressDialog?.setMessage("Testing the connection to your WebDAV server…")
         progressDialog?.isIndeterminate = true
         progressDialog?.show()
     }
@@ -290,23 +290,22 @@ class WebDAVSetup : AppCompatActivity() {
 
     fun notifyFailed(message: String = "") {
         val alertDialog = AlertDialog.Builder(this)
-        alertDialog.setTitle("Error connecting to webDAV server")
+        alertDialog.setTitle("Couldn't connect to the WebDAV server")
         if (message == "") {
             alertDialog.setMessage(
-                "There was an error connecting to the webDAV server." +
-                        "Please verify the address, username and password."
+                "Check the address, username and password."
             )
         } else {
             alertDialog.setMessage(message)
         }
-        alertDialog.setPositiveButton("Ok") { _, _ -> {} }
+        alertDialog.setPositiveButton("OK") { _, _ -> {} }
         alertDialog.show()
     }
 
     fun setWebDAVAuthentication(address: String, username: String, password: String) {
         preferenceManager.setWebDAVAuthentication(address, username, password)
         preferenceManager.setWebDAVEnabled(true)
-        Toast.makeText(this, "Successfully added WebDAV.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "WebDAV server connected.", Toast.LENGTH_SHORT).show()
     }
 
     fun destroyWebDAVAuthentication() {

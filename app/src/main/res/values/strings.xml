@@ -7,57 +7,39 @@
         <item quantity="one">%d edit to sync</item>
         <item quantity="other">%d edits to sync</item>
     </plurals>
-    <string name="title_activity_sync_setup">Sync Setup</string>
-    <string name="title_activity_zotero_api_setup">Zotero API</string>
+    <string name="title_activity_sync_setup">Sign in</string>
     <string name="title_activity_library">Loading</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="title_activity_item">ItemActivity</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="search_title">Search</string>
     <string name="search_hint">Search</string>
     <string name="title_activity_settings">Settings</string>
 
-    <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
-
-    <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
-
-    <!-- Sync Preferences -->
     <string name="settings">Settings</string>
-    <string name="sync_method">Sync Method</string>
+    <string name="sync_method">Sync method</string>
     <string name="syncing_header">Syncing</string>
     <string name="title">Title</string>
     <string name="author">Author</string>
     <string name="library_header">Library</string>
-    <string name="unfiled_items">Unfiled Items</string>
-    <string name="title_activity_web_davsetup">WebDAV Setup</string>
-    <string name="loading_library_text">Loading your library</string>
-    <string name="setting_sync_attachments_location">Attachments Location</string>
-    <string name="title_activity_attachment_manager">Attachment Downloader</string>
+    <string name="title_activity_web_davsetup">WebDAV</string>
+    <string name="setting_sync_attachments_location">Attachment folder</string>
+    <string name="title_activity_attachment_manager">Attachment Manager</string>
     <string name="attachment_manager">Attachment Manager</string>
-    <string name="setup_webdav">Setup WebDAV</string>
-    <string name="loading_your_library">Loading your library</string>
     <string name="filter">Filter</string>
-    <string name="force_resync">Force Resync</string>
+    <string name="force_resync">Re-download library</string>
     <string name="app_frontpage_disclaimer">You must use the official Zotero Account syncing to use this app.</string>
     <string name="proceed">Proceed</string>
     <string name="enter_your_zotero_api_key_manually">Enter your Zotero API Key Manually</string>
     <string name="zotero_account_sync">Zotero Account Sync</string>
     <string name="pick_your_cloud_storage_provider">Pick your cloud storage provider</string>
     <string name="clear_filter">Clear filter</string>
-    <string name="surname">Surname</string>
-    <string name="firstname">First Name</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
-    <string name="host_url">Host URL</string>
-    <string name="webdav_config_title">Webdav Server Configuration</string>
-    <string name="advanced_configuration">Advanced Configuration</string>
-    <string name="connect">Connect</string>
-    <string name="save_connect">Save and Connect</string>
+    <string name="host_url">Server address</string>
+    <string name="webdav_config_title">WebDAV server</string>
+    <string name="advanced_configuration">Advanced</string>
+    <string name="save_connect">Save and connect</string>
     
     <!-- API Key Setup -->
     <string name="api_key_instructions_title">How to get your API key</string>

@@ -276,7 +276,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             } catch (e: IllegalArgumentException) {
                 presenter.createErrorAlert("Couldn't open the file",
                     "Android refused access to the file. This is a known problem on Huawei " +
-                            "devices: in Settings, set Attachments Location to Custom Path.",
+                            "devices: in Settings, set Attachment folder to Custom Path.",
                     {})
             } catch (e: FileNotFoundException) {
                 presenter.createErrorAlert("File not found",
@@ -888,7 +888,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             return
         }
         if (!preferences.isAttachmentUploadingEnabled()) {
-            presenter.makeToastAlert("Uploading is off. Turn on “Offer to upload attachments” in Settings.")
+            presenter.makeToastAlert("Uploading is off. Turn on “Upload edited attachments” in Settings.")
             return
         }
         Single.fromCallable {
@@ -1239,7 +1239,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             Log.e("zotero", "error testing storage. ${e}")
             presenter.createErrorAlert(
                 "Can't use the attachment folder",
-                "The app can't access the folder set in Settings → Attachments Location, so " +
+                "The app can't access the folder set in Settings → Attachment folder, so " +
                         "it's back to the default. Choose the folder again in Settings.",
                 {})
             preferences.useExternalCache()

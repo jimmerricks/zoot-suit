@@ -138,7 +138,7 @@
                             <com.google.android.material.textfield.TextInputEditText
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:hint="Connect Timeout (ms)" />
+                                android:hint="Connect timeout (ms)" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <com.google.android.material.textfield.TextInputLayout
@@ -152,7 +152,7 @@
                             <com.google.android.material.textfield.TextInputEditText
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:hint="Read Timeout (ms)" />
+                                android:hint="Read timeout (ms)" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <com.google.android.material.textfield.TextInputLayout
@@ -167,7 +167,7 @@
                             <com.google.android.material.textfield.TextInputEditText
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:hint="Write Timeout (ms)" />
+                                android:hint="Write timeout (ms)" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <CheckBox
@@ -175,7 +175,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:checked="true"
-                            android:text="Verify SSL Certificate" />
+                            android:text="Verify the server's certificate" />
 
                         <CheckBox
                             android:id="@+id/checkBox_add_zotero_host"
@@ -183,14 +183,14 @@
                             android:layout_height="wrap_content"
                             android:checked="true"
                             android:clickable="true"
-                            android:text="Automatically format URL with /zotero and HTTPS" />
+                            android:text="Add https:// and /zotero to the address" />
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/TextInputLayout_webdav_auth_mode"
                             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="Auth Method">
+                            android:hint="Authentication">
 
                             <AutoCompleteTextView
                                 android:layout_width="match_parent"
@@ -204,7 +204,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Change this if you are having difficulty logging in to your webdav server." />
+                            android:text="Change this only if signing in fails." />
                     </LinearLayout>
 
                 </androidx.constraintlayout.widget.ConstraintLayout>

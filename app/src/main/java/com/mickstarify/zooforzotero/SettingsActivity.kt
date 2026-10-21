@@ -84,7 +84,7 @@ class SettingsActivity : AppCompatActivity() {
                 val value = newValue.toString()
                 val isValid = value.matches(Regex("\\d+")) // Match only non-negative integers
                 if (!isValid) {
-                    Toast.makeText(context, "Please enter a valid non-negative integer", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Enter a whole number of milliseconds, 0 or more.", Toast.LENGTH_SHORT).show()
                 }
                 isValid
             }
@@ -132,7 +132,7 @@ class SettingsActivity : AppCompatActivity() {
                 }
                 "use_webdav" -> {
                     if (sharedPreferences?.getBoolean("use_webdav", false) == true && !(requireActivity() as SettingsActivity).myPreferenceManager.isWebDAVConfigured()) {
-                        Toast.makeText(requireContext(), "Please configure webdav first", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Set up the WebDAV server first.", Toast.LENGTH_SHORT).show()
                         sharedPreferences.edit().putBoolean("use_webdav", false).apply()
                         (requireActivity() as SettingsActivity).updateWebDAVPreferenceUI(false)
                     }
