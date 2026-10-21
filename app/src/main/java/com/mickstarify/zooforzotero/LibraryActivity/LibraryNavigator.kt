@@ -24,22 +24,36 @@ class LibraryNavigator {
     }
 
     /**
-     * Pushes a new state for [collectionName]. The current group is carried
-     * over unless [usePersonalLibrary] is true; the filter (e.g. a tag view)
-     * is not, since opening a collection leaves it. Does nothing (and returns
-     * false) if we are already viewing that collection unfiltered; re-opening
-     * the collection under a filter pushes an unfiltered state, so Back
-     * returns to the filtered view.
+     * Pushes a new state for [collectionName] in the current library (My Library or a
+     * group); the filter (e.g. a tag view) is not carried, since opening a collection
+     * leaves it. Does nothing (and returns false) if we are already viewing that
+     * collection unfiltered; re-opening the collection under a filter pushes an
+     * unfiltered state, so Back returns to the filtered view.
      */
-    fun setCollection(collectionName: String, usePersonalLibrary: Boolean = true): Boolean {
+    fun setCollection(collectionName: String): Boolean {
         if (current.currentCollection == collectionName && current.filterText == "") {
             return false
         }
         val newState = LibraryModelState()
-        if (!usePersonalLibrary) {
-            newState.currentGroup = current.currentGroup
-        }
+        newState.currentGroup = current.currentGroup
         newState.currentCollection = collectionName
+        states.push(newState)
+        return true
+    }
+
+    /**
+     * Pushes the top of a library: My Library's "all" when [group] is null, else the
+     * group's "group_all". Returns false if that is already what's shown, unfiltered.
+     */
+    fun openLibrary(group: GroupInfo?): Boolean {
+        val newState = LibraryModelState()
+        if (group != null) newState.currentGroup = group
+        newState.currentCollection = if (group != null) GROUP_ALL else ALL
+        if (current.currentGroup.id == newState.currentGroup.id &&
+            current.currentCollection == newState.currentCollection && current.filterText == ""
+        ) {
+            return false
+        }
         states.push(newState)
         return true
     }
@@ -49,4 +63,9 @@ class LibraryNavigator {
     fun isUsingGroup(): Boolean = current.isUsingGroup()
 
     fun currentGroup(): GroupInfo = current.currentGroup
+
+    companion object {
+        const val ALL = "all"
+        const val GROUP_ALL = "group_all"
+    }
 }

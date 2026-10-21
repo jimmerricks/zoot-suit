@@ -30,11 +30,17 @@
 
     </LinearLayout>
 
-    <com.google.android.material.navigation.NavigationView
-            android:id="@+id/nav_view_library"
-            android:layout_width="wrap_content"
+    <!-- the sidebar: libraries, the collection tree, Unfiled / My Publications / Trash
+         (SidebarAdapter). A RecyclerView because a NavigationView menu can't nest. -->
+    <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/sidebar"
+            android:layout_width="320dp"
             android:layout_height="match_parent"
             android:layout_gravity="start"
-            app:menu="@menu/activity_library_drawer"
-            android:fitsSystemWindows="true"/>
+            android:background="?android:attr/colorBackground"
+            android:clipToPadding="false"
+            android:fitsSystemWindows="true"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:scrollbars="vertical"/>
 </androidx.drawerlayout.widget.DrawerLayout>

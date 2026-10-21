@@ -9,9 +9,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.PersistableBundle
 import android.util.Log
-import android.util.SparseArray
 import android.view.Menu
-import android.view.SubMenu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.WindowManager
@@ -27,12 +25,12 @@ import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.getSystemService
 import androidx.core.view.GravityCompat
-import androidx.core.view.iterator
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
-import com.google.android.material.navigation.NavigationView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.AttachmentManager.AttachmentManager
 import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemAttachmentEntry
 import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemViewFragment
@@ -43,8 +41,6 @@ import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewMo
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.SettingsActivity
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import dagger.hilt.android.AndroidEntryPoint
@@ -53,26 +49,16 @@ private const val TAG = "LibraryActivity"
 
 @AndroidEntryPoint
 class LibraryActivity : AppCompatActivity(),
-    NavigationView.OnNavigationItemSelectedListener,
-
+    SidebarAdapter.Listener,
     ItemViewFragment.OnItemFragmentInteractionListener,
     ItemAttachmentEntry.OnAttachmentFragmentInteractionListener,
     NoteInteractionListener {
-
-    private val MENU_ID_UNFILED_ITEMS: Int = 1
-    private val MENU_ID_TRASH: Int = 2
-    private val MENU_ID_MY_PUBLICATIONS = 3
-
-    private val MENU_ID_COLLECTIONS_OFFSET: Int = 10
 
     lateinit var presenter: LibraryActivityPresenter
     private var itemView: ItemViewFragment? = null
 
     lateinit var navController: NavController
     lateinit var navHostFragment: NavHostFragment
-
-    // used to "uncheck" the last pressed menu item if we change via code.
-    private var currentPressedMenuItem: MenuItem? = null
 
     private lateinit var libraryListViewModel: LibraryListViewModel
 
@@ -93,8 +79,6 @@ class LibraryActivity : AppCompatActivity(),
         navController = navHostFragment.navController
 
         this.setupActionbar()
-        val navigationView = findViewById<NavigationView>(R.id.nav_view_library)
-        navigationView.setNavigationItemSelectedListener(this)
 
         presenter = LibraryActivityPresenter(this, this)
 
@@ -127,125 +111,61 @@ class LibraryActivity : AppCompatActivity(),
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    lateinit var collectionsMenu: Menu
-    lateinit var sharedCollections: SubMenu
+    private val sidebarAdapter = SidebarAdapter(this)
+    private lateinit var sidebar: RecyclerView
 
     fun initUI() {
         setupActionbar()
-        val navigationView = findViewById<NavigationView>(R.id.nav_view_library)
-        navigationView.setCheckedItem(R.id.my_library)
-        collectionsMenu = navigationView.menu.addSubMenu(
-            R.id.group_collections,
-            Menu.NONE,
-            Menu.NONE,
-            "Collections"
-        )
-
-        // add our "unfiled items" entry
-        navigationView.menu.add(R.id.group_other, MENU_ID_UNFILED_ITEMS, Menu.NONE, "Unfiled Items")
-            .setIcon(R.drawable.baseline_description_24).isCheckable = true
-
-        // add our "My Publications" entry
-        navigationView.menu.add(
-            R.id.group_other,
-            MENU_ID_MY_PUBLICATIONS,
-            Menu.NONE,
-            "My Publications"
-        )
-            .setIcon(R.drawable.baseline_book_24).isCheckable = true
-
-        // add our "Trash" entry
-        navigationView.menu.add(R.id.group_other, MENU_ID_TRASH, Menu.NONE, "Trash")
-            .setIcon(R.drawable.baseline_delete_24).isCheckable = true
-
-
-
-        sharedCollections = navigationView.menu.addSubMenu(
-            R.id.group_shared_collections,
-            Menu.NONE,
-            Menu.NONE,
-            "Group Libraries"
-        )
-        // hidden until a group is added, so there's no empty heading when groups are off
-        sharedCollections.item.isVisible = false
-
+        sidebar = findViewById(R.id.sidebar)
+        sidebar.layoutManager = LinearLayoutManager(this)
+        sidebar.adapter = sidebarAdapter
         navController.navigate(R.id.libraryListFragment)
     }
 
-    val collectionKeyByMenuId = SparseArray<String>()
-
-    fun addNavigationEntry(collection: Collection, parent: String) {
-        // we will add a collection to the menu, with the following menu ID.
-        val menuId = MENU_ID_COLLECTIONS_OFFSET + collectionKeyByMenuId.size()
-        collectionKeyByMenuId.put(menuId, collection.key)
-
-        collectionsMenu.add(R.id.group_collections, menuId, Menu.NONE, collection.name)
-            .setIcon(R.drawable.ic_folder_black_24dp).isCheckable = true
-    }
-
-    fun highlightMenuItem(state: LibraryModelState) {
-        /* Given some collection name / group name, highlight that corresponding item.
-        * Needed for back button, whereby the app loads a prior state and needs the UI
-        * to reflect this change with respect to the item selected.  */
-
-        currentPressedMenuItem?.let {
-            it.isChecked = false
-        }
-
-        if (state.isUsingGroup()) {
-            for (menuItem: MenuItem in sharedCollections) {
-                if (menuItem.title.toString() == state.currentGroup.name) {
-                    menuItem.isChecked = true
-                    currentPressedMenuItem = menuItem
-                    break
+    /** Redraws the sidebar; see [SidebarRows]. Scrolls the selected row into view. */
+    fun showSidebar(rows: List<SidebarRow>) {
+        sidebarAdapter.submit(rows)
+        val selected = sidebarAdapter.selectedPosition()
+        if (selected >= 0) {
+            (sidebar.layoutManager as LinearLayoutManager).let {
+                if (selected < it.findFirstCompletelyVisibleItemPosition() ||
+                    selected > it.findLastCompletelyVisibleItemPosition()
+                ) {
+                    it.scrollToPosition(selected)
                 }
             }
-            return
-        }
-
-        val menuItem: MenuItem? = if (state.currentCollection == "all") {
-            val navigationView = findViewById<NavigationView>(R.id.nav_view_library)
-            navigationView.menu.findItem(R.id.my_library)
-        } else if (state.currentCollection == "unfiled_items") {
-            val navigationView = findViewById<NavigationView>(R.id.nav_view_library)
-            navigationView.menu.findItem(MENU_ID_UNFILED_ITEMS)
-        } else if (state.currentCollection == "zooforzotero_my_publications") {
-            val navigationView = findViewById<NavigationView>(R.id.nav_view_library)
-            navigationView.menu.findItem(MENU_ID_MY_PUBLICATIONS)
-        } else if (state.currentCollection == "zooforzotero_Trash") {
-            val navigationView = findViewById<NavigationView>(R.id.nav_view_library)
-            navigationView.menu.findItem(MENU_ID_TRASH)
-        } else {
-            // if it reaches here that means it's a collection.
-            val index = collectionKeyByMenuId.indexOfValue(state.currentCollection)
-            if (index >= 0) {
-                val menuId = collectionKeyByMenuId.keyAt(index)
-                collectionsMenu.findItem(menuId)
-            } else {
-                null
-            }
-        }
-        menuItem?.isChecked = true
-        menuItem?.let {
-            currentPressedMenuItem = it
         }
     }
 
-    /* Shows a shared Collection (group) on the sidebar. */
-    fun addSharedCollection(groupInfo: GroupInfo) {
-        val navigationView = findViewById<NavigationView>(R.id.nav_view_library)
-        sharedCollections.add(
-            R.id.group_shared_collections,
-            Menu.NONE,
-            Menu.NONE,
-            groupInfo.name
-        )
-            .setIcon(R.drawable.ic_folder_black_24dp).isCheckable = true
-        sharedCollections.item.isVisible = true
+    private fun closeSidebar() {
+        findViewById<DrawerLayout>(R.id.drawerlayout_library).closeDrawer(GravityCompat.START)
     }
 
-    fun clearSidebar() {
-        collectionsMenu.clear()
+    override fun onLibrarySelected(groupId: Int) {
+        closeSidebar()
+        presenter.openLibrary(groupId)
+    }
+
+    override fun onGroupsToggled() {
+        presenter.toggleSidebarGroups()
+    }
+
+    override fun onCollectionSelected(key: String) {
+        closeSidebar()
+        presenter.setCollection(key)
+    }
+
+    override fun onCollectionToggled(key: String) {
+        presenter.toggleSidebarCollection(key)
+    }
+
+    override fun onViewSelected(view: SidebarView) {
+        closeSidebar()
+        when (view) {
+            SidebarView.UNFILED -> presenter.setCollection(view.collectionId)
+            SidebarView.MY_PUBLICATIONS -> presenter.openMyPublications()
+            SidebarView.TRASH -> presenter.openTrash()
+        }
     }
 
     fun showFilterMenu() {
@@ -326,37 +246,6 @@ class LibraryActivity : AppCompatActivity(),
             title = resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)
         }
         return super.onPrepareOptionsMenu(menu)
-    }
-
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        Log.d("zotero", "pressed ${item.groupId} - ${item.itemId}")
-        currentPressedMenuItem?.let {
-            it.isChecked = false
-        }
-
-        currentPressedMenuItem = item
-        if (item.itemId == R.id.my_library) {
-            presenter.setCollection("all", fromNavigationDrawer = true)
-        } else if (item.itemId == MENU_ID_UNFILED_ITEMS) {
-            presenter.setCollection("unfiled_items", fromNavigationDrawer = true)
-        } else if (item.itemId == MENU_ID_MY_PUBLICATIONS) {
-            presenter.openMyPublications()
-        } else if (item.itemId == MENU_ID_TRASH) {
-            presenter.openTrash()
-        } else if (item.groupId == R.id.group_shared_collections) {
-            // this is the id that refers to group libraries
-            presenter.openGroup(item.title.toString())
-        } else if (item.groupId == R.id.group_collections) {
-            // this is the id that refers to user collections. The term "group collections" is misleading.
-            presenter.setCollection(collectionKeyByMenuId[item.itemId], fromNavigationDrawer = true)
-        } else {
-            Log.e("zotero", "error unhandled menuitem. ${item.title}")
-        }
-        val drawer = findViewById<DrawerLayout>(R.id.drawerlayout_library)
-        drawer.closeDrawer(GravityCompat.START)
-        // shouldnt be neccessary but there was a bug where android wouldn't highlight on certain occassions
-        item.isChecked = true
-        return true
     }
 
     fun createErrorAlert(title: String, message: String, onClick: () -> Unit) {

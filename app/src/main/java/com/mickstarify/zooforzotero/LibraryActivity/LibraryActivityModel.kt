@@ -182,9 +182,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     @Volatile private var onDeviceKeys: Set<String> = emptySet()
     @Volatile private var editedKeys: Set<String> = emptySet()
 
-    override fun getGroupByTitle(groupTitle: String): GroupInfo? {
-        return this.groups?.filter { it.name == groupTitle }?.firstOrNull()
+    override fun getGroupById(groupId: Int): GroupInfo? {
+        return this.groups?.firstOrNull { it.id == groupId }
     }
+
+    fun getGroups(): List<GroupInfo> = groups ?: emptyList()
 
     override fun downloadLibrary(doRefresh: Boolean, useSmallLoadingAnimation: Boolean) {
         if (!doRefresh && zoteroDB.isPopulated()) {
@@ -732,7 +734,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 override fun onSuccess(groupInfo: List<GroupInfo>) {
                     Log.d("zotero", "completed get group info.")
                     this@LibraryActivityModel.groups = groupInfo
-                    presenter.displayGroupsOnActionBar(groupInfo)
+                    presenter.showGroups()
                 }
 
                 override fun onComplete() {
@@ -1138,12 +1140,25 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         this.zoteroDBPicker.stopGroup()
     }
 
+    /** Switches the list and the sidebar to My Library, at its top. */
+    fun openMyLibrary() {
+        if (state.isUsingGroup()) {
+            usePersonalLibrary()
+            navigator.openLibrary(null)
+            presenter.receiveCollections(getCollections())
+        } else {
+            navigator.openLibrary(null)
+        }
+        presenter.redisplayItems()
+    }
+
     fun getCurrentCollection(): String {
         return navigator.currentCollection()
     }
 
-    fun setCurrentCollection(collectionName: String, usePersonalLibrary: Boolean = true) {
-        navigator.setCollection(collectionName, usePersonalLibrary)
+    /** Opens a collection (or Unfiled, Trash, …) in the library that's open. */
+    fun setCurrentCollection(collectionName: String) {
+        navigator.setCollection(collectionName)
     }
 
     fun checkAttachmentStorageAccess() {
@@ -1237,11 +1252,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                     }
                 } else {
                     zoteroDBPicker.groupId = db.groupID
-                    val newState = LibraryModelState().apply {
-                        this.currentCollection = "group_all"
-                        this.currentGroup = groups?.filter { it.id == db.groupID }?.firstOrNull()!!
+                    // opening the group; a refresh of the open group keeps its place
+                    if (state.currentGroup.id != db.groupID) {
+                        getGroupById(db.groupID)?.let { navigator.openLibrary(it) }
                     }
-                    this.states.add(newState)
+                    presenter.receiveCollections(getCollections())
                     presenter.redisplayItems()
                 }
                 if (db.items?.size == 0) {
@@ -1276,14 +1291,15 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         }
         val oldState = states.peek()
         states.pop()
-        if (oldState.currentGroup != state.currentGroup) {
+        if (oldState.currentGroup.id != state.currentGroup.id) {
+            // back into another library; its database was loaded when we were there
             if (state.isUsingGroup()) {
-                presenter.openGroup(state.currentGroup.name)
+                zoteroDBPicker.groupId = state.currentGroup.id
             } else {
-                // we are returning to the user's collection.
                 this.usePersonalLibrary()
-                presenter.setCollection(state.currentCollection)
             }
+            presenter.receiveCollections(getCollections())
+            presenter.redisplayItems()
         } else if (oldState.currentCollection != state.currentCollection ||
             oldState.filterText != state.filterText
         ) {

@@ -58,25 +58,45 @@ class LibraryNavigatorTest {
     }
 
     @Test
-    fun `personal library push drops the current group`() {
-        val nav = LibraryNavigator()
-        nav.current.currentGroup = group(42)
-        assertTrue(nav.isUsingGroup())
-
-        nav.setCollection("all", usePersonalLibrary = true)
-
-        assertFalse(nav.isUsingGroup())
-        assertEquals(GroupInfo.NO_GROUP_ID, nav.currentGroup().id)
-    }
-
-    @Test
-    fun `non-personal push retains the current group`() {
+    fun `opening a collection stays in the current group`() {
         val nav = LibraryNavigator()
         nav.current.currentGroup = group(42)
 
-        nav.setCollection("group_all", usePersonalLibrary = false)
+        nav.setCollection("ABCD1234")
 
         assertTrue(nav.isUsingGroup())
         assertEquals(42, nav.currentGroup().id)
+    }
+
+    @Test
+    fun `opening My Library drops the current group`() {
+        val nav = LibraryNavigator()
+        nav.current.currentGroup = group(42)
+        nav.current.currentCollection = "ABCD1234"
+
+        assertTrue(nav.openLibrary(null))
+
+        assertFalse(nav.isUsingGroup())
+        assertEquals("all", nav.currentCollection())
+    }
+
+    @Test
+    fun `opening a group shows its top`() {
+        val nav = LibraryNavigator()
+        nav.setCollection("all")
+
+        assertTrue(nav.openLibrary(group(42)))
+
+        assertEquals(42, nav.currentGroup().id)
+        assertEquals("group_all", nav.currentCollection())
+    }
+
+    @Test
+    fun `opening the library already shown is a no-op`() {
+        val nav = LibraryNavigator()
+        nav.openLibrary(group(42))
+        assertFalse(nav.openLibrary(group(42)))
+        assertTrue(nav.openLibrary(group(7)))
+        assertEquals(3, nav.states.size)
     }
 }

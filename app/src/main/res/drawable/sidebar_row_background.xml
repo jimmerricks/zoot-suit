@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the sidebar's selected row: a rounded tint of the primary colour, like NavigationView's -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_activated="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="8dp" />
+            <solid android:color="@color/sidebarSelected" />
+        </shape>
+    </item>
+    <item android:drawable="@android:color/transparent" />
+</selector>

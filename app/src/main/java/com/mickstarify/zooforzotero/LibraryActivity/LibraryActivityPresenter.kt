@@ -36,11 +36,15 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         }
     }.thenBy { it.getTitle().lowercase(Locale.ROOT) }
 
-    override fun openGroup(groupTitle: String) {
-        model.getGroupByTitle(groupTitle)?.also {
-            model.startGroupSync(it)
+    /** Opens My Library ([GroupInfo.NO_GROUP_ID]) or a group at its top, from the sidebar. */
+    override fun openLibrary(groupId: Int) {
+        if (groupId == GroupInfo.NO_GROUP_ID) {
+            model.openMyLibrary()
+        } else {
+            model.getGroupById(groupId)?.also {
+                model.startGroupSync(it)
+            }
         }
-
     }
 
     override fun startUploadingAttachmentProgress(attachment: Item, position: Int, total: Int) {
@@ -58,11 +62,44 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         }
     }
 
-    override fun displayGroupsOnActionBar(groups: List<GroupInfo>) {
-        groups.forEach { groupInfo: GroupInfo ->
-            Log.d("zotero", "got group ${groupInfo.name}")
-            view.addSharedCollection(groupInfo)
+    override fun showGroups() {
+        refreshSidebar()
+    }
+
+    /**
+     * Redraws the sidebar for the open library and what the list shows. A collection
+     * opened from elsewhere (Back, a collection row in search) has its parents expanded.
+     */
+    fun refreshSidebar() {
+        val groupId = model.state.currentGroup.id
+        val current = model.getCurrentCollection()
+        val tree = CollectionTree(model.getCollections())
+        var expanded = model.preferences.getSidebarExpandedCollections(groupId)
+        val hiddenBy = tree.ancestorsOf(current).filter { it !in expanded }
+        if (hiddenBy.isNotEmpty()) {
+            expanded = expanded + hiddenBy
+            model.preferences.setSidebarExpandedCollections(groupId, expanded)
         }
+        view.showSidebar(
+            SidebarRows.build(
+                model.getGroups(), model.preferences.isSidebarGroupsExpanded(),
+                groupId, current, tree, expanded
+            )
+        )
+    }
+
+    fun toggleSidebarGroups() {
+        model.preferences.setSidebarGroupsExpanded(!model.preferences.isSidebarGroupsExpanded())
+        refreshSidebar()
+    }
+
+    fun toggleSidebarCollection(key: String) {
+        val groupId = model.state.currentGroup.id
+        val expanded = model.preferences.getSidebarExpandedCollections(groupId)
+        model.preferences.setSidebarExpandedCollections(
+            groupId, if (key in expanded) expanded - key else expanded + key
+        )
+        refreshSidebar()
     }
 
     override fun modifyNote(note: Note) {
@@ -336,13 +373,13 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
         }
-        model.usePersonalLibrary()
         view.setTitle("My Publications")
         val entries = model.getMyPublications().sort().map{ListEntry(it)}
         model.isDisplayingItems = entries.isNotEmpty()
         model.setCurrentCollection("zooforzotero_my_publications")
         libraryListViewModel.setItems(entries)
         showFilterSummary()
+        refreshSidebar()
     }
 
     override fun openTrash() {
@@ -351,13 +388,13 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
         }
-        model.usePersonalLibrary()
         view.setTitle("Trash")
         val entries = model.getTrashedItems().sort().map{ListEntry(it)}
         model.isDisplayingItems = entries.isNotEmpty()
         model.setCurrentCollection("zooforzotero_Trash")
         libraryListViewModel.setItems(entries)
         showFilterSummary()
+        refreshSidebar()
     }
 
     override fun uploadAttachment(item: Item) {
@@ -376,24 +413,19 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
 
     override fun backButtonPressed() {
         model.loadPriorState()
-        view.highlightMenuItem(model.state)
+        refreshSidebar()
     }
 
-    override fun setCollection(collectionKey: String, fromNavigationDrawer: Boolean) {
+    override fun setCollection(collectionKey: String) {
         /*SetCollection is the method used to display items on the listView. It
         * has to get the data, then sort it, then provide it to the view.*/
         if (!model.isLoaded()) {
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
         }
-        // this check covers if the user has just left their group library from the sidemenu.
-        if (fromNavigationDrawer) {
-            model.usePersonalLibrary()
-        }
-
         Log.d("zotero", "Got request to change collection to ${collectionKey}")
         model.startListUpdate()
-        model.setCurrentCollection(collectionKey, usePersonalLibrary = fromNavigationDrawer)
+        model.setCurrentCollection(collectionKey)
         if (collectionKey == "all" && !model.isUsingGroups()) {
             view.setTitle("My Library")
             val entries = model.getLibraryItems().sort().map { ListEntry(it) }
@@ -420,7 +452,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
         }
-        // It is an actual collection on the user's private.
+        // a collection, in My Library or the open group
         else {
             val collection = model.getCollectionFromKey(collectionKey)
 
@@ -435,16 +467,11 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             libraryListViewModel.setItems(entries)
         }
         showFilterSummary()
+        refreshSidebar()
     }
 
     override fun receiveCollections(collections: List<Collection>) {
-        view.clearSidebar()
-        for (collection: Collection in collections.filter {
-            !it.hasParent()
-        }.sortedBy { it.name.lowercase(Locale.ROOT) }) {
-            Log.d("zotero", "Got collection ${collection.name}")
-            view.addNavigationEntry(collection, "Catalog")
-        }
+        refreshSidebar()
     }
 
     override fun createErrorAlert(

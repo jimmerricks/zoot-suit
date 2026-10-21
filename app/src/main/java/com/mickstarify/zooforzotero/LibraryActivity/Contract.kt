@@ -19,11 +19,8 @@ interface Contract {
             message: String
         )
 
-        fun addSharedCollection(groupInfo: GroupInfo)
-
         //        fun hideLoadingAnimation()
         fun setTitle(title: String)
-        fun addNavigationEntry(collection: Collection, parent: String)
         fun populateEntries(entries: List<ListEntry>)
         fun showItemDialog()
         fun updateAttachmentDownloadProgress(progress: Int, total: Int)
@@ -31,7 +28,6 @@ interface Contract {
         fun makeToastAlert(message: String)
         fun showLibraryContentDisplay(message: String = "")
         fun hideLibraryContentDisplay()
-        fun clearSidebar()
         fun closeItemView()
         fun showAttachmentUploadProgress(attachment: Item, position: Int, total: Int)
         fun hideAttachmentUploadProgress()
@@ -44,7 +40,7 @@ interface Contract {
         fun showPendingEdits(count: Int)
         fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>)
         fun showNote(note: Note)
-        fun highlightMenuItem(state: LibraryModelState)
+        fun showSidebar(rows: List<SidebarRow>)
         fun showLoadingAlertDialog(message: String)
         fun hideLoadingAlertDialog()
     }
@@ -52,7 +48,7 @@ interface Contract {
     interface Presenter {
         fun createErrorAlert(title: String, message: String, onClick: () -> Unit)
         fun receiveCollections(collections: List<Collection>)
-        fun setCollection(collectionName: String, fromNavigationDrawer: Boolean = false)
+        fun setCollection(collectionName: String)
         fun selectItem(item: Item, longPress: Boolean = false)
         fun requestLibraryRefresh()
         fun showLibraryLoadingAnimation()
@@ -78,8 +74,8 @@ interface Contract {
         fun modifyNote(note: Note)
         fun deleteNote(note: Note)
         fun refreshItemView()
-        fun displayGroupsOnActionBar(groups: List<GroupInfo>)
-        fun openGroup(groupTitle: String)
+        fun showGroups()
+        fun openLibrary(groupId: Int)
         fun startUploadingAttachmentProgress(attachment: Item, position: Int, total: Int)
         fun stopUploadingAttachmentProgress()
         fun onResume()
@@ -134,7 +130,7 @@ interface Contract {
         fun getUnfiledItems(): List<Item>
         fun startGroupSync(group: GroupInfo, refresh: Boolean = false)
         fun usePersonalLibrary()
-        fun getGroupByTitle(groupTitle: String): GroupInfo?
+        fun getGroupById(groupId: Int): GroupInfo?
         fun loadPriorState()
         fun getItemsForTag(tagName: String): List<Item>
         fun getAllTags(): List<Pair<String, Int>>

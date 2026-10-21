@@ -94,6 +94,24 @@ class PreferenceManager @Inject constructor(context: Context) {
             .apply()
     }
 
+    /** Collections expanded in the sidebar, per library (My Library = NO_GROUP_ID). */
+    fun getSidebarExpandedCollections(groupId: Int): Set<String> =
+        sharedPreferences.getStringSet("sidebar_expanded_collections_$groupId", null)?.toSet()
+            ?: emptySet()
+
+    fun setSidebarExpandedCollections(groupId: Int, keys: Set<String>) {
+        sharedPreferences.edit()
+            .putStringSet("sidebar_expanded_collections_$groupId", HashSet(keys)).apply()
+    }
+
+    /** Whether the sidebar's Group Libraries heading is open. */
+    fun isSidebarGroupsExpanded(): Boolean =
+        sharedPreferences.getBoolean("sidebar_groups_expanded", true)
+
+    fun setSidebarGroupsExpanded(value: Boolean) {
+        sharedPreferences.edit().putBoolean("sidebar_groups_expanded", value).apply()
+    }
+
     fun getIsShowingOnlyPdfs(): Boolean {
         return sharedPreferences.getBoolean("is_showing_only_with_pdfs", false)
     }
