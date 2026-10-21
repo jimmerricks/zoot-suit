@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import androidx.core.content.edit
 import com.mickstarify.zooforzotero.MainActivity
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
 import java.io.File
@@ -22,7 +23,8 @@ object SignOut {
         // login (credentials), library versions (one file per library), settings
         val prefsDir = File(activity.applicationInfo.dataDir, "shared_prefs")
         prefsDir.listFiles()?.map { it.name.removeSuffix(".xml") }?.forEach { name ->
-            activity.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear().commit()
+            // commit, not apply: the process exits before a background write would run
+            activity.getSharedPreferences(name, Context.MODE_PRIVATE).edit(commit = true) { clear() }
             activity.deleteSharedPreferences(name)
         }
 
