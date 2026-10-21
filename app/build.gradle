@@ -23,8 +23,30 @@ def localSetting = { String key ->
     value.startsWith('"') ? value : "\"${value}\""
 }
 
+// Release signing (docs/release-identity.md): keystore.properties next to settings.gradle,
+// else the file named by $KEYSTORE_PROPERTIES (the Docker build mounts it). Keys: storeFile,
+// storePassword, keyAlias, keyPassword. Without it, assembleRelease gives an unsigned APK.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+if (!keystorePropertiesFile.exists() && System.getenv("KEYSTORE_PROPERTIES")) {
+    keystorePropertiesFile = file(System.getenv("KEYSTORE_PROPERTIES"))
+}
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
 android {
     compileSdkVersion 36
+    signingConfigs {
+        if (keystoreProperties.getProperty("storeFile")) {
+            release {
+                storeFile file(keystoreProperties.getProperty("storeFile"))
+                storePassword keystoreProperties.getProperty("storePassword")
+                keyAlias keystoreProperties.getProperty("keyAlias")
+                keyPassword keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
     defaultConfig {
         // our own id (namespace and Kotlin packages keep upstream's): installs beside
         // Zoo for Zotero rather than over it. Versioning restarts with the new id.
@@ -46,6 +68,9 @@ android {
             versionNameSuffix "-debug"
         }
         release {
+            if (keystoreProperties.getProperty("storeFile")) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
