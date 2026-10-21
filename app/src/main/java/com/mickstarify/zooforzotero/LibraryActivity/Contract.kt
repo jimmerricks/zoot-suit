@@ -66,7 +66,6 @@ interface Contract {
             message: String
         )
 
-        fun isLiveSearchEnabled(): Boolean
         fun isShowingContent(): Boolean
         fun cancelAttachmentDownload()
         fun redisplayItems()

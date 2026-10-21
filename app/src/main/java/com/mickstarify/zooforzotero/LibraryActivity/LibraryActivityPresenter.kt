@@ -183,8 +183,23 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 //        view.updateLibraryLoadingProgress(progress, total, message)
     }
 
-    override fun isLiveSearchEnabled(): Boolean {
-        return model.preferences.shouldLiveSearch()
+    fun warmSearchIndex() = model.warmSearchIndex()
+
+    /** The search the list shows, or "" if it shows none (tag views aren't searches). */
+    fun currentSearch(): String =
+        model.state.filterText.takeUnless { it.startsWith("tag:") } ?: ""
+
+    /**
+     * Shows the results for [query] across the open library. A new search from a search
+     * replaces it, so Back returns to where searching started; a blank query ends the search.
+     */
+    fun search(query: String) {
+        if (query.isBlank()) {
+            if (currentSearch() != "") model.loadPriorState()
+            return
+        }
+        if (currentSearch() != "") model.state.filterText = query else addFilterState(query)
+        showFilter(query)
     }
 
     override fun closeQuery() {
@@ -245,9 +260,8 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     /** Shows the results for a filter state, e.g. "tag:to-read", with its title. */
     private fun showFilter(filterText: String) {
         this.filterEntries(filterText)
-        if (filterText.startsWith("tag:")) {
-            title.value = "Tag: ${filterText.removePrefix("tag:")}"
-        }
+        title.value = if (filterText.startsWith("tag:")) "Tag: ${filterText.removePrefix("tag:")}"
+        else "Search: $filterText"
     }
 
     override fun showLoadingAlertDialog(message: String) {
@@ -579,10 +593,6 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         }
         observe(libraryListViewModel.getOnClearFilterRequested()) {
             previewLibraryFilter(LibraryFilter())
-        }
-        observe(libraryListViewModel.getLibraryFilterText()) {
-            Log.d("zotero", "got filter text $it")
-            filterEntries(it)
         }
     }
 

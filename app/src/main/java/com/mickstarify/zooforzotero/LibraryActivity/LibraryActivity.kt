@@ -24,7 +24,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.getSystemService
 import androidx.core.view.GravityCompat
@@ -233,6 +232,11 @@ class LibraryActivity : AppCompatActivity(),
                 showFilterMenu()
             }
 
+            R.id.search -> {
+                presenter.warmSearchIndex()
+                LibrarySearchDialog(this, presenter.currentSearch()) { presenter.search(it) }.show()
+            }
+
             R.id.library_filter -> {
                 LibraryFilterDialog(this, presenter.getLibraryFilter()) {
                     presenter.previewLibraryFilter(it)
@@ -277,7 +281,6 @@ class LibraryActivity : AppCompatActivity(),
         return super.onOptionsItemSelected(item)
     }
 
-    lateinit var searchView: SearchView
     private var pendingEdits = 0
 
     /** Edited attachments waiting to go up; shown in the toolbar, tapping it syncs. */
@@ -528,11 +531,6 @@ class LibraryActivity : AppCompatActivity(),
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Log.d(packageName, "got intent ${intent.action} $intent")
-        if (intent.action == ACTION_FILTER) {
-            val query = intent.getStringExtra(EXTRA_QUERY) ?: ""
-            Log.d(packageName, "got intent for library filter $query")
-            presenter.filterEntries(query)
-        }
     }
 
     override fun onPause() {
@@ -565,12 +563,6 @@ class LibraryActivity : AppCompatActivity(),
 
     override fun onNoteDelete(note: Note) {
         presenter.deleteNote(note)
-    }
-
-    companion object {
-        const val ACTION_FILTER =
-            "com.mickstarify.zooforzotero.intent.action.LIBRARY_FILTER_INTENT"
-        const val EXTRA_QUERY = "com.mickstarify.zooforzotero.intent.EXTRA_QUERY_TEXT"
     }
 
     override fun deleteNote(note: Note) {

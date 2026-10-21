@@ -9,6 +9,12 @@
         app:showAsAction="always|withText" />
 
     <item
+        android:id="@+id/search"
+        android:icon="@drawable/baseline_search_white_24"
+        android:title="@string/search_title"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/library_filter"
         android:icon="@drawable/baseline_filter_list_white_24"
         android:title="@string/filter"
@@ -18,14 +24,7 @@
         android:id="@+id/filter_menu"
         android:icon="@drawable/ic_sort_white_24"
         android:title="@string/sort"
-        app:showAsAction="collapseActionView|ifRoom" />
-
-    <item
-        android:id="@+id/search"
-        android:icon="@drawable/baseline_search_white_24"
-        android:title="@string/search_title"
-        app:actionViewClass="androidx.appcompat.widget.SearchView"
-        app:showAsAction="collapseActionView|ifRoom" />
+        app:showAsAction="ifRoom" />
 
 
     <item

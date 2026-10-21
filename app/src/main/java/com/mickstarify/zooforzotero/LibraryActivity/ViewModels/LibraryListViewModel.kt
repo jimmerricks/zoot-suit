@@ -62,13 +62,6 @@ class LibraryListViewModel : ViewModel() {
 
     fun getOnLibraryRefreshRequested(): LiveData<Int> = onLibraryRefreshRequested
 
-    private val libraryFilterText = MutableLiveData<String>("")
-    fun getLibraryFilterText(): LiveData<String> = libraryFilterText
-    fun setLibraryFilterText(query: String) {
-        if (this.libraryFilterText.value != query) {
-            this.libraryFilterText.value = query
-        }
-    }
 
     /** What the list says when it shows nothing; set with every list. */
     private val emptyMessage = MutableLiveData<EmptyListMessage>()

@@ -69,11 +69,6 @@
             android:title="Show items from subcollections" />
 
         <SwitchPreference
-            android:defaultValue="true"
-            android:key="should_live_search"
-            android:summary="Turn off if searching is slow"
-            android:title="Search as you type" />
-        <SwitchPreference
             android:defaultValue="false"
             android:key="check_md5sum_before_attachment_open"
             android:summary="Compare a file with Zotero's checksum before opening it. Slower for large files."

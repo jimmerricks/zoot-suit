@@ -455,6 +455,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return LibrarySearch.Index(items, fields).also { searchIndex = it }
     }
 
+    /** Builds the search index in the background while the search dialog is open. */
+    fun warmSearchIndex() {
+        if (!isLoaded()) return
+        Thread { searchIndex() }.start()
+    }
+
     var downloadDisposable: Disposable? = null
 
     /**

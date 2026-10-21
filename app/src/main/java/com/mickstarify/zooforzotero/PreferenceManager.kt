@@ -287,17 +287,15 @@ class PreferenceManager @Inject constructor(context: Context) {
         return sharedPreferences.getBoolean("attachments_uploading_enabled", true)
     }
 
-    fun shouldLiveSearch(): Boolean {
-        /* This preference defines whether library search should update as the user types.
-        * This may be problematic for devices with a slow refresh rate or slow IO. */
-        return sharedPreferences.getBoolean("should_live_search", true)
-    }
-
     /** The fields a library search looks in; unset, [LibrarySearch.DEFAULT_FIELDS]. */
     fun getSearchFields(): Set<LibrarySearch.Field> {
         val names = sharedPreferences.getStringSet("search_fields", null)
             ?: return LibrarySearch.DEFAULT_FIELDS
         return LibrarySearch.Field.entries.filter { it.name in names }.toSet()
+    }
+
+    fun setSearchFields(fields: Set<LibrarySearch.Field>) {
+        sharedPreferences.edit { putStringSet("search_fields", fields.map { it.name }.toSet()) }
     }
 
     fun hasShownCustomStorageWarning(): Boolean {

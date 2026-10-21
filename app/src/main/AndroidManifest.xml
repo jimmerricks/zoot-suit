@@ -47,33 +47,12 @@
             android:name="org.apache.http.legacy"
             android:required="false" />
 
-        <meta-data
-            android:name="android.app.default_searchable"
-            android:value=".LibraryActivity.SearchResultsActivity" />
-
-        <activity
-            android:name=".LibraryActivity.SearchResultsActivity"
-            android:theme="@style/Theme.ZooForZotero"
-            android:launchMode="singleTop"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.SEARCH" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.app.searchable"
-                android:resource="@xml/searchable" />
-        </activity>
         <activity
             android:name=".LibraryActivity.LibraryActivity"
             android:label="@string/title_activity_library"
             android:launchMode="singleInstance"
             android:theme="@style/Theme.ZooForZotero.NoActionBar"
-            android:exported="false">
-            <meta-data
-                android:name="android.app.searchable"
-                android:resource="@xml/searchable" />
-        </activity>
+            android:exported="false" />
         <activity
             android:name=".SyncSetup.SyncSetupActivity"
             android:label="@string/title_activity_sync_setup"

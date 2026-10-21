@@ -1,20 +1,14 @@
 package com.mickstarify.zooforzotero.LibraryActivity.Fragments
 
-import android.app.Activity
-import android.app.SearchManager
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.TextView
-import androidx.appcompat.widget.SearchView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -26,14 +20,12 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.mickstarify.zooforzotero.LibraryActivity.LibraryActivity
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
-import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.adapters.LibraryListInteractionListener
 import com.mickstarify.zooforzotero.adapters.LibraryListRecyclerViewAdapter
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class LibraryListFragment : Fragment(), LibraryListInteractionListener,
@@ -45,9 +37,6 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
 
     private lateinit var viewModel: LibraryListViewModel
 
-    @Inject
-    lateinit var preferenceManager: PreferenceManager
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -55,78 +44,11 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         return inflater.inflate(R.layout.library_list_fragment, container, false)
     }
 
-    fun hideKeyboard(activity: Activity) {
-        val imm: InputMethodManager =
-            activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-        //Find the currently focused view, so we can grab the correct window token from it.
-        var view = activity.currentFocus
-        //If no view currently has focus, create a new one, just so we can grab a window token from it
-        if (view == null) {
-            view = View(activity)
-        }
-        imm.hideSoftInputFromWindow(view.windowToken, 0)
-    }
-
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         menu.clear()
         inflater.inflate(R.menu.activity_library_actionbar, menu)
         super.onCreateOptionsMenu(menu, inflater)
-
-        // While the search field is open it takes the toolbar's width. Filter and Sort move
-        // to the overflow (else opening the overflow demotes them there behind the toolbar's
-        // back: icons and overflow entries at once, and after closing the search every icon
-        // stays in the overflow). Closing rebuilds the menu from XML, icons included.
-        val menuItem = menu.findItem(R.id.search)
-        menuItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
-            override fun onMenuItemActionExpand(item: MenuItem): Boolean {
-                for (id in intArrayOf(R.id.library_filter, R.id.filter_menu)) {
-                    menu.findItem(id)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
-                }
-                return true
-            }
-
-            override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
-                val activity = requireActivity() as LibraryActivity
-                activity.presenter.closeQuery()
-                activity.invalidateOptionsMenu()
-                return true
-            }
-        })
-
-        val searchManager =
-            (requireActivity() as LibraryActivity).getSystemService(Context.SEARCH_SERVICE) as SearchManager
-        searchView = menu.findItem(R.id.search).actionView as SearchView
-        searchView.apply {
-            setSearchableInfo(searchManager.getSearchableInfo((requireActivity() as LibraryActivity).componentName))
-            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String): Boolean {
-//                    setTitle("Search results for $query")
-                    // we will only search on submit for android 7<=
-                    if (!preferenceManager.shouldLiveSearch()) {
-                        viewModel.setLibraryFilterText(query)
-                    }
-                    (requireActivity() as LibraryActivity).presenter.addFilterState(query)
-                    Log.d("zotero", "queryOnQuery $query")
-                    hideKeyboard(requireActivity())
-                    return true
-
-                    // need to dismiss keyboard.
-                }
-
-                override fun onQueryTextChange(query: String): Boolean {
-                    if (!preferenceManager.shouldLiveSearch()) {
-                        return false
-                    }
-                    Log.d("zotero", "queryOnQuery $query")
-                    viewModel.setLibraryFilterText(query)
-                    return true
-                }
-
-            })
-        }
     }
-
-    lateinit var searchView: SearchView
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
