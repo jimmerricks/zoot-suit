@@ -16,7 +16,6 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
-import java.util.LinkedList
 import java.util.Locale
 
 /**
@@ -185,25 +184,13 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     fun warmSearchIndex() = model.warmSearchIndex()
 
-    /** The search the list shows, or "" if it shows none (tag views aren't searches). */
-    fun currentSearch(): String =
-        model.state.filterText.takeUnless { it.startsWith("tag:") } ?: ""
+    /** The open library's search, or "" for none. */
+    fun currentSearch(): String = model.librarySearch
 
-    /**
-     * Shows the results for [query] across the open library. A new search from a search
-     * replaces it, so Back returns to where searching started; a blank query ends the search.
-     */
+    /** Narrows every list of the open library to items matching [query]; "" ends the search. */
     fun search(query: String) {
-        if (query.isBlank()) {
-            if (currentSearch() != "") model.loadPriorState()
-            return
-        }
-        if (currentSearch() != "") model.state.filterText = query else addFilterState(query)
-        showFilter(query)
-    }
-
-    override fun closeQuery() {
-        this.setCollection(model.getCurrentCollection())
+        model.librarySearch = query
+        redisplayItems()
     }
 
     override fun addFilterState(query: String) {
@@ -238,17 +225,22 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     /**
-     * Toolbar subtitle naming the active filter and its count, if the list uses the filter;
-     * and what the list says if it is empty. [query] is the search or tag view shown, if any.
+     * Toolbar subtitle naming the active search and filter with the count, if the list goes
+     * through them; and what the list says if it is empty. [query] is the tag view shown, if any.
      */
     private fun showFilterSummary(query: String = model.state.filterText) {
+        val search = model.librarySearch
         val filter = model.libraryFilter
         val shown = model.lastFilteredItems
         subtitle.value =
-            if (!filter.isActive || shown == null) null
-            else "Filter: ${filter.describe()} · ${shown.size} " + if (shown.size == 1) "item" else "items"
+            if ((search.isEmpty() && !filter.isActive) || shown == null) null
+            else listOfNotNull(
+                "Search: “$search”".takeIf { search.isNotEmpty() },
+                "Filter: ${filter.describe()}".takeIf { filter.isActive },
+                "${shown.size} " + if (shown.size == 1) "item" else "items",
+            ).joinToString(" · ")
         libraryListViewModel.setEmptyMessage(
-            EmptyListMessage.forList(filter, shown != null, query, model.getCurrentCollection())
+            EmptyListMessage.forList(search, filter, shown != null, query, model.getCurrentCollection())
         )
     }
 
@@ -260,8 +252,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     /** Shows the results for a filter state, e.g. "tag:to-read", with its title. */
     private fun showFilter(filterText: String) {
         this.filterEntries(filterText)
-        title.value = if (filterText.startsWith("tag:")) "Tag: ${filterText.removePrefix("tag:")}"
-        else "Search: $filterText"
+        if (filterText.startsWith("tag:")) {
+            title.value = "Tag: ${filterText.removePrefix("tag:")}"
+        }
     }
 
     override fun showLoadingAlertDialog(message: String) {
@@ -272,33 +265,11 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         view.hideLoadingAlertDialog()
     }
 
+    /** Shows a tag view ("tag:to-read"): the open library's items with that tag. */
     override fun filterEntries(query: String) {
-        Log.d("zotero", "filtering $query")
-        if (query == "" || !model.isLoaded()) {
-            //not going to waste my time lol.
-            return
-        }
-
+        if (!query.startsWith("tag:") || !model.isLoaded()) return
         model.startListUpdate()
-        if (query.startsWith("tag:")) {
-            val tagName = query.substring(4) // remove tag:
-            val entries = model.getItemsForTag(tagName).sort().map { ListEntry(it) }
-            libraryListViewModel.setItems(entries)
-            showFilterSummary(query)
-            return
-        }
-
-        val collections = model.filterCollections(query)
-        val items = model.filterItems(query).sort()
-
-        val entries = LinkedList<ListEntry>()
-        entries.addAll(collections.sortedBy { it.name.lowercase(Locale.ROOT) }
-            .map { ListEntry(it) })
-        entries.addAll(
-            items
-                .map { ListEntry(it) })
-
-        Log.d("zotero", "setting items ${entries.size}")
+        val entries = model.getItemsForTag(query.removePrefix("tag:")).sort().map { ListEntry(it) }
         libraryListViewModel.setItems(entries)
         showFilterSummary(query)
     }
@@ -591,7 +562,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         observe(libraryListViewModel.getOnLibraryRefreshRequested()) {
             this.requestLibraryRefresh()
         }
+        // the empty list's button: clears whatever it named, search and filter alike
         observe(libraryListViewModel.getOnClearFilterRequested()) {
+            model.librarySearch = ""
             previewLibraryFilter(LibraryFilter())
         }
     }

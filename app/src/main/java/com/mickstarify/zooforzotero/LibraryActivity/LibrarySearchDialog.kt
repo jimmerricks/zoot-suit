@@ -15,12 +15,13 @@ import com.mickstarify.zooforzotero.R
 
 /**
  * Library search, laid out like [LibraryFilterDialog] and [LibrarySortDialog]: the query,
- * then the fields to search in. Nothing runs until Search (or the keyboard's search key);
- * the chosen fields are kept for next time. While a search is shown, it opens with that
- * query and offers Clear, which ends the search.
+ * then the fields to search in. Like the filter, a search narrows whatever list is shown
+ * until it is cleared; unlike it, nothing runs until Search (or the keyboard's search key),
+ * as each search scans the library. The chosen fields are kept for next time. With a
+ * search on, it opens with that query and offers Clear, which ends the search.
  *
- * @param current the search the list shows, or ""
- * @param onSearch runs a search; "" ends the one shown
+ * @param current the open library's search, or ""
+ * @param onSearch sets the search; "" ends it
  */
 class LibrarySearchDialog(
     private val context: Context,

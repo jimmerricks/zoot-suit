@@ -77,7 +77,8 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         clearFilter.setOnClickListener { viewModel.onClearFilterRequested() }
         viewModel.getEmptyMessage().observe(viewLifecycleOwner) { message ->
             emptyText.text = message.text
-            clearFilter.visibility = if (message.canClearFilter) View.VISIBLE else View.GONE
+            message.clearLabel?.let { clearFilter.text = it }
+            clearFilter.visibility = if (message.clearLabel != null) View.VISIBLE else View.GONE
         }
 
         viewModel.getAttachmentStates().observe(viewLifecycleOwner) { states ->

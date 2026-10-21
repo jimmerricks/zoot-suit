@@ -149,13 +149,21 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return applyLibraryFilter(shown)
     }
 
-    /** Applies [libraryFilter]; every list view goes through here (also tag views, search). */
+    /**
+     * Applies [librarySearch] and [libraryFilter]; every list view goes through here
+     * (collections, unfiled items, tag views), Trash and My Publications excepted.
+     */
     private fun applyLibraryFilter(items: List<Item>): List<Item> {
+        val search = librarySearch
+        val searched = if (search.isEmpty()) items else {
+            val matches = searchIndex()?.search(search)?.mapTo(HashSet()) { it.itemKey } ?: emptySet()
+            items.filter { it.itemKey in matches }
+        }
         val filter = libraryFilter
-        val filtered = if (!filter.isActive) items else {
+        val filtered = if (!filter.isActive) searched else {
             val onDeviceItems = if (filter.onDevice) owningItems(onDeviceKeys) else emptySet()
             val editedItems = if (filter.editedHere) owningItems(editedKeys) else emptySet()
-            items.filter { filter.matches(it, onDeviceItems, editedItems) }
+            searched.filter { filter.matches(it, onDeviceItems, editedItems) }
         }
         lastFilteredItems = filtered
         return filtered
@@ -177,7 +185,18 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     private val savedFilters = mutableMapOf<Int, LibraryFilter>() // by library (group id)
 
     /**
-     * The items the list shows, after the filter; null if the current list doesn't go
+     * The open library's search, narrowing every list like [libraryFilter]; "" for none.
+     * Each library has its own, kept while the app runs (unlike the filter, not saved).
+     */
+    var librarySearch: String
+        get() = searches[state.currentGroup.id] ?: ""
+        set(value) {
+            searches[state.currentGroup.id] = value.trim()
+        }
+    private val searches = mutableMapOf<Int, String>() // by library (group id)
+
+    /**
+     * The items the list shows, after search and filter; null if the current list doesn't go
      * through the filter (trash, My Publications). For counts in the dialog and toolbar.
      */
     var lastFilteredItems: List<Item>? = null
@@ -242,10 +261,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     override fun getMyPublications(): List<Item> {
         return zoteroDB.myPublications ?: LinkedList()
-    }
-
-    override fun filterCollections(query: String): List<ZoteroCollection> {
-        return LibraryItemFilter.collectionsMatching(zoteroDB.collections, query)
     }
 
     override fun openPDF(attachment: Item) {
@@ -434,10 +449,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             return
         }
         openPDF(item)
-    }
-
-    override fun filterItems(query: String): List<Item> {
-        return applyLibraryFilter(searchIndex()?.search(query) ?: emptyList())
     }
 
     @Volatile

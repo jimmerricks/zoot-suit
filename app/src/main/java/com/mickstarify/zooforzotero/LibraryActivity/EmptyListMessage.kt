@@ -1,39 +1,49 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
 /**
- * What the library list says when it has nothing to show, and whether it offers to clear
- * the filter. The most likely reason comes first: a filter that hides everything, then a
- * search or tag with no results, then the place itself being empty.
+ * What the library list says when it has nothing to show, and the label of its button
+ * that clears the search and filter, if they are to blame (null: no button). The most
+ * likely reason comes first: a search or filter that hides everything, then a tag with
+ * no items, then the place itself being empty.
  */
-data class EmptyListMessage(val text: String, val canClearFilter: Boolean = false) {
+data class EmptyListMessage(val text: String, val clearLabel: String? = null) {
     companion object {
         /**
+         * @param search the open library's search; "" for none
          * @param filter the open library's filter
-         * @param filterApplies whether the list went through [filter] (not for Trash and
-         *   My Publications)
-         * @param query a search ("method") or a tag view ("tag:to-read"); "" for neither
+         * @param filterApplies whether the list went through search and filter (not for
+         *   Trash and My Publications)
+         * @param query a tag view ("tag:to-read"); "" for none
          * @param collection the current place: a collection key or one of the app's
          *   special keys ("all", "group_all", "unfiled_items", "zooforzotero_Trash", …)
          */
         fun forList(
+            search: String,
             filter: LibraryFilter,
             filterApplies: Boolean,
             query: String,
             collection: String,
-        ): EmptyListMessage = when {
-            filterApplies && filter.isActive ->
-                EmptyListMessage("No items match the filter: ${filter.describe()}.", canClearFilter = true)
-            query.startsWith("tag:") -> EmptyListMessage("No items have the tag “${query.removePrefix("tag:")}”.")
-            query.isNotEmpty() -> EmptyListMessage("No items match “$query”.")
-            else -> EmptyListMessage(
-                when (collection) {
-                    "all", "group_all" -> "This library has no items yet. Pull down to sync."
-                    "unfiled_items" -> "No unfiled items."
-                    "zooforzotero_Trash" -> "The trash is empty."
-                    "zooforzotero_my_publications" -> "No items in My Publications."
-                    else -> "This collection is empty."
-                }
-            )
+        ): EmptyListMessage {
+            val searching = filterApplies && search.isNotEmpty()
+            val filtering = filterApplies && filter.isActive
+            return when {
+                searching && filtering -> EmptyListMessage(
+                    "No items match “$search” with the filter: ${filter.describe()}.",
+                    "Clear search and filter"
+                )
+                searching -> EmptyListMessage("No items here match “$search”.", "Clear search")
+                filtering -> EmptyListMessage("No items match the filter: ${filter.describe()}.", "Clear filter")
+                query.startsWith("tag:") -> EmptyListMessage("No items have the tag “${query.removePrefix("tag:")}”.")
+                else -> EmptyListMessage(
+                    when (collection) {
+                        "all", "group_all" -> "This library has no items yet. Pull down to sync."
+                        "unfiled_items" -> "No unfiled items."
+                        "zooforzotero_Trash" -> "The trash is empty."
+                        "zooforzotero_my_publications" -> "No items in My Publications."
+                        else -> "This collection is empty."
+                    }
+                )
+            }
         }
     }
 }

@@ -59,7 +59,6 @@ interface Contract {
         fun attachmentDownloadError(message: String = "")
         fun updateAttachmentDownloadProgress(progress: Long, total: Long)
         fun filterEntries(query: String)
-        fun closeQuery()
         fun updateLibraryRefreshProgress(
             progress: Int,
             total: Int,
@@ -116,8 +115,6 @@ interface Contract {
         fun getMyPublications(): List<Item>
         fun downloadAttachment(item: Item)
         fun cancelAttachmentDownload()
-        fun filterCollections(query: String): List<Collection>
-        fun filterItems(query: String): List<Item>
         fun isLoaded(): Boolean
         fun createNote(note: Note)
         fun modifyNote(note: Note)

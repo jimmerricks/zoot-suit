@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="4dp"
-            android:text="Searches the whole library. Every word must match; case and accents are ignored."
+            android:text="Narrows the list on screen, like the filter, until cleared. Every word must match; case and accents are ignored."
             android:textAppearance="@style/TextAppearance.AppCompat.Caption" />
 
         <TextView

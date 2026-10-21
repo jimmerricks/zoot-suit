@@ -9,7 +9,6 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.ItemTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection as ZoteroCollection
 
 class LibraryItemFilterTest {
 
@@ -92,19 +91,5 @@ class LibraryItemFilterTest {
         val items = listOf(item("A", tags = listOf("x", "x")))
         assertEquals(listOf("x" to 1), LibraryItemFilter.tagCounts(items))
         assertTrue(LibraryItemFilter.tagCounts(null).isEmpty())
-    }
-
-    @Test
-    fun `collections match by name case-insensitively`() {
-        val collections = listOf(
-            ZoteroCollection("K1", 1, "Platform Governance", ""),
-            ZoteroCollection("K2", 1, "STS", ""),
-            ZoteroCollection("K3", 1, "Governmentality", "K1")
-        )
-        val result = LibraryItemFilter.collectionsMatching(collections, "GOVERN")
-        assertEquals(listOf("K1", "K3"), result.map { it.key })
-        assertTrue(LibraryItemFilter.collectionsMatching(null, "x").isEmpty())
-        assertEquals(listOf("K3"), LibraryItemFilter.collectionsMatching(collections, "ity govern").map { it.key })
-        assertTrue(LibraryItemFilter.collectionsMatching(collections, " ").isEmpty())
     }
 }

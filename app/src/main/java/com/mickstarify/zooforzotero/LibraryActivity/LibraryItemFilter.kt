@@ -1,10 +1,9 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection as ZoteroCollection
 
 /**
- * The library screen's item and collection filtering.
+ * The library screen's item filtering.
  *
  * Previously inlined in LibraryActivityModel. Everything here is pure: the
  * caller supplies the preference flags and an attachment lookup, so the
@@ -48,12 +47,5 @@ object LibraryItemFilter {
             }
         }
         return counts.toList().sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.first })
-    }
-
-    /** Collections whose name contains every term of [query]; see [LibrarySearch.terms]. */
-    fun collectionsMatching(collections: List<ZoteroCollection>?, query: String): List<ZoteroCollection> {
-        val terms = LibrarySearch.terms(query)
-        if (terms.isEmpty()) return emptyList()
-        return collections?.filter { c -> LibrarySearch.fold(c.name).let { n -> terms.all { n.contains(it) } } } ?: emptyList()
     }
 }
