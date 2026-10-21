@@ -1,10 +1,13 @@
 # Zoot Suit
 
-A personal fork of [Zoo for Zotero](https://github.com/mickstar/Zoo-For-Zotero) by Michael Johnston, an Android client for browsing and syncing Zotero libraries.
+An Android client for browsing and syncing Zotero libraries: a modified version of [Zoo for Zotero](https://github.com/mickstar/Zoo-For-Zotero) by Michael Johnston, changed since October 2026 (the differences are listed below and in the git history).
 
-**Upstream:** `mickstar/Zoo-For-Zotero` — forked at v4.0.0 (commit `0261040`)  
-**License:** GPLv3 (inherited)  
+**Upstream:** `mickstar/Zoo-For-Zotero`, forked at v4.0.0 (commit `0261040`)  
+**Licence:** GPLv3, see [LICENSE](LICENSE). Upstream ships no licence file; its author states GPLv3 in its terms of use.  
+**App id:** `nu.n4.zootsuit`: installs beside Zoo for Zotero, not over it.  
 **Not affiliated with the Zotero project.**
+
+Test builds are published under [Releases](https://github.com/jimmerricks/zoot-suit/releases). [Privacy policy](https://jimmerricks.github.io/zoot-suit/privacy-policy.html), [terms of use](https://jimmerricks.github.io/zoot-suit/terms-of-use.html).
 
 ---
 
@@ -26,6 +29,8 @@ A personal fork of [Zoo for Zotero](https://github.com/mickstar/Zoo-For-Zotero) 
 | Look | Light toolbar controls; photo header in the sidebar; sort dialog in its own style | White toolbar; plain sidebar; sort and filter dialogs alike (live, Cancel restores) |
 | WebDAV upload | Unconditional overwrite | Checks for newer remote versions first, conditional replace, optional backup |
 | Android 7 + Let's Encrypt | Fails TLS | ISRG Root X1 bundled |
+| Signing out | Clear the app's data | Settings → Sign out |
+| Zotero File Storage upload | Overwrites | Replaces only the file this device edited (Zotero refuses otherwise) |
 
 Planned divergences are tracked in [dependency-modernization-plan.md](dependency-modernization-plan.md).
 
@@ -44,8 +49,9 @@ Planned divergences are tracked in [dependency-modernization-plan.md](dependency
 
 ## Building
 
-1. Copy `apikeys.properties.example` to `apikeys.properties` and supply your Zotero OAuth key/secret from [zotero.org/settings/applications](https://www.zotero.org/settings/applications).
-2. Build with Android Studio or `./gradlew assembleDebug`.
+1. Copy `apikeys.properties.example` to `apikeys.properties` and supply your Zotero OAuth key/secret from [zotero.org/oauth/apps](https://www.zotero.org/oauth/apps). Without them, sign-in works with an API key only.
+2. Build with Android Studio or `./gradlew assembleDebug` (application id `nu.n4.zootsuit.debug`).
+3. Release builds: `./gradlew assembleRelease` signs with the keystore named in `keystore.properties` (or the file `$KEYSTORE_PROPERTIES` names); keys `storeFile`, `storePassword`, `keyAlias`, `keyPassword`. Without it the APK is unsigned. Keystores and both properties files are git-ignored.
 
 **Requirements:** Android 7.0+ (API 24), JDK 17+.
 
