@@ -437,7 +437,22 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun filterItems(query: String): List<Item> {
-        return applyLibraryFilter(LibraryItemFilter.matchingQuery(zoteroDB.items, query))
+        return applyLibraryFilter(searchIndex()?.search(query) ?: emptyList())
+    }
+
+    @Volatile
+    private var searchIndex: LibrarySearch.Index? = null
+
+    /**
+     * The open library's search index for the chosen fields, built on first use after a
+     * load, a sync or a change of fields (it keys on the item list's identity). Null
+     * before the library loads.
+     */
+    private fun searchIndex(): LibrarySearch.Index? {
+        val items = zoteroDB.items ?: return null
+        val fields = preferences.getSearchFields()
+        searchIndex?.takeIf { it.isFor(items, fields) }?.let { return it }
+        return LibrarySearch.Index(items, fields).also { searchIndex = it }
     }
 
     var downloadDisposable: Disposable? = null

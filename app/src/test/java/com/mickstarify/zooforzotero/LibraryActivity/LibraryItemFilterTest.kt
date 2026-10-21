@@ -74,25 +74,6 @@ class LibraryItemFilterTest {
     }
 
     @Test
-    fun `query matches title, creator, tag and key case-insensitively`() {
-        val items = listOf(
-            item("AAAA1111", mapOf("title" to "Discipline and Punish")),
-            item("BBBB2222", creators = listOf("Pierre" to "Bourdieu")),
-            item("CCCC3333", tags = listOf("governmentality")),
-            item("DDDD4444", mapOf("title" to "Unrelated"))
-        )
-        assertEquals(listOf("AAAA1111"), keys(LibraryItemFilter.matchingQuery(items, "discipline")))
-        assertEquals(listOf("BBBB2222"), keys(LibraryItemFilter.matchingQuery(items, "BOURDIEU")))
-        assertEquals(listOf("CCCC3333"), keys(LibraryItemFilter.matchingQuery(items, "Government")))
-        assertEquals(listOf("DDDD4444"), keys(LibraryItemFilter.matchingQuery(items, "dddd")))
-    }
-
-    @Test
-    fun `query against an unloaded library is empty`() {
-        assertTrue(LibraryItemFilter.matchingQuery(null, "anything").isEmpty())
-    }
-
-    @Test
     fun `tag counts span the whole list, sorted by name ignoring case`() {
         val items = listOf(
             item("A", tags = listOf("reading-list", "STS")),
@@ -123,5 +104,7 @@ class LibraryItemFilterTest {
         val result = LibraryItemFilter.collectionsMatching(collections, "GOVERN")
         assertEquals(listOf("K1", "K3"), result.map { it.key })
         assertTrue(LibraryItemFilter.collectionsMatching(null, "x").isEmpty())
+        assertEquals(listOf("K3"), LibraryItemFilter.collectionsMatching(collections, "ity govern").map { it.key })
+        assertTrue(LibraryItemFilter.collectionsMatching(collections, " ").isEmpty())
     }
 }

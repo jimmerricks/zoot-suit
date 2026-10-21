@@ -141,20 +141,6 @@ class Item : Parcelable {
         return date
     }
 
-    /* Matches the query text against the metadata stored in item,
-* checks to see if we can find the text anywhere. Useful for search. */
-    fun query(queryText: String): Boolean {
-        val queryUpper = queryText.uppercase()
-
-        return this.itemKey.uppercase().contains(queryUpper) ||
-                this.tags.joinToString("_").uppercase().contains(queryUpper) ||
-                this.data.values.joinToString("_").uppercase().contains(
-                    queryUpper
-                ) || this.creators.map {
-            it.makeString().uppercase()
-        }.joinToString("_").contains(queryUpper)
-    }
-
     fun getSortableDateAddedString(): String {
         return data["dateAdded"] ?: "XXXX-XX-XX"
     }

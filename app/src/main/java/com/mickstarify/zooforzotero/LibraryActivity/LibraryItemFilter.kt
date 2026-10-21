@@ -35,11 +35,6 @@ object LibraryItemFilter {
         return newItems
     }
 
-    /** Items matching a free-text search; see [Item.query]. Null means no library loaded. */
-    fun matchingQuery(items: List<Item>?, query: String): List<Item> {
-        return items?.filter { it.query(query) } ?: emptyList()
-    }
-
     /**
      * Every tag in [items] with the number of items carrying it, sorted by name
      * case-insensitively. An item tagged twice with the same tag counts once.
@@ -55,9 +50,10 @@ object LibraryItemFilter {
         return counts.toList().sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.first })
     }
 
-    /** Collections whose name contains [query], case-insensitively. */
+    /** Collections whose name contains every term of [query]; see [LibrarySearch.terms]. */
     fun collectionsMatching(collections: List<ZoteroCollection>?, query: String): List<ZoteroCollection> {
-        val queryUpper = query.uppercase()
-        return collections?.filter { it.name.uppercase().contains(queryUpper) } ?: emptyList()
+        val terms = LibrarySearch.terms(query)
+        if (terms.isEmpty()) return emptyList()
+        return collections?.filter { c -> LibrarySearch.fold(c.name).let { n -> terms.all { n.contains(it) } } } ?: emptyList()
     }
 }

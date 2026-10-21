@@ -1,6 +1,7 @@
 package com.mickstarify.zooforzotero
 
 import com.mickstarify.zooforzotero.LibraryActivity.LibraryFilter
+import com.mickstarify.zooforzotero.LibraryActivity.LibrarySearch
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import android.content.Context
 import android.util.Log
@@ -290,6 +291,13 @@ class PreferenceManager @Inject constructor(context: Context) {
         /* This preference defines whether library search should update as the user types.
         * This may be problematic for devices with a slow refresh rate or slow IO. */
         return sharedPreferences.getBoolean("should_live_search", true)
+    }
+
+    /** The fields a library search looks in; unset, [LibrarySearch.DEFAULT_FIELDS]. */
+    fun getSearchFields(): Set<LibrarySearch.Field> {
+        val names = sharedPreferences.getStringSet("search_fields", null)
+            ?: return LibrarySearch.DEFAULT_FIELDS
+        return LibrarySearch.Field.entries.filter { it.name in names }.toSet()
     }
 
     fun hasShownCustomStorageWarning(): Boolean {
