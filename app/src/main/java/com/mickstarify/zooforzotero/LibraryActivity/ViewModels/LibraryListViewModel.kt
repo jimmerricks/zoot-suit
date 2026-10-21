@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.mickstarify.zooforzotero.LibraryActivity.EmptyListMessage
 import com.mickstarify.zooforzotero.LibraryActivity.ListEntry
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -69,4 +70,16 @@ class LibraryListViewModel : ViewModel() {
         }
     }
 
+    /** What the list says when it shows nothing; set with every list. */
+    private val emptyMessage = MutableLiveData<EmptyListMessage>()
+    fun getEmptyMessage(): LiveData<EmptyListMessage> = emptyMessage
+    fun setEmptyMessage(message: EmptyListMessage) {
+        if (emptyMessage.value != message) emptyMessage.value = message
+    }
+
+    private val onClearFilterRequested = MutableLiveData<Int>()
+    fun getOnClearFilterRequested(): LiveData<Int> = onClearFilterRequested
+    fun onClearFilterRequested() {
+        onClearFilterRequested.value = (onClearFilterRequested.value ?: 0) + 1
+    }
 }

@@ -227,13 +227,19 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         return LibraryFilterDialog.Preview(shown.size, LibraryItemFilter.tagCounts(shown))
     }
 
-    /** Toolbar subtitle naming the active filter and its count, if the list uses the filter. */
-    private fun showFilterSummary() {
+    /**
+     * Toolbar subtitle naming the active filter and its count, if the list uses the filter;
+     * and what the list says if it is empty. [query] is the search or tag view shown, if any.
+     */
+    private fun showFilterSummary(query: String = model.state.filterText) {
         val filter = model.libraryFilter
         val shown = model.lastFilteredItems
         subtitle.value =
             if (!filter.isActive || shown == null) null
             else "Filter: ${filter.describe()} · ${shown.size} " + if (shown.size == 1) "item" else "items"
+        libraryListViewModel.setEmptyMessage(
+            EmptyListMessage.forList(filter, shown != null, query, model.getCurrentCollection())
+        )
     }
 
     override fun onTagOpen(tagName: String) {
@@ -269,7 +275,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             val tagName = query.substring(4) // remove tag:
             val entries = model.getItemsForTag(tagName).sort().map { ListEntry(it) }
             libraryListViewModel.setItems(entries)
-            showFilterSummary()
+            showFilterSummary(query)
             return
         }
 
@@ -285,7 +291,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
         Log.d("zotero", "setting items ${entries.size}")
         libraryListViewModel.setItems(entries)
-        showFilterSummary()
+        showFilterSummary(query)
     }
 
     override fun attachmentDownloadError(message: String) {
@@ -579,6 +585,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         }
         observe(libraryListViewModel.getOnLibraryRefreshRequested()) {
             this.requestLibraryRefresh()
+        }
+        observe(libraryListViewModel.getOnClearFilterRequested()) {
+            previewLibraryFilter(LibraryFilter())
         }
         observe(libraryListViewModel.getLibraryFilterText()) {
             Log.d("zotero", "got filter text $it")

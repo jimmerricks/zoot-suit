@@ -12,6 +12,8 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.widget.SearchView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
@@ -137,6 +139,14 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
             } else {
                 hideEmptyList()
             }
+        }
+
+        val emptyText = requireView().findViewById<TextView>(R.id.textView_Library_label)
+        val clearFilter = requireView().findViewById<Button>(R.id.button_clear_filter)
+        clearFilter.setOnClickListener { viewModel.onClearFilterRequested() }
+        viewModel.getEmptyMessage().observe(viewLifecycleOwner) { message ->
+            emptyText.text = message.text
+            clearFilter.visibility = if (message.canClearFilter) View.VISIBLE else View.GONE
         }
 
         viewModel.getAttachmentStates().observe(viewLifecycleOwner) { states ->

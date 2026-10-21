@@ -36,11 +36,25 @@
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="96dp"
                     android:layout_marginEnd="16dp"
-                    android:text="@string/catalog_empty"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:text="No items match the filter: to-read." />
+
+                <Button
+                    android:id="@+id/button_clear_filter"
+                    style="@style/Widget.AppCompat.Button.Colored"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/clear_filter"
+                    android:visibility="gone"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/textView_Library_label"
+                    tools:visibility="visible" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

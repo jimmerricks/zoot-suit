@@ -32,7 +32,6 @@
     <string name="syncing_header">Syncing</string>
     <string name="title">Title</string>
     <string name="author">Author</string>
-    <string name="library_content_empty_library">This catalog is currently empty.\nPlease refresh your library.</string>
     <string name="library_header">Library</string>
     <string name="unfiled_items">Unfiled Items</string>
     <string name="title_activity_web_davsetup">WebDAV Setup</string>
@@ -49,7 +48,7 @@
     <string name="enter_your_zotero_api_key_manually">Enter your Zotero API Key Manually</string>
     <string name="zotero_account_sync">Zotero Account Sync</string>
     <string name="pick_your_cloud_storage_provider">Pick your cloud storage provider</string>
-    <string name="catalog_empty">This catalog is empty. If you believe this is an error, please refresh your library.</string>
+    <string name="clear_filter">Clear filter</string>
     <string name="surname">Surname</string>
     <string name="firstname">First Name</string>
     <string name="username">Username</string>
