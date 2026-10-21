@@ -84,6 +84,33 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         return db.itemDao().getItemsForGroup(groupID)
     }
 
+    /**
+     * A library's items (not trashed) with their fields, creators, tags and collections.
+     * Same result as [getItemsForGroup], read with one query per table and joined here
+     * by key, rather than through Room's @Relation batches. Blocking; call off the main thread.
+     */
+    fun loadItems(groupID: Int): List<Item> {
+        val dao = db.itemDao()
+        val infos = dao.getItemInfosForGroup(groupID)
+        val data = HashMap<String, MutableList<ItemData>>(infos.size * 2)
+        val creators = HashMap<String, MutableList<Creator>>(infos.size * 2)
+        val tags = HashMap<String, MutableList<ItemTag>>()
+        val collections = HashMap<String, MutableList<String>>()
+        for (d in dao.getItemDataForGroup(groupID)) data.getOrPut(d.parent) { ArrayList(8) }.add(d)
+        for (c in dao.getCreatorsForGroup(groupID)) creators.getOrPut(c.parent) { ArrayList(2) }.add(c)
+        for (t in dao.getTagsForGroup(groupID)) tags.getOrPut(t.parent) { ArrayList(2) }.add(t)
+        for (c in dao.getItemCollectionsForGroup(groupID)) collections.getOrPut(c.itemKey) { ArrayList(1) }.add(c.collectionKey)
+        return infos.map { info ->
+            Item().apply {
+                itemInfo = info
+                itemData = data[info.itemKey] ?: emptyList()
+                this.creators = creators[info.itemKey] ?: emptyList()
+                this.tags = tags[info.itemKey] ?: emptyList()
+                this.collections = collections[info.itemKey] ?: emptyList()
+            }
+        }
+    }
+
     fun getItemKeysWithTag(tag: String): Maybe<List<String>> {
         return db.itemDao().getItemKeysWithTag(tag)
     }

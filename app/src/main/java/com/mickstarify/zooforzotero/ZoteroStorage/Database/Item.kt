@@ -296,6 +296,23 @@ interface ItemDao {
     @Query("SELECT * FROM itemInfo WHERE `group`=:groupID and `deleted`=1")
     fun getTrashedItemsForGroup(groupID: Int): Maybe<List<Item>>
 
+    // One query per table for a library's items (not trashed), joined in ZoteroDatabase.loadItems;
+    // Room's @Relation for getItemsForGroup reads the same rows in batches of 999 keys.
+    @Query("SELECT * FROM ItemInfo WHERE `group`=:groupID AND `deleted`=0")
+    fun getItemInfosForGroup(groupID: Int): List<ItemInfo>
+
+    @Query("SELECT d.* FROM ItemData d JOIN ItemInfo i ON d.parent = i.itemKey WHERE i.`group`=:groupID AND i.`deleted`=0")
+    fun getItemDataForGroup(groupID: Int): List<ItemData>
+
+    @Query("SELECT c.* FROM ItemCreator c JOIN ItemInfo i ON c.parent = i.itemKey WHERE i.`group`=:groupID AND i.`deleted`=0")
+    fun getCreatorsForGroup(groupID: Int): List<Creator>
+
+    @Query("SELECT t.* FROM ItemTags t JOIN ItemInfo i ON t.parent = i.itemKey WHERE i.`group`=:groupID AND i.`deleted`=0")
+    fun getTagsForGroup(groupID: Int): List<ItemTag>
+
+    @Query("SELECT c.* FROM ItemCollection c JOIN ItemInfo i ON c.itemKey = i.itemKey WHERE i.`group`=:groupID AND i.`deleted`=0")
+    fun getItemCollectionsForGroup(groupID: Int): List<ItemCollection>
+
     @Query("SELECT parent from ItemTags where `tag`=:tag")
     fun getItemKeysWithTag(tag: String): Maybe<List<String>>
 

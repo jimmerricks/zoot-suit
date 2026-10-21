@@ -124,12 +124,12 @@ class ZoteroDB(
     fun loadItemsFromDatabase(): Completable {
         /* Load the items from Database as well as all the attachments. */
         val completable =
-            Completable.fromMaybe(zoteroDatabase.getItemsForGroup(groupID).doOnSuccess(
-                Consumer {
-                    Log.d("zotero", "loaded ${it.size} items from DB for groupID=$groupID, setting now.")
-                    items = it
-                }
-            )).andThen(
+            Completable.fromAction {
+                val start = System.nanoTime()
+                val loaded = zoteroDatabase.loadItems(groupID)
+                Log.d("zotero", "loaded ${loaded.size} items from DB for groupID=$groupID in ${(System.nanoTime() - start) / 1_000_000} ms, setting now.")
+                items = loaded
+            }.andThen(
                 Completable.fromMaybe(
                     zoteroDatabase.getAttachmentsForGroup(groupID).doOnSuccess(Consumer {
                         Log.d("zotero", "Loading attachmentInfo from Database")
