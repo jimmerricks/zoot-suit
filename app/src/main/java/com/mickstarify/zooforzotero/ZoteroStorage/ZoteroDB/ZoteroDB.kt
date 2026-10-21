@@ -39,12 +39,16 @@ class ZoteroDB(
         groupID.toString()
     }
 
+    // replaced whole (never mutated) by loads on the io scheduler and read from the main
+    // thread and from background checks; @Volatile so a reader sees the new list
+    @Volatile
     var collections: List<Collection>? = null
         set(value) {
             field = value
             this.populateCollectionChildren()
             this.createCollectionItemMap()
         }
+    @Volatile
     var items: List<Item>? = null
         set(value) {
             field = value
