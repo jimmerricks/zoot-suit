@@ -42,10 +42,18 @@ Slices done so far (each behavior-preserving, unit-tested where pure):
 - `LibraryNavigator`: the back-stack of `LibraryModelState`s (6 tests).
 - `LibraryItemFilter`: notes/PDF display filters, item and collection search
   (7 tests).
+- Presenter → ViewModel, first step (2026-10-21): `LibraryViewModel` owns the
+  presenter and so the model; the presenter attaches to each new activity, so
+  rotation keeps the library, the open group and Back (it used to reload 20k items
+  and replay the last click). Title, filter summary, sidebar rows and edit count are
+  LiveData on the presenter; the model holds the application context only. The
+  presenter still calls the view for dialogs and navigation, and the model is still
+  the god class: the attachment and sync-staging slices remain.
 
 Next, in rising order of risk: attachment download/upload (largest RxJava
 surface, can lose data), then sync staging (`finishLibrarySync`,
-`loadPriorState`), then the Presenter → ViewModel swap. Each of these needs
+`loadPriorState`), then the rest of the Presenter → ViewModel swap (dialogs and
+navigation as events, the presenter folded into the ViewModel). Each of these needs
 a logged-in emulator with a disposable test library, not the real one: this
 code uploads attachments and creates/deletes notes.
 
@@ -116,8 +124,11 @@ expandable (expanded keys per library in prefs). Unfiled and Trash follow the op
 library (the trash query was fixed to My Library); My Publications is My Library
 only. `LibraryNavigator.openLibrary()` is the one move that switches library;
 collection pushes keep the group. Setting `show_subcollection_items`. A collection's
-list no longer shows subcollection rows. Navigation state is still in memory, so a
-restart opens My Library: the Presenter → ViewModel slice fixes that.
+list no longer shows subcollection rows. Later the same day: the place (library and
+collection) is saved and reopened at startup; a group synced before opens from Room
+(offline too), refreshing in the background when a day old; Settings → Group
+libraries applies on returning (`LibraryNavigator.leaveGroups`); the sidebar draws
+its own status-bar strip, animates expand/collapse and closes on Back.
 
 This also starts the "attachment download/upload" slice of item 2: the upload half
 is now a self-contained pipeline inside the model, ready to move out with the

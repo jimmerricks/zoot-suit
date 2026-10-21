@@ -20,6 +20,7 @@ A personal fork of [Zoo for Zotero](https://github.com/mickstar/Zoo-For-Zotero) 
 | Filtering | One tag at a time (tag view); only-PDF/only-notes in the sort dialog | One filter dialog: tags (any number), has PDF/notes, PDF on device, edits to sync; AND; live list and counts; remembered; shown in the toolbar |
 | Attachment actions | Tap only in the list | Long-press menu: Open, Download to device, Upload my changes, Delete local copy; state shown per attachment, and as a badge on the list's PDF icon (on device / edited here) |
 | Sidebar | Top-level collections only; groups in a flat list after Trash, opening one kept My Library's collections | Collection tree, nested and expandable; groups under a collapsible heading, each with its own collections, Unfiled and Trash; listed offline too |
+| Rotation and restart | Rotation reloaded the library and lost your place; every start opened My Library | Rotation keeps everything; a restart reopens the library and collection you were in |
 | Collection view | Subcollections as rows, then the collection's own items | Items only (subcollections are in the sidebar); optional "Show items from subcollections" |
 | Adding items | + button (Zotero Save, ISBN scanner), share target | Removed: add items in Zotero itself |
 | Look | Light toolbar controls; photo header in the sidebar; sort dialog in its own style | White toolbar; plain sidebar; sort and filter dialogs alike (live, Cancel restores) |
