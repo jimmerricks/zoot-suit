@@ -121,9 +121,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         }
     }
 
-    fun shouldIUpdateLibrary(): Boolean {
+    /** Whether [db] (by default the open library) was last synced a day or more ago. */
+    fun shouldIUpdateLibrary(db: ZoteroDB = zoteroDB): Boolean {
         val currentTimestamp = System.currentTimeMillis()
-        val lastModified = zoteroDB.getLastSyncedTimestamp()
+        val lastModified = db.getLastSyncedTimestamp()
         Log.d("zotero", "last modified = $lastModified")
 
         if (TimeUnit.MILLISECONDS.toHours(currentTimestamp - lastModified) >= 24) {
@@ -1136,21 +1137,34 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
 
+    // the group the user asked to open; its load switches the list to it (see finishLibrarySync)
+    private var openingGroupId: Int? = null
+
+    /**
+     * Opens a group, or refreshes the open one ([refresh]). A group synced before opens
+     * from the device, offline too and while My Library syncs; one last synced a day or
+     * more ago is then refreshed in the background, as My Library is at startup. Only a
+     * group never synced here waits for the network.
+     */
     override fun startGroupSync(group: GroupInfo, refresh: Boolean) {
+        val db = zoteroGroupDB.getGroup(group.id)
+        if (!refresh) openingGroupId = group.id
+        if (!refresh && (db.isPopulated() || db.getLastSyncedTimestamp() != 0L)) {
+            finishLibrarySync(db) {
+                if (shouldIUpdateLibrary(db) && !syncManager.isSyncing()) {
+                    syncManager.startCompleteSync(db, true)
+                }
+            }
+            return
+        }
+
         if (syncManager.isSyncing()) {
             Log.e("zotero", "cannot sync groups, still in a sync")
             presenter.makeToastAlert("Cannot open groups yet, still syncing library.")
+            openingGroupId = null
             return
         }
-
-        val db = zoteroGroupDB.getGroup(group.id)
-        if (!refresh && db.isPopulated()) {
-            // already synced and loaded.
-            finishLibrarySync(db)
-            return
-        }
-
-        syncManager.startCompleteSync(db, false)
+        syncManager.startCompleteSync(db, refresh)
     }
 
     override fun usePersonalLibrary() {
@@ -1267,15 +1281,17 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                     } else {
                         presenter.redisplayItems()
                     }
-                } else {
+                } else if (openingGroupId == db.groupID || state.currentGroup.id == db.groupID) {
                     zoteroDBPicker.groupId = db.groupID
                     // opening the group; a refresh of the open group keeps its place
                     if (state.currentGroup.id != db.groupID) {
                         getGroupById(db.groupID)?.let { navigator.openLibrary(it) }
                     }
+                    openingGroupId = null
                     presenter.receiveCollections(getCollections())
                     presenter.redisplayItems()
                 }
+                // else: a background refresh of a group the user has since left: loaded, not shown
                 if (db.items?.size == 0) {
                     // incase there was an error, i don't want users to be stuck with an empty library.
                     db.setItemsVersion(0)
