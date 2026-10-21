@@ -125,7 +125,6 @@ interface Contract {
         fun deleteNote(note: Note)
         fun openPDF(attachment: Item)
         fun openAttachment(item: Item)
-        fun deleteAttachment(item: Item)
         fun uploadAttachment(attachment: Item)
         fun getUnfiledItems(): List<Item>
         fun startGroupSync(group: GroupInfo, refresh: Boolean = false)

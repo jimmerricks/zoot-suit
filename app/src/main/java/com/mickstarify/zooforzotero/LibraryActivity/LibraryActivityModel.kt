@@ -711,38 +711,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         })
     }
 
-    override fun deleteAttachment(item: Item) {
-        zoteroAPI.deleteItem(item.itemKey, item.getVersion(), object : DeleteItemListener {
-            override fun success() {
-                presenter.makeToastAlert("Successfully deleted your attachment.")
-                zoteroDB.deleteItem(item.itemKey)
-                presenter.refreshItemView()
-            }
-
-            override fun failedItemLocked() {
-                presenter.createErrorAlert(
-                    "Error Deleting Attachment", "The item is locked " +
-                            "and you do not have permission to delete this attachment."
-                ) {}
-            }
-
-            override fun failedItemChangedSince() {
-                presenter.createErrorAlert(
-                    "Error Deleting Attachment",
-                    "Your local copy of this note is out of date. " +
-                            "Please refresh your library to delete this attachment."
-                ) {}
-            }
-
-            override fun failed(code: Int) {
-                presenter.createErrorAlert(
-                    "Error Deleting Attachment", "There was an error " +
-                            "deleting your attachment. The server responded : $code"
-                ) {}
-            }
-        })
-    }
-
     fun displayGroupsOnUI() {
         val groups = zoteroDatabase.getGroups()
         groups.subscribeOn(Schedulers.io())
