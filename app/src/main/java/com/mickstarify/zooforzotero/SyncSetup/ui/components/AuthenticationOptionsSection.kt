@@ -27,8 +27,8 @@ fun AuthenticationOptionsSection(
         Spacer(modifier = Modifier.height(8.dp))
 
         AuthOptionCard(
-            title = "Web Authentication",
-            description = "Sign in through your browser",
+            title = "Sign in with Zotero",
+            description = "Log in on zotero.org",
             icon = Icons.Outlined.Language,
             selected = selectedOption == SyncOption.ZoteroAPI,
             onClick = {
@@ -37,8 +37,8 @@ fun AuthenticationOptionsSection(
         )
 
         AuthOptionCard(
-            title = "API Key",
-            description = "Enter your API key manually",
+            title = "API key",
+            description = "Paste a key you created on zotero.org",
             icon = Icons.Outlined.Key,
             selected = selectedOption == SyncOption.ZoteroAPIManual,
             onClick = {

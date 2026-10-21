@@ -28,9 +28,9 @@
     <string name="attachment_manager">Attachment Manager</string>
     <string name="filter">Filter</string>
     <string name="force_resync">Re-download library</string>
-    <string name="app_frontpage_disclaimer">You must use the official Zotero Account syncing to use this app.</string>
-    <string name="proceed">Proceed</string>
-    <string name="enter_your_zotero_api_key_manually">Enter your Zotero API Key Manually</string>
+    <string name="app_frontpage_disclaimer">Zoot Suit syncs with your zotero.org account.</string>
+    <string name="proceed">Continue</string>
+    <string name="enter_your_zotero_api_key_manually">Enter a Zotero API key</string>
     <string name="zotero_account_sync">Zotero Account Sync</string>
     <string name="pick_your_cloud_storage_provider">Pick your cloud storage provider</string>
     <string name="clear_filter">Clear filter</string>
@@ -43,7 +43,7 @@
     
     <!-- API Key Setup -->
     <string name="api_key_instructions_title">How to get your API key</string>
-    <string name="api_key_instructions_steps">1. Visit Zotero Account settings\n2. Navigate to Security\n3. Create new private key</string>
+    <string name="api_key_instructions_steps">1. Open your Zotero account settings\n2. Go to Security\n3. Create a new private key. Allow write access to upload notes and annotated PDFs, and group access to see group libraries.</string>
     
     <!-- Privacy Policy -->
     <string name="privacy_policy">Privacy Policy</string>

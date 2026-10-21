@@ -33,18 +33,18 @@ class ApiKeyRepositoryImpl @Inject constructor(
                     200 -> {
                         val keyInfo = response.body()
                         if (keyInfo == null) {
-                            ApiKeyRepository.ValidationResult.Error("Error, got back unrecognizable data from Zotero API.")
+                            ApiKeyRepository.ValidationResult.Error("Zotero sent an answer the app doesn't understand. Try again later.")
                         } else {
                             ApiKeyRepository.ValidationResult.Success(keyInfo)
                         }
                     }
 
                     404 -> {
-                        ApiKeyRepository.ValidationResult.Error("Error: Your API key was not found. Please check your key and try again.")
+                        ApiKeyRepository.ValidationResult.Error("Zotero doesn't know this key. Check it and try again.")
                     }
 
                     else -> {
-                        ApiKeyRepository.ValidationResult.Error("Unknown network error, got back server code ${response.code()}")
+                        ApiKeyRepository.ValidationResult.Error("Zotero answered with an error (HTTP ${response.code()}). Check the key, or try again later.")
                     }
                 }
             } catch (_: Exception) {

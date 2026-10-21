@@ -156,8 +156,8 @@ fun AuthOptionCard(
 fun AuthOptionCardSelectedPreview() {
     ZoteroTheme {
         AuthOptionCard(
-            title = "Web Authentication",
-            description = "Sign in through your browser",
+            title = "Sign in with Zotero",
+            description = "Log in on zotero.org",
             icon = Icons.Outlined.Language,
             selected = true,
             onClick = {}
@@ -170,8 +170,8 @@ fun AuthOptionCardSelectedPreview() {
 fun AuthOptionCardUnselectedPreview() {
     ZoteroTheme {
         AuthOptionCard(
-            title = "API Key",
-            description = "Enter your API key manually",
+            title = "API key",
+            description = "Paste a key you created on zotero.org",
             icon = Icons.Outlined.Key,
             selected = false,
             onClick = {}
@@ -185,16 +185,16 @@ fun AuthOptionCardDarkPreview() {
     ZoteroTheme(darkTheme = true) {
         Column {
             AuthOptionCard(
-                title = "Web Authentication",
-                description = "Sign in through your browser",
+                title = "Sign in with Zotero",
+                description = "Log in on zotero.org",
                 icon = Icons.Outlined.Language,
                 selected = true,
                 onClick = {}
             )
             Spacer(modifier = Modifier.height(12.dp))
             AuthOptionCard(
-                title = "API Key",
-                description = "Enter your API key manually",
+                title = "API key",
+                description = "Paste a key you created on zotero.org",
                 icon = Icons.Outlined.Key,
                 selected = false,
                 onClick = {}

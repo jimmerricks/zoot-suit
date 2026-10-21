@@ -99,7 +99,7 @@ class ManualApiViewModel @Inject constructor(
                     updateCurrentState {
                         it.copy(
                             isValidating = false,
-                            errorMessage = "Network error connecting to Zotero API."
+                            errorMessage = "Couldn't reach Zotero. Check your connection."
                         )
                     }
                 }

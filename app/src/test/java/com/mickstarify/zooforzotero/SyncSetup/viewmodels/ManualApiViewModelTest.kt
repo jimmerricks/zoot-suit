@@ -25,7 +25,7 @@ class ManualApiViewModelTest : BaseViewModelTest() {
         private const val TEST_USER_ID = 12345
         private const val TEST_USER_ID_STRING = "12345"
         private const val INVALID_API_ERROR_MESSAGE = "Invalid API key"
-        private const val NETWORK_ERROR_MESSAGE = "Network error connecting to Zotero API."
+        private const val NETWORK_ERROR_MESSAGE = "Couldn't reach Zotero. Check your connection."
         private const val BLANK_KEY_INPUT = "   "
         private const val EMPTY_STRING = ""
     }

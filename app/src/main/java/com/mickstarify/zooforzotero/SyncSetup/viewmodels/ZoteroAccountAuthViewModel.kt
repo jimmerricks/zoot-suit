@@ -106,7 +106,7 @@ class ZoteroAccountAuthViewModel @Inject constructor(
                 Log.e(TAG, "Error starting OAuth flow: ${e.message}", e)
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    error = "Error connecting to Zotero's server: ${e.message}"
+                    error = "Couldn't reach Zotero: ${e.message}"
                 )
             }
         }
@@ -141,7 +141,7 @@ class ZoteroAccountAuthViewModel @Inject constructor(
                 Log.e(TAG, "Error handling OAuth callback: ${e.message}", e)
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    error = "Error completing authentication: ${e.message}"
+                    error = "Couldn't finish signing in: ${e.message}"
                 )
             }
         }

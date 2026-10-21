@@ -81,7 +81,7 @@ fun ApiKeyInstructionsCard() {
                         fontWeight = FontWeight.Medium
                     )
                 ) {
-                    append("Zotero Security Settings")
+                    append("Zotero security settings")
                 }
                 pop()
             }

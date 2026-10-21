@@ -76,7 +76,7 @@ fun ZoteroOAuthWebView(
                             if (oauthToken != null && oauthVerifier != null) {
                                 onOAuthCallback(oauthToken, oauthVerifier)
                             } else {
-                                onError("Failed to retrieve OAuth parameters from callback")
+                                onError("Zotero's sign-in page didn't return a login. Try again.")
                             }
                             return true
                         }
@@ -104,7 +104,7 @@ fun ZoteroOAuthWebView(
                 ) {
                     super.onReceivedError(view, errorCode, description, failingUrl)
                     Log.e(TAG, "WebView error $errorCode: $description for URL: $failingUrl")
-                    onError("Connection error: $description")
+                    onError("Couldn't reach Zotero: $description")
                 }
 
                 override fun onPageStarted(

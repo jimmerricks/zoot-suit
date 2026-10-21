@@ -70,7 +70,7 @@ class ApiKeyRepositoryImplTest : BaseViewModelTest() {
         // Assert
         assertTrue(result is ApiKeyRepository.ValidationResult.Error)
         val errorResult = result as ApiKeyRepository.ValidationResult.Error
-        assertEquals("Error, got back unrecognizable data from Zotero API.", errorResult.message)
+        assertEquals("Zotero sent an answer the app doesn't understand. Try again later.", errorResult.message)
     }
 
     @Test
@@ -86,7 +86,7 @@ class ApiKeyRepositoryImplTest : BaseViewModelTest() {
         // Assert
         assertTrue(result is ApiKeyRepository.ValidationResult.Error)
         val errorResult = result as ApiKeyRepository.ValidationResult.Error
-        assertEquals("Error: Your API key was not found. Please check your key and try again.", errorResult.message)
+        assertEquals("Zotero doesn't know this key. Check it and try again.", errorResult.message)
     }
 
     @Test
@@ -102,7 +102,7 @@ class ApiKeyRepositoryImplTest : BaseViewModelTest() {
         // Assert
         assertTrue(result is ApiKeyRepository.ValidationResult.Error)
         val errorResult = result as ApiKeyRepository.ValidationResult.Error
-        assertEquals("Unknown network error, got back server code 401", errorResult.message)
+        assertEquals("Zotero answered with an error (HTTP 401). Check the key, or try again later.", errorResult.message)
     }
 
     @Test
@@ -118,7 +118,7 @@ class ApiKeyRepositoryImplTest : BaseViewModelTest() {
         // Assert
         assertTrue(result is ApiKeyRepository.ValidationResult.Error)
         val errorResult = result as ApiKeyRepository.ValidationResult.Error
-        assertEquals("Unknown network error, got back server code 500", errorResult.message)
+        assertEquals("Zotero answered with an error (HTTP 500). Check the key, or try again later.", errorResult.message)
     }
 
     @Test
@@ -161,7 +161,7 @@ class ApiKeyRepositoryImplTest : BaseViewModelTest() {
         // Assert
         assertTrue(result is ApiKeyRepository.ValidationResult.Error)
         val errorResult = result as ApiKeyRepository.ValidationResult.Error
-        assertEquals("Error: Your API key was not found. Please check your key and try again.", errorResult.message)
+        assertEquals("Zotero doesn't know this key. Check it and try again.", errorResult.message)
     }
 
     @Test

@@ -64,7 +64,7 @@ fun SyncSetupWebViewScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Zotero Authentication") },
+                title = { Text("Sign in to Zotero") },
                 colors = zootTopAppBarColors(),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -91,13 +91,13 @@ fun SyncSetupWebViewScreen(
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Connecting to Zotero API...",
+                            text = "Connecting to Zotero…",
                             style = MaterialTheme.typography.bodyLarge,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "If this takes too long, try using the API key method instead.",
+                            text = "Taking too long? Go back and use an API key instead.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center
                         )
@@ -133,13 +133,13 @@ fun SyncSetupWebViewScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "Unable to connect to Zotero",
+                            text = "Couldn't connect to Zotero",
                             style = MaterialTheme.typography.headlineSmall,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Please check your internet connection and try again.",
+                            text = "Check your connection and try again.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center
                         )
@@ -163,7 +163,7 @@ fun SyncSetupWebViewScreen(
             onDismissRequest = {
                 viewModel.handleEvent(ZoteroAccountAuthViewModel.Event.DismissError)
             },
-            title = { Text("Authentication Error") },
+            title = { Text("Sign-in failed") },
             text = { Text(errorMessage) },
             confirmButton = {
                 TextButton(

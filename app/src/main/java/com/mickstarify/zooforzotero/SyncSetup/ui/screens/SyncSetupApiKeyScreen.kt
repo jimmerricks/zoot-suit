@@ -77,7 +77,7 @@ private fun SyncSetupApiKeyScreenContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "Enter API Key",
+            text = "API key",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -86,7 +86,7 @@ private fun SyncSetupApiKeyScreenContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Connect to your Zotero account using an API key",
+            text = "Sign in to your Zotero account with an API key",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -102,8 +102,8 @@ private fun SyncSetupApiKeyScreenContent(
         OutlinedTextField(
             value = state.apiKey,
             onValueChange = { onEvent(ManualApiViewModel.Event.ApiKeyChanged(it)) },
-            label = { Text("API Key") },
-            placeholder = { Text("Enter your Zotero API key") },
+            label = { Text("API key") },
+            placeholder = { Text("Paste your Zotero API key") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             enabled = !state.isValidating,
@@ -115,7 +115,7 @@ private fun SyncSetupApiKeyScreenContent(
                         color = MaterialTheme.colorScheme.error
                     )
                 } else {
-                    Text("The key should be a long string of letters and numbers")
+                    Text("A key is a long string of letters and digits")
                 }
             }
         )
@@ -139,10 +139,10 @@ private fun SyncSetupApiKeyScreenContent(
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Validating...")
+                    Text("Checking…")
                 }
             } else {
-                Text("Continue with API Key")
+                Text("Continue")
             }
         }
 
@@ -207,7 +207,7 @@ private fun SyncSetupApiKeyScreenErrorPreview() {
         SyncSetupApiKeyScreenContent(
             state = ManualApiViewModel.State(
                 apiKey = "invalid-key",
-                errorMessage = "Error: Your API key was not found. Please check your key and try again."
+                errorMessage = "Zotero doesn't know this key. Check it and try again."
             ),
             onEvent = {}
         )
