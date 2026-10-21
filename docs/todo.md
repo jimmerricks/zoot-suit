@@ -1,26 +1,32 @@
-# Open items after the 2026-10-21 review pass
+# Open items (updated 2026-10-21, after the release-prep pass)
 
 Release identity: see `release-identity.md`. Test environment:
 `../../.claude/reference/test-environment.md`.
 
 ## Before release
-- **Sign-out** (none in the app; the revoked-key message says "clear app data").
-  One place now: `AuthenticationStorageImpl.destroyCredentials` + `deleteEverything`.
-- **Zotero File Storage upload**: request format fixed to Zotero's docs and
-  unit-tested (`b4b2848`, `5212215`), never run against the server. Also check the
-  S3 multipart part (`@Part("file")` has no filename).
+- **Push and publish** (Jim's go-ahead): push `master` to `origin`, turn on GitHub
+  Pages (root of `master`) and issues, attach the release-signed APK to a release.
+- **OAuth sign-in end to end**: request token and login page work on API 24; finishing
+  needs the scratch account's password (see release-identity.md §1).
 - **Android 16**: Back moved to `OnBackPressedCallback` (`4771fd2`), checked on API 24
   only. With targetSdk 36, orientation/resizability limits are ignored on ≥600dp.
-- Lint: 1 error left (`BaseViewModel.kt:47`, StateFlow.value in composition), 146 warnings.
+  Needs an API 36 emulator.
 
 ## Smaller
 - Custom Path direct lookup (`c0bcf6f`): each missing file logs a provider error line
   (harmless). Writes still list the folder.
-- `LibraryActivity` is `singleInstance` and exported with a custom action; consider
-  `singleTask`, unexported, explicit intent from `SearchResultsActivity`.
+- `LibraryActivity` is `singleInstance`; `singleTask` would be the usual choice, but
+  it changes how the task behaves around external PDF viewers: test before changing.
 - `ZoteroDB` derived maps rebuild after `items` is published (brief inconsistency).
-- WebDAV setup saves and enables WebDAV before its connection test passes.
 - `AttachmentInfo.downloadedFrom` says WEBDAV for group downloads (unused label).
-- Sync fixes `37c89ca`/`f5750a2` have no tests: `ZoteroAPI` hard-codes `BASE_URL`;
-  inject it to test sync against MockWebServer.
+- Sign out doesn't count edits waiting to sync; the dialog only warns in general.
+- Lint: 0 errors, ~150 warnings (mostly HardcodedText, UseKtx).
 - Earlier open work (handover list in `../../.claude/CLAUDE.md`) still stands.
+
+## Done in the 2026-10-21 pass
+Search menu (Filter/Sort move to the overflow while searching, icons restored after);
+organisation authors shown; OAuth as Zoot Suit with read-only groups and no token
+logging; applicationId `nu.n4.zootsuit`; release signing; Sign out; File Storage
+uploads use the edited file's base (a second upload failed with 412), tested against
+a scratch account including a conflict; WebDAV setup keeps working settings until a
+new one connects; lint error; MockWebServer paging tests; LICENSE, readme, policies.
