@@ -203,6 +203,12 @@ class Item : Parcelable {
         return extension
     }
 
+    /** For a PDF attachment: the key of the item that has it (its parent, or itself if standalone). */
+    fun pdfOwnerKey(): String? {
+        if (!isDownloadable() || data["contentType"] != "application/pdf") return null
+        return data["parentItem"] ?: itemKey
+    }
+
     fun getPdfAttachment(): Item? {
         /*
         * If the item has a PDF attachment, this will return it.

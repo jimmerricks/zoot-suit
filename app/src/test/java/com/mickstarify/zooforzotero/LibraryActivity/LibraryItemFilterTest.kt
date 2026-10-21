@@ -28,10 +28,10 @@ class LibraryItemFilterTest {
     }
 
     private fun pdf(parent: String) =
-        item("$parent-PDF", mapOf("itemType" to "attachment", "contentType" to "application/pdf"))
+        item("$parent-PDF", mapOf("itemType" to "attachment", "contentType" to "application/pdf", "parentItem" to parent))
 
     private fun html(parent: String) =
-        item("$parent-HTML", mapOf("itemType" to "attachment", "contentType" to "text/html"))
+        item("$parent-HTML", mapOf("itemType" to "attachment", "contentType" to "text/html", "parentItem" to parent))
 
     private val withNote = item("NOTE", withNote = true)
     private val withPdf = item("PDF")
@@ -39,36 +39,39 @@ class LibraryItemFilterTest {
     private val withBoth = item("BOTH", withNote = true)
     private val all = listOf(withNote, withPdf, withHtml, withBoth)
 
-    private val attachments = mapOf(
-        "PDF" to listOf(html("PDF"), pdf("PDF")),
-        "HTML" to listOf(html("HTML")),
-        "BOTH" to listOf(pdf("BOTH"))
-    )
-    private val lookup: (String) -> List<Item> = { attachments[it] ?: emptyList() }
+    private val keysWithPdf = setOf("PDF", "BOTH")
 
     private fun keys(items: List<Item>) = items.map { it.itemKey }
 
     @Test
     fun `no display filters returns everything in order`() {
-        val result = LibraryItemFilter.applyDisplayFilters(all, false, false, lookup)
+        val result = LibraryItemFilter.applyDisplayFilters(all, false, false, keysWithPdf)
         assertEquals(keys(all), keys(result))
     }
 
     @Test
     fun `only notes keeps items that have notes`() {
-        val result = LibraryItemFilter.applyDisplayFilters(all, onlyNotes = true, onlyPdfs = false, attachmentsFor = lookup)
+        val result = LibraryItemFilter.applyDisplayFilters(all, onlyNotes = true, onlyPdfs = false, keysWithPdf = keysWithPdf)
         assertEquals(listOf("NOTE", "BOTH"), keys(result))
     }
 
     @Test
-    fun `only pdfs keeps items with at least one pdf attachment`() {
-        val result = LibraryItemFilter.applyDisplayFilters(all, onlyNotes = false, onlyPdfs = true, attachmentsFor = lookup)
+    fun `only pdfs keeps items with a pdf`() {
+        val result = LibraryItemFilter.applyDisplayFilters(all, onlyNotes = false, onlyPdfs = true, keysWithPdf = keysWithPdf)
         assertEquals(listOf("PDF", "BOTH"), keys(result))
     }
 
     @Test
+    fun `a pdf attachment belongs to its parent, or to itself if standalone`() {
+        assertEquals("PDF", pdf("PDF").pdfOwnerKey())
+        assertEquals("ALONE", item("ALONE", mapOf("itemType" to "attachment", "contentType" to "application/pdf")).pdfOwnerKey())
+        assertEquals(null, html("HTML").pdfOwnerKey())
+        assertEquals(null, item("BOOK", mapOf("itemType" to "book")).pdfOwnerKey())
+    }
+
+    @Test
     fun `both display filters must hold together`() {
-        val result = LibraryItemFilter.applyDisplayFilters(all, onlyNotes = true, onlyPdfs = true, attachmentsFor = lookup)
+        val result = LibraryItemFilter.applyDisplayFilters(all, onlyNotes = true, onlyPdfs = true, keysWithPdf = keysWithPdf)
         assertEquals(listOf("BOTH"), keys(result))
     }
 

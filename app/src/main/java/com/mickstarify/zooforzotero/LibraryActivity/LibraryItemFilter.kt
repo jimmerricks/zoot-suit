@@ -12,24 +12,21 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 object LibraryItemFilter {
 
     /**
-     * Applies the "only notes" / "only PDFs" display preferences. With both
-     * set, an item must satisfy both. [attachmentsFor] maps an item key to
-     * its child attachments.
+     * Applies the filter's "has notes" / "has PDF". With both set, an item must satisfy
+     * both. [keysWithPdf]: keys of items with a PDF (ZoteroDB.keysWithPdf).
      */
     fun applyDisplayFilters(
         items: List<Item>,
         onlyNotes: Boolean,
         onlyPdfs: Boolean,
-        attachmentsFor: (String) -> List<Item>
+        keysWithPdf: Set<String>
     ): List<Item> {
         var newItems = items
         if (onlyNotes) {
             newItems = newItems.filter { it.notes.size > 0 }
         }
         if (onlyPdfs) {
-            newItems = newItems.filter { item ->
-                attachmentsFor(item.itemKey).any { it.data["contentType"] == "application/pdf" }
-            }
+            newItems = newItems.filter { it.itemKey in keysWithPdf }
         }
         return newItems
     }

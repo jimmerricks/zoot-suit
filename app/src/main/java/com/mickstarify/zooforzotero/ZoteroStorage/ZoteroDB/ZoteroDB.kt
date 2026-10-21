@@ -78,6 +78,15 @@ class ZoteroDB(
     @Volatile
     private var itemsByKey: Map<String, Item> = emptyMap()
 
+    /**
+     * Keys of items with a PDF: parents of a PDF attachment, and standalone PDFs. Built
+     * with [items], so the list's "has PDF" filter is a set lookup per item rather than
+     * a walk through each item's attachments and their fields on every redraw.
+     */
+    @Volatile
+    var keysWithPdf: Set<String> = emptySet()
+        private set
+
     val namespace: String = if (prefix == "") {
         "zoteroDB"
     } else {
@@ -157,12 +166,14 @@ class ZoteroDB(
     }
 
     private fun associateItemsWithAttachments() {
+        val withPdf = HashSet<String>()
         for (item in items!!) {
             if (item.isDownloadable()) {
                 val parentKey = item.data["parentItem"]
                 if (parentKey != null) {
                     itemsByKey[parentKey]?.attachments?.add(item)
                 }
+                item.pdfOwnerKey()?.let { withPdf.add(it) }
             }
             if (item.itemType == "note") {
                 try {
@@ -175,6 +186,7 @@ class ZoteroDB(
                 }
             }
         }
+        keysWithPdf = withPdf
     }
 
     fun processItems() {

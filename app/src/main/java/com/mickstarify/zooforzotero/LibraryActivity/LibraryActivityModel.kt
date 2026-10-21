@@ -144,7 +144,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             items,
             onlyNotes = libraryFilter.hasNotes,
             onlyPdfs = libraryFilter.hasPdf,
-            attachmentsFor = ::getAttachments
+            keysWithPdf = zoteroDB.keysWithPdf
         )
         return applyLibraryFilter(shown)
     }
