@@ -12,8 +12,11 @@ Decided 2026-10-21 (Jim); state after the release-prep commits of that day.
 - The registered website and callback URL are `http://localhost` (placeholders). The
   app sends its callback, `zootsuit://oauth_callback` (`OAUTH_CALLBACK` in
   `ZoteroOAuthWebView.kt`), with each request; the WebView catches it, no intent
-  filter registers the scheme. Zotero accepted it for the request token. Set the
-  registered callback to the same value if Zotero ever starts enforcing it.
+  filter registers the scheme. Zotero accepted it for the request token. Zotero's
+  form only takes an http(s) callback, so `zootsuit://oauth_callback` can't be
+  registered (2026-10-21). If Zotero ever enforces a match, switch `OAUTH_CALLBACK`
+  and the registration to an https URL the WebView intercepts, e.g.
+  `https://jimmerricks.github.io/zoot-suit/oauth_callback`; test with sign-in end to end.
 - Groups are requested read-only (`all_groups=read`): the app writes only to the
   personal library.
 - Tested on API 24: the request token and Zotero's login page work (signpost +
