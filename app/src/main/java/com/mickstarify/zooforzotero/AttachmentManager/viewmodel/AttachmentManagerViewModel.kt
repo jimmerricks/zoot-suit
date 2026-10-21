@@ -54,7 +54,7 @@ class AttachmentManagerViewModel @Inject constructor(
             val attachmentStats: AttachmentStats? = null,
             val downloadProgress: DownloadProgress = DownloadProgress(),
             val isDownloading: Boolean = false,
-            val downloadButtonText: String = "Download All Attachments",
+            val downloadButtonText: String = "Download all attachments",
             val downloadButtonEnabled: Boolean = false,
             val error: String? = null
         ) : State()
@@ -111,8 +111,8 @@ class AttachmentManagerViewModel @Inject constructor(
                         .catch { exception ->
                             Log.e(TAG, "Error calculating metadata", exception)
                             _stateFlow.value = State.LoadedState(
-                                error = "Error reading filesystem: ${exception.message}",
-                                downloadButtonText = "Download All Attachments",
+                                error = "Couldn't read the attachment folder: ${exception.message}",
+                                downloadButtonText = "Download all attachments",
                                 downloadButtonEnabled = false
                             )
                         }
@@ -126,7 +126,7 @@ class AttachmentManagerViewModel @Inject constructor(
                             
                             _stateFlow.value = State.LoadedState(
                                 attachmentStats = stats,
-                                downloadButtonText = if (progress.isComplete) "Download All Attachments" else "Loading...",
+                                downloadButtonText = if (progress.isComplete) "Download all attachments" else "Loading…",
                                 downloadButtonEnabled = progress.isComplete
                             )
                             
@@ -138,13 +138,13 @@ class AttachmentManagerViewModel @Inject constructor(
                 .onFailure { exception ->
                     Log.e(TAG, "Error loading library", exception)
                     val errorMessage = when (exception) {
-                        is NoCredentialsException -> "No credentials available. Please re-authenticate."
-                        else -> "Error loading library: ${exception.message}"
+                        is NoCredentialsException -> "Not signed in. Sign in to Zotero again."
+                        else -> "Couldn't load the library: ${exception.message}"
                     }
                     
                     _stateFlow.value = State.LoadedState(
                         error = errorMessage,
-                        downloadButtonText = "Download All Attachments",
+                        downloadButtonText = "Download all attachments",
                         downloadButtonEnabled = false
                     )
                     
@@ -176,7 +176,7 @@ class AttachmentManagerViewModel @Inject constructor(
                 
                 if (attachmentItems.isEmpty()) {
                     Log.d(TAG, "No attachments to download")
-                    triggerEffect(Effect.ShowError("No attachments to download"))
+                    triggerEffect(Effect.ShowError("This library has no attachments to download."))
                     return@launch
                 }
                 
@@ -186,7 +186,7 @@ class AttachmentManagerViewModel @Inject constructor(
                 _stateFlow.value = State.LoadedState(
                     attachmentStats = (_stateFlow.value as? State.LoadedState)?.attachmentStats,
                     isDownloading = true,
-                    downloadButtonText = "Downloading...",
+                    downloadButtonText = "Downloading…",
                     downloadButtonEnabled = false,
                     downloadProgress = DownloadProgress(current = 0, total = attachmentItems.size, isIndeterminate = false)
                 )
@@ -202,7 +202,7 @@ class AttachmentManagerViewModel @Inject constructor(
                         _stateFlow.value = State.LoadedState(
                             attachmentStats = (_stateFlow.value as? State.LoadedState)?.attachmentStats,
                             isDownloading = true,
-                            downloadButtonText = "Downloading...",
+                            downloadButtonText = "Downloading…",
                             downloadButtonEnabled = false,
                             downloadProgress = DownloadProgress(
                                 current = index + 1,
@@ -232,13 +232,13 @@ class AttachmentManagerViewModel @Inject constructor(
                 }
                 
                 // Download completed - recalculate metadata
-                Log.d(TAG, "Download completed: $successCount successful, $failureCount failed")
+                Log.d(TAG, "Downloaded $successCount; $failureCount failed.")
                 
                 val currentState = _stateFlow.value as? State.LoadedState
                 _stateFlow.value = State.LoadedState(
                     attachmentStats = currentState?.attachmentStats,
                     isDownloading = false,
-                    downloadButtonText = "Download All Attachments",
+                    downloadButtonText = "Download all attachments",
                     downloadButtonEnabled = true,
                     downloadProgress = DownloadProgress()
                 )
@@ -248,9 +248,9 @@ class AttachmentManagerViewModel @Inject constructor(
                 
                 // Show completion message
                 val message = if (failureCount > 0) {
-                    "Download completed: $successCount successful, $failureCount failed"
+                    "Downloaded $successCount; $failureCount failed."
                 } else {
-                    "All attachments downloaded successfully!"
+                    "All attachments downloaded."
                 }
                 triggerEffect(Effect.ShowError(message))
                 
@@ -261,7 +261,7 @@ class AttachmentManagerViewModel @Inject constructor(
                 _stateFlow.value = State.LoadedState(
                     attachmentStats = currentState?.attachmentStats,
                     isDownloading = false,
-                    downloadButtonText = "Download All Attachments",
+                    downloadButtonText = "Download all attachments",
                     downloadButtonEnabled = true,
                     error = "Download failed: ${exception.message}",
                     downloadProgress = DownloadProgress()
@@ -281,7 +281,7 @@ class AttachmentManagerViewModel @Inject constructor(
         _stateFlow.value = State.LoadedState(
             attachmentStats = currentState?.attachmentStats,
             isDownloading = false,
-            downloadButtonText = "Download All Attachments",
+            downloadButtonText = "Download all attachments",
             downloadButtonEnabled = true,
             downloadProgress = DownloadProgress()
         )

@@ -43,7 +43,7 @@ fun AttachmentManagerScreen(
     BackHandler(enabled = isDownloading) {
         Toast.makeText(
             context,
-            "Do not exit while download is active. Cancel it first.",
+            "Cancel the download before leaving.",
             Toast.LENGTH_SHORT
         ).show()
     }
@@ -58,7 +58,7 @@ fun AttachmentManagerScreen(
                         if (isDownloading) {
                             Toast.makeText(
                                 context,
-                                "Do not exit while download is active. Cancel it first.",
+                                "Cancel the download before leaving.",
                                 Toast.LENGTH_SHORT
                             ).show()
                         } else {
@@ -92,7 +92,7 @@ fun AttachmentManagerScreen(
                 
                 is AttachmentManagerViewModel.State.LoadingState -> {
                     LoadingSection(
-                        message = "Loading your library...",
+                        message = "Loading your library…",
                         progress = DownloadProgress(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -102,7 +102,7 @@ fun AttachmentManagerScreen(
                     // Show download progress if downloading
                     if (state.isDownloading) {
                         LoadingSection(
-                            message = "Downloading attachments...",
+                            message = "Downloading attachments…",
                             progress = state.downloadProgress,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -141,7 +141,7 @@ fun AttachmentManagerScreen(
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Cancel Download")
+                            Text("Cancel download")
                         }
                     } else {
                         Button(
@@ -232,7 +232,7 @@ private fun AttachmentManagerScreenCalculatingPreview() {
                     totalCount = 25,
                     localSize = "32.1MB"
                 ),
-                downloadButtonText = "Loading...",
+                downloadButtonText = "Loading…",
                 downloadButtonEnabled = false
             ),
             dispatch = {}
@@ -246,7 +246,7 @@ private fun AttachmentManagerScreenErrorPreview() {
     ZoteroTheme {
         AttachmentManagerScreen(
             state = AttachmentManagerViewModel.State.LoadedState(
-                error = "No credentials available. Please re-authenticate."
+                error = "Not signed in. Sign in to Zotero again."
             ),
             dispatch = {}
         )
@@ -276,7 +276,7 @@ private fun AttachmentManagerScreenDownloadingPreview() {
                     localSize = "32.1MB"
                 ),
                 isDownloading = true,
-                downloadButtonText = "Downloading...",
+                downloadButtonText = "Downloading…",
                 downloadButtonEnabled = false,
                 downloadProgress = DownloadProgress(
                     current = 15,

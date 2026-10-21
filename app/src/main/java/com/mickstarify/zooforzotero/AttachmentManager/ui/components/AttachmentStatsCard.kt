@@ -46,7 +46,7 @@ fun AttachmentStatsCard(
                     modifier = Modifier.size(28.dp)
                 )
                 Text(
-                    text = "Local Library",
+                    text = "On this device",
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.SemiBold
@@ -72,7 +72,7 @@ fun AttachmentStatsCard(
                 
                 StatItem(
                     icon = Icons.Filled.Storage,
-                    label = "Storage Used",
+                    label = "Storage used",
                     value = stats.localSize,
                     modifier = Modifier.weight(1f)
                 )

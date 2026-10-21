@@ -37,7 +37,7 @@ fun DownloadButton(
         )
     }
     
-    val buttonText = if (isDownloading) "Cancel Download" else "Download All Attachments"
+    val buttonText = if (isDownloading) "Cancel download" else "Download all attachments"
     val buttonIcon = if (isDownloading) Icons.Filled.Cancel else Icons.Filled.CloudDownload
     
     Button(

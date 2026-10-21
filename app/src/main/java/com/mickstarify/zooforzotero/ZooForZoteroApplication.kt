@@ -31,9 +31,9 @@ class ZooForZoteroApplication : Application() {
 
             dialog {
                 //required
-                text = "Zoot Suit crashed. Would you like to report it?"
+                text = "Zoot Suit crashed. Send a crash report?"
                 //optional, enables the dialog title
-                title = "Crash Report"
+                title = "Crash report"
                 //defaults to android.R.string.ok
                 positiveButtonText = "Send"
                 //defaults to android.R.string.cancel

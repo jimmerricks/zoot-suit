@@ -156,7 +156,7 @@ fun LoadingSection(
 private fun LoadingSectionIndeterminatePreview() {
     ZoteroTheme {
         LoadingSection(
-            message = "Loading your library...",
+            message = "Loading your library…",
             progress = DownloadProgress(
                 isIndeterminate = true
             ),
@@ -170,7 +170,7 @@ private fun LoadingSectionIndeterminatePreview() {
 private fun LoadingSectionProgressPreview() {
     ZoteroTheme {
         LoadingSection(
-            message = "Downloading attachments...",
+            message = "Downloading attachments…",
             progress = DownloadProgress(
                 current = 15,
                 total = 48,
@@ -187,7 +187,7 @@ private fun LoadingSectionProgressPreview() {
 private fun LoadingSectionProgressNoFilePreview() {
     ZoteroTheme {
         LoadingSection(
-            message = "Downloading attachments...",
+            message = "Downloading attachments…",
             progress = DownloadProgress(
                 current = 30,
                 total = 100,
