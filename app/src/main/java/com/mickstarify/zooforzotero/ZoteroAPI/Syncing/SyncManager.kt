@@ -49,7 +49,7 @@ class SyncManager (
                 )
             }
         } else {
-            syncChangeListener.createErrorAlert(title, "Message: $e") {}
+            syncChangeListener.createErrorAlert(title, "Pull down to try again.\n\nDetails: ${e.message ?: e}") {}
         }
     }
 
@@ -118,12 +118,12 @@ class SyncManager (
                         Log.d("zotero", "local copy of collections is already up to date.")
                     } else if (e is APIKeyRevokedException) {
                         syncChangeListener.createErrorAlert(
-                            "Invalid API Key",
-                            "Your API Key is invalid. To rectify this issue please clear app data for the app. " +
-                                    "Then relogin."
+                            "API key no longer valid",
+                            "Zotero rejected this app's API key (it may have been revoked). " +
+                                    "To sign in again, clear the app's data in Android's app settings."
                         ) {}
                     } else {
-                        reportError("Error downloading Collections", e)
+                        reportError("Couldn't sync collections", e)
                     }
                     finishGetCollections(db)
                 }
@@ -228,7 +228,7 @@ class SyncManager (
                         if (downloaded == 0) {
                             syncChangeListener.makeToastAlert("Already up to date.")
                         } else {
-                            syncChangeListener.makeToastAlert("Updated ${downloaded} items.")
+                            syncChangeListener.makeToastAlert(if (downloaded == 1) "Updated 1 item." else "Updated $downloaded items.")
                         }
                     }
                     db.destroyDownloadProgress()
@@ -272,11 +272,11 @@ class SyncManager (
                         // we need to redownload items but without the progress.
                         Log.d("zotero", "mismatched, reloading items.")
                         db.destroyDownloadProgress()
-                        syncChangeListener.makeToastAlert("Could not continue, library has changed since last sync.")
+                        syncChangeListener.makeToastAlert("The library changed in Zotero during the sync. Starting over.")
                         loadItems(db, useSmallLoadingAnimation = false)
                         return
                     } else {
-                        reportError("Error downloading items", e)
+                        reportError("Couldn't sync items", e)
                         Log.e("zotero", "${e}")
                         Log.e("zotero", "${e.stackTrace}")
                     }
@@ -327,7 +327,7 @@ class SyncManager (
 
                 override fun onError(e: Throwable) {
                 Log.e("zotero", "there was an error processing deleted Entries, ${e}")
-                reportError("Error Updating Deleted Items", e)
+                reportError("Couldn't sync deletions", e)
                 // finish anyway: it reloads what's stored and stops the sync animation
                 syncChangeListener.finishLibrarySync(db)
             }

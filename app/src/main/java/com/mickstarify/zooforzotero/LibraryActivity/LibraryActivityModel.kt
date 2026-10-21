@@ -767,8 +767,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 override fun onError(e: Throwable) {
                     Log.e("zotero", "error loading groups.")
                     presenter.createErrorAlert(
-                        "Error loading group data",
-                        "Message: ${e.message}",
+                        "Couldn't load the group list",
+                        "Details: ${e.message}",
                         {})
                 }
 
@@ -1198,7 +1198,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
         if (syncManager.isSyncing()) {
             Log.e("zotero", "cannot sync groups, still in a sync")
-            presenter.makeToastAlert("Cannot open groups yet, still syncing library.")
+            presenter.makeToastAlert("Still syncing. Open the group when the sync finishes.")
             openingGroup = null
             return
         }
@@ -1238,8 +1238,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         } catch (e: Exception) {
             Log.e("zotero", "error testing storage. ${e}")
             presenter.createErrorAlert(
-                "Permission Error",
-                "There was an error accessing your zotero attachment location. Please reconfigure in settings.",
+                "Can't use the attachment folder",
+                "The app can't access the folder set in Settings → Attachments Location, so " +
+                        "it's back to the default. Choose the folder again in Settings.",
                 {})
             preferences.useExternalCache()
         }
@@ -1345,7 +1346,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 }
                 this.refreshPendingEdits()
             }.onErrorComplete {
-                presenter.createErrorAlert("error loading library", "got error message ${it}", {})
+                presenter.createErrorAlert("Couldn't load the library", "Details: ${it.message ?: it}", {})
                 presenter.hideBasicSyncAnimation()
                 true
             }
@@ -1397,7 +1398,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             }
 
             this.doubleBackToExitPressedOnce = true
-            presenter.makeToastAlert("Please press BACK again to exit")
+            presenter.makeToastAlert("Press Back again to exit.")
             Handler().postDelayed(Runnable { doubleBackToExitPressedOnce = false }, 2000)
             return
         }
@@ -1471,9 +1472,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             )
         } else {
             presenter.createErrorAlert(
-                "Error with stored API",
-                "The API Key we have stored in the application is invalid!" +
-                        "Please re-authenticate the application"
+                "Sign in again",
+                "The stored Zotero login is no longer valid."
             ) { presenter.finishLibrary() }
             auth.destroyCredentials()
             zoteroDB.clearItemsVersion()
