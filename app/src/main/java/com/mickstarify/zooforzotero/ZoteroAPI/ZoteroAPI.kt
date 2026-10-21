@@ -728,7 +728,6 @@ class ZoteroAPI(
                         userID,
                         attachment.itemKey,
                         authorizationPojo.uploadKey,
-                        "upload=${authorizationPojo.uploadKey}",
                         ifMatch,
                         ifNoneMatch
                     )
@@ -791,7 +790,6 @@ class ZoteroAPI(
             filesize, //in bytes
             mtime, //this is in milli
             1,
-            "Content-Type: application/x-www-form-urlencoded",
             ifMatch,
             ifNoneMatch
         )

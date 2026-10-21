@@ -13,6 +13,8 @@ import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Multipart
@@ -180,28 +182,30 @@ interface ZoteroAPIService {
         @Header("If-Unmodified-Since-Version") ifUnmodifiedSinceVersion: Int
     ): Call<ResponseBody>
 
+    // Zotero wants these as a form-encoded body (web_api/v3/file_upload); they were
+    // sent as query parameters with a JSON string "Content-Type: …" as the body
+    @FormUrlEncoded
     @POST("users/{user}/items/{itemKey}/file")
     fun uploadAttachmentAuthorization(
         @Path("user") user: String,
         @Path("itemKey") itemKey: String,
-        @Query("md5") md5: String,
-        @Query("filename") filename: String,
-        @Query("filesize") filesize: Long,
-        @Query("mtime") mtime: Long,
+        @Field("md5") md5: String,
+        @Field("filename") filename: String,
+        @Field("filesize") filesize: Long,
+        @Field("mtime") mtime: Long,
         @Query("params") params: Int = 1,
-        @Body bodyText: String,
         // exactly one of the two: If-Match with the server's md5 to replace a file,
         // If-None-Match: * for an attachment without one (null headers aren't sent)
         @Header("If-Match") ifMatch: String?,
         @Header("If-None-Match") ifNoneMatch: String?
     ): Observable<Response<ResponseBody>>
 
+    @FormUrlEncoded
     @POST("users/{user}/items/{itemKey}/file")
     fun registerUpload(
         @Path("user") user: String,
         @Path("itemKey") itemKey: String,
-        @Query("upload") uploadKey: String,
-        @Body body: String,
+        @Field("upload") uploadKey: String,
         @Header("If-Match") ifMatch: String?,
         @Header("If-None-Match") ifNoneMatch: String?
     ): Observable<Response<ResponseBody>>
