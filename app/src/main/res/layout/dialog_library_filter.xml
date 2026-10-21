@@ -70,6 +70,8 @@
         android:id="@+id/listView_tags"
         android:layout_width="match_parent"
         android:layout_height="300dp"
-        android:choiceMode="multipleChoice" />
+        android:choiceMode="multipleChoice"
+        android:divider="@null"
+        android:dividerHeight="0dp" />
 
 </LinearLayout>

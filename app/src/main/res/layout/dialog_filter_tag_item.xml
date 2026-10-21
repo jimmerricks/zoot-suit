@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A tag in the filter dialog: the box at the start, like the dialog's other
+     checkboxes (android.R.layout.simple_list_item_multiple_choice puts it at the end). -->
+<CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/text1"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:checkMark="@null"
+    android:drawableStart="?android:attr/listChoiceIndicatorMultiple"
+    android:drawablePadding="0dp"
+    android:drawableTint="@color/checkbox_tint"
+    android:ellipsize="end"
+    android:gravity="center_vertical"
+    android:maxLines="1"
+    android:paddingStart="0dp"
+    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+    android:textSize="14sp" />

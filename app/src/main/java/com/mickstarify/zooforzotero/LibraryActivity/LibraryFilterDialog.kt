@@ -45,7 +45,7 @@ class LibraryFilterDialog(
         val search = view.findViewById<EditText>(R.id.editText_tag_search)
         val list = view.findViewById<ListView>(R.id.listView_tags)
         val noTags = view.findViewById<TextView>(R.id.textView_no_tags)
-        val adapter = ArrayAdapter<String>(context, android.R.layout.simple_list_item_multiple_choice)
+        val adapter = ArrayAdapter<String>(context, R.layout.dialog_filter_tag_item)
         list.adapter = adapter
 
         fun render() {
