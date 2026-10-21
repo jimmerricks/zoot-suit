@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mickstarify.zooforzotero.BuildConfig
 import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorage
+import com.mickstarify.zooforzotero.SyncSetup.ui.components.OAUTH_CALLBACK
 import com.mickstarify.zooforzotero.common.DispatchersProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,24 +48,25 @@ class ZoteroAccountAuthViewModel @Inject constructor(
     private val _effects = MutableStateFlow<Effect?>(null)
     val effects: StateFlow<Effect?> = _effects.asStateFlow()
 
-    // OAuth configuration
+    // OAuth configuration. Groups are read-only: the app only ever writes to the personal
+    // library (edits in groups aren't uploaded), so it doesn't ask for more.
     private val REQUEST_TOKEN_ENDPOINT = "https://www.zotero.org/oauth/request?" +
             "library_access=1&" +
             "notes_access=1&" +
             "write_access=1&" +
-            "all_groups=write"
+            "all_groups=read"
 
     private val ACCESS_TOKEN_ENDPOINT = "https://www.zotero.org/oauth/access?" +
             "library_access=1&" +
             "notes_access=1&" +
             "write_access=1&" +
-            "all_groups=write"
+            "all_groups=read"
 
     private val ZOTERO_AUTHORIZE_ENDPOINT = "https://www.zotero.org/oauth/authorize?" +
             "library_access=1&" +
             "notes_access=1&" +
             "write_access=1&" +
-            "all_groups=write"
+            "all_groups=read"
 
     private val oAuthProvider = CommonsHttpOAuthProvider(
         REQUEST_TOKEN_ENDPOINT,
@@ -93,11 +95,10 @@ class ZoteroAccountAuthViewModel @Inject constructor(
                 val authUrl = withContext(dispatchers.io) {
                     oAuthProvider.retrieveRequestToken(
                         oAuthConsumer,
-                        "zooforzotero://oauth_callback"
+                        OAUTH_CALLBACK
                     )
                 }
 
-                Log.d(TAG, "OAuth authorization URL: $authUrl")
                 _state.value = _state.value.copy(
                     isLoading = false,
                     authorizationUrl = authUrl
@@ -126,7 +127,6 @@ class ZoteroAccountAuthViewModel @Inject constructor(
                 val userID = params.getFirst("userID")
                 val userKey = oAuthConsumer.token
 
-                Log.d(TAG, "OAuth success - userID: $userID, username: $username")
 
                 authenticationStorage.setCredentials(username, userID, userKey)
 

@@ -17,6 +17,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
 import com.mickstarify.zooforzotero.ui.theme.ZoteroTheme
 
+/** Where Zotero sends the browser after sign-in; caught here, never opened. */
+const val OAUTH_CALLBACK = "zootsuit://oauth_callback"
+
 private const val TAG = "ZoteroOAuthWebView"
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -59,19 +62,13 @@ fun ZoteroOAuthWebView(
         update = { view ->
             view.webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                    Log.d(TAG, "shouldOverrideUrlLoading: $url")
 
                     url?.let { urlString ->
                         // Check for OAuth callback URL
-                        if (urlString.startsWith("zooforzotero://oauth_callback")) {
+                        if (urlString.startsWith(OAUTH_CALLBACK)) {
                             val uri = Uri.parse(urlString)
                             val oauthToken = uri.getQueryParameter("oauth_token")
                             val oauthVerifier = uri.getQueryParameter("oauth_verifier")
-
-                            Log.d(
-                                TAG,
-                                "OAuth callback - token: $oauthToken, verifier: $oauthVerifier"
-                            )
 
                             if (oauthToken != null && oauthVerifier != null) {
                                 onOAuthCallback(oauthToken, oauthVerifier)
@@ -92,7 +89,6 @@ fun ZoteroOAuthWebView(
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    Log.d(TAG, "onPageFinished: $url")
                     onPageFinished()
                 }
 
@@ -113,7 +109,6 @@ fun ZoteroOAuthWebView(
                     favicon: android.graphics.Bitmap?
                 ) {
                     super.onPageStarted(view, url, favicon)
-                    Log.d(TAG, "onPageStarted: $url")
                 }
             }
 
