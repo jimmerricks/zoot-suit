@@ -69,7 +69,9 @@ class ZoteroAPI(
     val userID: String,
     val username: String,
     val attachmentStorageManager: AttachmentStorageManager,
-    val preferencesManager: PreferenceManager
+    val preferencesManager: PreferenceManager,
+    // tests point this at a MockWebServer
+    baseUrl: String = BASE_URL
 ) {
     private val baseHttpClient = OkHttpClient().newBuilder().apply {
         if (BuildConfig.DEBUG) {
@@ -131,21 +133,21 @@ class ZoteroAPI(
         .build()
 
     val service: ZoteroAPIService = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+        .baseUrl(baseUrl)
         .client(zoteroHttpClient)
         .addConverterFactory(GsonConverterFactory.create())
         .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
         .build().create(ZoteroAPIService::class.java)
 
     val attachmentsService: ZoteroAPIService = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+        .baseUrl(baseUrl)
         .client(httpClientForAttachments)
         .addConverterFactory(GsonConverterFactory.create())
         .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
         .build().create(ZoteroAPIService::class.java)
 
     val shortTimeoutService: ZoteroAPIService = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+        .baseUrl(baseUrl)
         .client(zoteroHttpClientShortTimeout)
         .addConverterFactory(GsonConverterFactory.create())
         .addCallAdapterFactory(RxJava3CallAdapterFactory.create())

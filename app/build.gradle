@@ -95,6 +95,8 @@ android {
         unitTests.all {
             useJUnitPlatform()
         }
+        // android.util.Log etc. return defaults instead of throwing (ZoteroAPI logs)
+        unitTests.returnDefaultValues = true
     }
     
     namespace 'com.mickstarify.zooforzotero'
