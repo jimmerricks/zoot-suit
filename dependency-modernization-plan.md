@@ -108,6 +108,17 @@ Adding items removed (2026-10-20): the + menu (Zotero Save, ISBN scan), the
 `ACTION_SEND` share target, `CAMERA`, zxing, the getbase FAB library and the unused
 `ItemTemplate`/`ZoteroItemTemplates`. The sidebar has no header any more.
 
+Sidebar (2026-10-21): a RecyclerView replaces the NavigationView menu
+(`SidebarAdapter`; rows from the pure `SidebarRows`, the tree from `CollectionTree`,
+both unit-tested). Groups sit under a collapsible heading, keyed by id, listed from
+Room first and refreshed online; the open library's collections are nested and
+expandable (expanded keys per library in prefs). Unfiled and Trash follow the open
+library (the trash query was fixed to My Library); My Publications is My Library
+only. `LibraryNavigator.openLibrary()` is the one move that switches library;
+collection pushes keep the group. Setting `show_subcollection_items`. A collection's
+list no longer shows subcollection rows. Navigation state is still in memory, so a
+restart opens My Library: the Presenter → ViewModel slice fixes that.
+
 This also starts the "attachment download/upload" slice of item 2: the upload half
 is now a self-contained pipeline inside the model, ready to move out with the
 download half.
@@ -119,8 +130,8 @@ Open, in priority order:
    `If-None-Match: *`; a `421` check meant `412`.
 3. Edits are tracked for My Library only; group-library attachments are never
    uploaded (unchanged from upstream).
-4. The library list's attachment icon doesn't show the local state yet (the item
-   view does).
+4. ~~The library list's attachment icon doesn't show the local state yet~~: done
+   (`9654b8f`).
 5. A copy edited *before* the AttachmentBase upgrade, whose AttachmentInfo row a
    sync already deleted, still falls back to the synced md5 (only affects installs
    upgraded from builds before `d8231b9`).
