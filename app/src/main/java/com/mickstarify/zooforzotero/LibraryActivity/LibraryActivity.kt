@@ -233,7 +233,15 @@ class LibraryActivity : AppCompatActivity(),
             }
 
             R.id.force_resync -> {
-                presenter.requestForceResync()
+                // clears every table, attachment bases too: edits waiting to sync are no
+                // longer recognised as edits afterwards
+                createYesNoPrompt(
+                    "Re-download the library?",
+                    "This deletes the library data on this device; the next sync downloads " +
+                            "all of it again from Zotero. Downloaded files stay, but edits " +
+                            "waiting to sync are no longer tracked: upload them first.",
+                    "Re-download", "Cancel", { presenter.requestForceResync() }, {}
+                )
             }
 
             android.R.id.home -> {
