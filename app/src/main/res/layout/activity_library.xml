@@ -31,16 +31,30 @@
     </LinearLayout>
 
     <!-- the sidebar: libraries, the collection tree, Unfiled / My Publications / Trash
-         (SidebarAdapter). A RecyclerView because a NavigationView menu can't nest. -->
-    <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/sidebar"
+         (SidebarAdapter). A RecyclerView because a NavigationView menu can't nest.
+         Insets are applied in code: the status bar strip above it takes the
+         toolbar's dark colour, so the white status icons stay visible. -->
+    <FrameLayout
+            android:id="@+id/sidebar_container"
             android:layout_width="320dp"
             android:layout_height="match_parent"
             android:layout_gravity="start"
-            android:background="?android:attr/colorBackground"
-            android:clipToPadding="false"
-            android:fitsSystemWindows="true"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:scrollbars="vertical"/>
+            android:background="?android:attr/colorBackground">
+
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/sidebar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:scrollbars="vertical"/>
+
+        <View
+                android:id="@+id/sidebar_status_bar"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_gravity="top"
+                android:background="@color/colorPrimaryDark"/>
+    </FrameLayout>
 </androidx.drawerlayout.widget.DrawerLayout>

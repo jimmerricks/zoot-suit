@@ -12,6 +12,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
+import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -25,6 +26,9 @@ import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.getSystemService
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
@@ -119,6 +123,15 @@ class LibraryActivity : AppCompatActivity(),
         sidebar = findViewById(R.id.sidebar)
         sidebar.layoutManager = LinearLayoutManager(this)
         sidebar.adapter = sidebarAdapter
+        val statusBarStrip = findViewById<View>(R.id.sidebar_status_bar)
+        val padding = sidebar.paddingTop
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.sidebar_container)) { _, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            statusBarStrip.layoutParams.height = bars.top
+            statusBarStrip.requestLayout()
+            sidebar.updatePadding(top = bars.top + padding, bottom = bars.bottom + padding)
+            insets
+        }
         navController.navigate(R.id.libraryListFragment)
     }
 
