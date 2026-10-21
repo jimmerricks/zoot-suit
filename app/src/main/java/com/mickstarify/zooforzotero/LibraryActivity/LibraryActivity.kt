@@ -238,8 +238,8 @@ class LibraryActivity : AppCompatActivity(),
             }
 
             R.id.library_filter -> {
-                LibraryFilterDialog(this, presenter.getLibraryFilter()) {
-                    presenter.previewLibraryFilter(it)
+                LibraryFilterDialog(this, presenter.getLibraryFilter(), presenter.getAllTags()) {
+                    presenter.setLibraryFilter(it)
                 }.show()
             }
 

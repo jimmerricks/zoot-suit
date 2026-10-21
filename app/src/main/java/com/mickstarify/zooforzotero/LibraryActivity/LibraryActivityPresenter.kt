@@ -216,12 +216,10 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     fun getLibraryFilter(): LibraryFilter = model.libraryFilter
 
-    /** Sets the list's filter, redraws the list and reports what it now shows. */
-    fun previewLibraryFilter(filter: LibraryFilter): LibraryFilterDialog.Preview {
+    /** Sets the list's filter and redraws the list. */
+    fun setLibraryFilter(filter: LibraryFilter) {
         model.libraryFilter = filter
         redisplayItems()
-        val shown = model.lastFilteredItems ?: emptyList()
-        return LibraryFilterDialog.Preview(shown.size, LibraryItemFilter.tagCounts(shown))
     }
 
     /**
@@ -565,7 +563,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         // the empty list's button: clears whatever it named, search and filter alike
         observe(libraryListViewModel.getOnClearFilterRequested()) {
             model.librarySearch = ""
-            previewLibraryFilter(LibraryFilter())
+            setLibraryFilter(LibraryFilter())
         }
     }
 

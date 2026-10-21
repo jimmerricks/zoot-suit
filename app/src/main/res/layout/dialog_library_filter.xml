@@ -8,14 +8,8 @@
     android:paddingEnd="20dp">
 
     <TextView
-        android:id="@+id/textView_filter_count"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="8dp"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
-
-    <TextView
         style="@style/DialogSectionHeader"
+        android:paddingTop="4dp"
         android:text="Item has" />
 
     <CheckBox

@@ -15,29 +15,26 @@ import android.widget.TextView
 import com.mickstarify.zooforzotero.R
 
 /**
- * Filter for the library list: device conditions and tags, all ticked conditions must
- * hold. Every tick is applied at once through [apply], so the list behind the dialog and
- * the counts here follow each change. Cancel (or Back) restores the filter the dialog
- * opened with; Clear unticks everything; Done keeps the current selection.
+ * Filter for the library list: item and device conditions and tags, all ticked conditions
+ * must hold. Ticks only change the dialog; the list is filtered when Done is tapped, since
+ * redrawing a large library on every tick was slow. Clear removes the filter at once;
+ * Cancel (or Back) leaves the list as it was.
  *
- * @param apply sets a filter on the list and returns what it now shows
+ * @param tagCounts the open library's tags with how many items carry each
+ * @param onApply sets the filter on the list
  */
 class LibraryFilterDialog(
     private val context: Context,
     private val initial: LibraryFilter,
-    private val apply: (LibraryFilter) -> Preview,
+    private val tagCounts: List<Pair<String, Int>>,
+    private val onApply: (LibraryFilter) -> Unit,
 ) {
-    /** What the list shows under a filter: item count and its tags with their counts. */
-    data class Preview(val itemCount: Int, val tagCounts: List<Pair<String, Int>>)
-
     private var filter = initial
-    private var preview = apply(initial)
     private var query = ""
     private var shownTags: List<String> = emptyList()
 
     fun show() {
         val view: View = LayoutInflater.from(context).inflate(R.layout.dialog_library_filter, null)
-        val count = view.findViewById<TextView>(R.id.textView_filter_count)
         val hasPdf = view.findViewById<CheckBox>(R.id.checkBox_filter_has_pdf)
         val hasNotes = view.findViewById<CheckBox>(R.id.checkBox_filter_has_notes)
         val onDevice = view.findViewById<CheckBox>(R.id.checkBox_filter_on_device)
@@ -47,18 +44,14 @@ class LibraryFilterDialog(
         val noTags = view.findViewById<TextView>(R.id.textView_no_tags)
         val adapter = ArrayAdapter<String>(context, R.layout.dialog_filter_tag_item)
         list.adapter = adapter
+        val counts = tagCounts.toMap()
 
         fun render() {
-            count.text = when (preview.itemCount) {
-                1 -> "1 item matches"
-                else -> "${preview.itemCount} items match"
-            }
             hasPdf.isChecked = filter.hasPdf
             hasNotes.isChecked = filter.hasNotes
             onDevice.isChecked = filter.onDevice
             edited.isChecked = filter.editedHere
-            // tags in what the list shows now, plus the selected ones; selected first
-            val counts = preview.tagCounts.toMap()
+            // the library's tags plus the selected ones; selected first
             val all = (counts.keys + filter.tags).filter { it.contains(query.trim(), ignoreCase = true) }
             shownTags = all.sortedWith(
                 compareBy<String> { it !in filter.tags }.thenBy(String.CASE_INSENSITIVE_ORDER) { it }
@@ -75,7 +68,6 @@ class LibraryFilterDialog(
 
         fun update(newFilter: LibraryFilter) {
             filter = newFilter
-            preview = apply(newFilter)
             render()
         }
 
@@ -99,17 +91,10 @@ class LibraryFilterDialog(
         val dialog = AlertDialog.Builder(context)
             .setTitle("Filter")
             .setView(view)
-            .setPositiveButton("Done", null)
-            .setNegativeButton("Cancel") { _, _ -> apply(initial) }
-            .setNeutralButton("Clear", null) // set below so it doesn't close the dialog
-            .setOnCancelListener { apply(initial) }
+            .setPositiveButton("Done") { _, _ -> if (filter != initial) onApply(filter) }
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton("Clear") { _, _ -> if (initial.isActive) onApply(LibraryFilter()) }
             .create()
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                search.setText("")
-                update(LibraryFilter())
-            }
-        }
         // no keyboard until the tag search is tapped; it would cover half the dialog
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
         render()

@@ -1458,7 +1458,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun getAllTags(): List<Pair<String, Int>> {
-        return LibraryItemFilter.tagCounts(zoteroDB.items)
+        return LibraryItemFilter.tagCounts(zoteroDB.getDisplayableItems())
     }
 
     override fun getItemsForTag(tagName: String): List<Item> {
