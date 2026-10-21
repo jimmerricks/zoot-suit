@@ -222,11 +222,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return filteredItems
     }
 
-    override fun getSubCollections(collectionKey: String): List<ZoteroCollection> {
-//        val collectionKey = zoteroDB.getCollectionId(collectionName)
-        return zoteroDB.getSubCollectionsFor(collectionKey)
-    }
-
 
     override fun getCollections(): List<ZoteroCollection> {
         return zoteroDB.collections ?: LinkedList()

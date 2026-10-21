@@ -116,7 +116,6 @@ interface Contract {
         fun getMyPublications(): List<Item>
         fun downloadAttachment(item: Item)
         fun cancelAttachmentDownload()
-        fun getSubCollections(collectionName: String): List<Collection>
         fun filterCollections(query: String): List<Collection>
         fun filterItems(query: String): List<Item>
         fun isLoaded(): Boolean

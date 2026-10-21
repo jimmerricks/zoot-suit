@@ -450,13 +450,7 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             this.openMyPublications()
         }else if (collectionKey == "group_all" && model.isUsingGroups()) {
             view.setTitle(model.getCurrentGroup()?.name ?: "ERROR")
-            val entries = LinkedList<ListEntry>()
-            entries.addAll(model.getCollections().filter {
-                !it.hasParent()
-            }.sortedBy {
-                it.name.lowercase(Locale.ROOT)
-            }.map { ListEntry(it) })
-            entries.addAll(model.getLibraryItems().sort().map { ListEntry(it) })
+            val entries = model.getLibraryItems().sort().map { ListEntry(it) }
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
         }
@@ -465,12 +459,8 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             val collection = model.getCollectionFromKey(collectionKey)
 
             view.setTitle(collection?.name ?: "Unknown Collection")
-            val entries = LinkedList<ListEntry>()
-            entries.addAll(model.getSubCollections(collectionKey).sortedBy {
-                it.name.lowercase(Locale.ROOT)
-            }.map { ListEntry(it) })
-
-            entries.addAll(model.getItemsFromCollection(collectionKey).sort().map { ListEntry(it) })
+            // subcollections are reached through the sidebar's tree, not as rows here
+            val entries = model.getItemsFromCollection(collectionKey).sort().map { ListEntry(it) }
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
         }
