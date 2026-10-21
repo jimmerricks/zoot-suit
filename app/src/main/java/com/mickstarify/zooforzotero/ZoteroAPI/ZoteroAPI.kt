@@ -472,6 +472,15 @@ class ZoteroAPI(
                         itemCount,
                         groupID
                     ).blockingSingle()
+                    if (res.items.isEmpty()) {
+                        // fewer items than Total-Results promised: without this the loop
+                        // asks for the same empty page forever. A library that changed
+                        // meanwhile starts over; otherwise the count was just high.
+                        if (res.LastModifiedVersion != response.LastModifiedVersion) {
+                            throw LibraryVersionMisMatchException("library changed while paging: ${response.LastModifiedVersion} -> ${res.LastModifiedVersion}")
+                        }
+                        break
+                    }
                     itemCount += res.items.size
                     emitter.onNext(res)
                 }
@@ -533,6 +542,7 @@ class ZoteroAPI(
                         libraryVersion,
                         index = itemCount
                     ).blockingSingle()
+                    if (r.collections.isEmpty()) break // see getItems
                     itemCount += r.collections.size
                     emitter.onNext(r.collections)
                 }
