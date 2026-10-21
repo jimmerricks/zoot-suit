@@ -16,6 +16,8 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
+import com.mickstarify.zooforzotero.SyncSetup.AuthenticationStorage
+import com.mickstarify.zooforzotero.SyncSetup.SyncSetupActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -71,7 +73,16 @@ class LibraryActivity : AppCompatActivity(),
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
 
         super.onCreate(savedInstanceState)
-        
+
+        // Without a stored login the library can't be built (LibraryActivityModel needs
+        // the API key). MainActivity checks this, but the activity is also reachable
+        // from recents or its exported filter intent after the login was removed.
+        if (!AuthenticationStorage(this).hasCredentials()) {
+            startActivity(Intent(this, SyncSetupActivity::class.java))
+            finish()
+            return
+        }
+
         setContentView(R.layout.activity_library)
 
         // Back closes the sidebar, else steps back through the library (Back twice at
