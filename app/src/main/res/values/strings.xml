@@ -30,9 +30,6 @@
     <string name="force_resync">Re-download library</string>
     <string name="app_frontpage_disclaimer">Zoot Suit syncs with your zotero.org account.</string>
     <string name="proceed">Continue</string>
-    <string name="enter_your_zotero_api_key_manually">Enter a Zotero API key</string>
-    <string name="zotero_account_sync">Zotero Account Sync</string>
-    <string name="pick_your_cloud_storage_provider">Pick your cloud storage provider</string>
     <string name="clear_filter">Clear filter</string>
     <string name="username">Username</string>
     <string name="password">Password</string>

@@ -2,9 +2,6 @@
 <resources>
     <color name="colorPrimary">#3F3577</color>
     <color name="colorPrimaryDark">#2B2350</color>
-    <color name="colorAccent">#C8102E</color>
-    <color name="colorAccentPressed">#9E0C24</color>
-    <color name="colorPrimaryPressed">#2B2350</color>
     <!-- the sidebar's selected row: colorPrimary at 12% -->
     <color name="sidebarSelected">#1F3F3577</color>
     <!-- badges on the library list's PDF icon -->
