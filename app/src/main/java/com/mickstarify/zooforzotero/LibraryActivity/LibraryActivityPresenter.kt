@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
@@ -25,6 +26,12 @@ import java.util.Locale
 class LibraryActivityPresenter(private val context: Context) : Contract.Presenter {
     lateinit var view: LibraryActivity
         private set
+
+    // What the screen shows, kept here so a recreated activity just renders it again
+    val title = MutableLiveData<String>()
+    val subtitle = MutableLiveData<String?>()
+    val sidebar = MutableLiveData<List<SidebarRow>>()
+    val pendingEdits = MutableLiveData(0)
 
     override lateinit var libraryListViewModel: LibraryListViewModel
     override lateinit var libraryLoadingViewModel: LibraryLoadingScreenViewModel
@@ -97,11 +104,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             expanded = expanded + hiddenBy
             model.preferences.setSidebarExpandedCollections(groupId, expanded)
         }
-        view.showSidebar(
-            SidebarRows.build(
-                model.getGroups(), model.preferences.isSidebarGroupsExpanded(),
-                groupId, current, tree, expanded
-            )
+        sidebar.value = SidebarRows.build(
+            model.getGroups(), model.preferences.isSidebarGroupsExpanded(),
+            groupId, current, tree, expanded
         )
     }
 
@@ -216,10 +221,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     private fun showFilterSummary() {
         val filter = model.libraryFilter
         val shown = model.lastFilteredItems
-        view.setSubtitle(
+        subtitle.value =
             if (!filter.isActive || shown == null) null
             else "Filter: ${filter.describe()} · ${shown.size} " + if (shown.size == 1) "item" else "items"
-        )
     }
 
     override fun onTagOpen(tagName: String) {
@@ -231,7 +235,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     private fun showFilter(filterText: String) {
         this.filterEntries(filterText)
         if (filterText.startsWith("tag:")) {
-            view.setTitle("Tag: ${filterText.removePrefix("tag:")}")
+            title.value = "Tag: ${filterText.removePrefix("tag:")}"
         }
     }
 
@@ -307,7 +311,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun showPendingEdits(count: Int) {
-        view.showPendingEdits(count)
+        pendingEdits.value = count
     }
 
     override fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>) {
@@ -341,7 +345,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     override fun showLibraryLoadingAnimation() {
 //        view.showLoadingAnimation(showScreen = true)
-        view.setTitle("Loading")
+        title.value = "Loading"
 
         if (view.getCurrentScreen() != AvailableScreens.LIBRARY_LOADING_SCREEN) {
             (view as LibraryActivity).navController.navigate(R.id.libraryLoadingScreen)
@@ -390,7 +394,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
         }
-        view.setTitle("My Publications")
+        title.value = "My Publications"
         val entries = model.getMyPublications().sort().map{ListEntry(it)}
         model.isDisplayingItems = entries.isNotEmpty()
         model.setCurrentCollection("zooforzotero_my_publications")
@@ -405,7 +409,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
         }
-        view.setTitle("Trash")
+        title.value = "Trash"
         val entries = model.getTrashedItems().sort().map{ListEntry(it)}
         model.isDisplayingItems = entries.isNotEmpty()
         model.setCurrentCollection("zooforzotero_Trash")
@@ -445,12 +449,12 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         model.startListUpdate()
         model.setCurrentCollection(collectionKey)
         if (collectionKey == "all" && !model.isUsingGroups()) {
-            view.setTitle("My Library")
+            title.value = "My Library"
             val entries = model.getLibraryItems().sort().map { ListEntry(it) }
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
         } else if (collectionKey == "unfiled_items") {
-            view.setTitle("Unfiled Items")
+            title.value = "Unfiled Items"
             val entries = model.getUnfiledItems().sort().map { ListEntry(it) }
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
@@ -459,7 +463,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         } else if (collectionKey == "zooforzotero_my_publications"){
             this.openMyPublications()
         }else if (collectionKey == "group_all" && model.isUsingGroups()) {
-            view.setTitle(model.getCurrentGroup()?.name ?: "ERROR")
+            title.value = model.getCurrentGroup()?.name ?: "ERROR"
             val entries = model.getLibraryItems().sort().map { ListEntry(it) }
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
@@ -468,7 +472,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         else {
             val collection = model.getCollectionFromKey(collectionKey)
 
-            view.setTitle(collection?.name ?: "Unknown Collection")
+            title.value = collection?.name ?: "Unknown Collection"
             // subcollections are reached through the sidebar's tree, not as rows here
             val entries = model.getItemsFromCollection(collectionKey).sort().map { ListEntry(it) }
             model.isDisplayingItems = entries.size > 0
@@ -516,8 +520,8 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             started = true
             start()
         } else if (model.isLoaded()) {
-            redisplayItems()
-            refreshSidebar()
+            // the list, title, sidebar and edit count are LiveData the activity observes;
+            // only the badges' snapshot is refreshed (files may have changed meanwhile)
             model.refreshPendingEdits()
         } else {
             view.navController.navigate(R.id.libraryLoadingScreen)
@@ -525,6 +529,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     private fun start() {
+        title.value = "Loading"
         view.navController.navigate(R.id.libraryLoadingScreen)
         libraryLoadingViewModel.setLoadingMessage("Loading your library")
 

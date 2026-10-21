@@ -102,16 +102,20 @@ class LibraryActivity : AppCompatActivity(),
                 }
             }
         }
+
+        // the presenter's state outlives this activity; a recreated one just renders it
+        presenter.title.observe(this) { supportActionBar?.title = it }
+        presenter.subtitle.observe(this) { supportActionBar?.subtitle = it }
+        presenter.sidebar.observe(this) { showSidebar(it) }
+        presenter.pendingEdits.observe(this) { showPendingEdits(it) }
     }
 
     private fun libraryLoadingScreenShown() {
-        supportActionBar?.title = "Loading"
         mDrawerToggle.isDrawerIndicatorEnabled = true
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
     }
 
     private fun libraryListScreenShown() {
-        supportActionBar?.title = "Library"
         mDrawerToggle.isDrawerIndicatorEnabled = true
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
@@ -312,14 +316,6 @@ class LibraryActivity : AppCompatActivity(),
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         mDrawerToggle.syncState()
-    }
-
-    fun setTitle(title: String) {
-        supportActionBar?.title = title
-    }
-
-    fun setSubtitle(subtitle: String?) {
-        supportActionBar?.subtitle = subtitle
     }
 
     fun showItemDialog(
