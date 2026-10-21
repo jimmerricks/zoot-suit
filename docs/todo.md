@@ -8,9 +8,11 @@ Release identity: see `release-identity.md`. Test environment:
   Pages (root of `master`) and issues, attach the release-signed APK to a release.
 - **OAuth sign-in end to end**: request token and login page work on API 24; finishing
   needs the scratch account's password (see release-identity.md §1).
-- **Android 16**: Back moved to `OnBackPressedCallback` (`4771fd2`), checked on API 24
-  only. With targetSdk 36, orientation/resizability limits are ignored on ≥600dp.
-  Needs an API 36 emulator.
+- **Android 16**: Back moved to `OnBackPressedCallback` (`4771fd2`). With targetSdk 36,
+  orientation/resizability limits are ignored on ≥600dp. The API 36 emulator exists
+  (tablet screen, scratch account): sign-in, the library list and the Search, Filter
+  and Sort dialogs render; no systematic pass yet (predictive Back, edge-to-edge,
+  rotation, the item view, attachments).
 
 ## Smaller
 - Custom Path direct lookup (`c0bcf6f`): each missing file logs a provider error line
@@ -23,8 +25,41 @@ Release identity: see `release-identity.md`. Test environment:
 - Lint: 0 errors, ~150 warnings (mostly HardcodedText, UseKtx).
 - Earlier open work (handover list in `../../.claude/CLAUDE.md`) still stands.
 
+## Library view controls: ideas, not built
+Search, Filter and Sort now act alike on the list on screen: each narrows or orders
+whatever is shown (a collection, unfiled items, a tag view; not Trash or My
+Publications), each applies only on its dialog's button, the subtitle names search and
+filter with the count, and an empty list offers to clear them. Search and filter clear
+when another collection opens unless "Keep the search/filter across collections" is on
+(then saved per library). What's left of the 2026-10-21 assessment:
+- **Chip bar** under the toolbar, shown only while something is active:
+  `[🔍 "foucault" ✕] [Has PDF ✕] [to-read ✕] … 42 items`. Each chip opens its
+  dialog, its ✕ clears just that part. Replaces the subtitle and gives search and
+  filter a clear button on screen in every state, not only on an empty list. Sort
+  needs no chip (it always has a value); an ↑/↓ by its icon would show the direction.
+- **Tag views become filter tags**: tapping a tag in the item view adds it to the
+  filter (a chip) instead of opening "Tag: x" on the Back stack. One tag mechanism
+  instead of three (filter tags, tag views, the search Tags field); changes what the
+  tag tap does, so it needs Jim's call. The "tag:" filter text on the state stack would
+  then go, and with it the last use of `filterEntries`.
+- **Search scope**: search narrows the list on screen, so a whole-library search
+  means opening My Library first. A "whole library" option in the dialog is possible
+  if that proves awkward.
+- **Kept search and filter** are easy to forget behind a subtitle; the chip bar would
+  make them visible. Kept per library is untested with groups (the scratch account has
+  none).
+- **Back** doesn't clear a search (it doesn't clear a filter either). Many apps clear
+  search on Back first; reconsider with the chip bar.
+- Dialog buttons: Filter Clear/Cancel/Done, Sort Cancel/Done, Search Clear/Cancel/
+  Search; all apply on the button (Clear at once). The filter dialog lost its live
+  "N items match"; a cheap count (no sort, no redraw) could come back if missed.
+
 ## Done in the 2026-10-21 pass
-Search menu (Filter/Sort move to the overflow while searching, icons restored after);
+Search as a dialog over the list on screen, like Filter (index over chosen fields,
+applied on Search, named in the subtitle, cleared from the dialog or an empty list);
+Filter and Sort apply on Done; search/filter clear per collection unless kept; "has
+PDF" from a precomputed set; tag views apply "has PDF"/"has notes"; sort keys computed
+once;
 organisation authors shown; OAuth as Zoot Suit with read-only groups and no token
 logging; applicationId `nu.n4.zootsuit`; release signing; Sign out; File Storage
 uploads use the edited file's base (a second upload failed with 412), tested against
