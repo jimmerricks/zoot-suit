@@ -3,6 +3,7 @@ package com.mickstarify.zooforzotero.LibraryActivity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.text.format.Formatter
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Handler
@@ -912,7 +913,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         val size = runCatching {
             attachmentStorageManager.getFileSize(attachmentStorageManager.getAttachmentUri(attachment))
         }.getOrDefault(0L)
-        return "$name (${size / 1000} KB)"
+        return "$name (${Formatter.formatShortFileSize(context, size)})"
     }
 
     /** Lists every edited attachment, all ticked; unticked ones stay edited for a later sync. */
