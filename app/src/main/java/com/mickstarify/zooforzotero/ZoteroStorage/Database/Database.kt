@@ -27,7 +27,7 @@ import javax.inject.Singleton
         AttachmentInfo::class,
         AttachmentBase::class
     ),
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 abstract class ZoteroRoomDatabase : RoomDatabase() {
@@ -51,7 +51,8 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         .addMigrations(MIGRATION_3_4)
         .addMigrations(MIGRATION_4_5)
         .addMigrations(MIGRATION_5_6)
-        .addMigrations(MIGRATION_6_7).build()
+        .addMigrations(MIGRATION_6_7)
+        .addMigrations(MIGRATION_7_8).build()
 
     /** md5 of the file this device last downloaded/uploaded for the attachment, or null. */
     fun getAttachmentBase(itemKey: String, group: Int): String? =
@@ -127,11 +128,9 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
             ItemInfo(itemPOJO.ItemKey, groupID, itemPOJO.version, Boolean.fromInt(itemPOJO.deleted))
         var itemDatas = LinkedList<ItemData>()
         var itemCreators = LinkedList<Creator>()
+        // blank fields aren't stored (see MIGRATION_7_8); a missing field reads as blank
         for ((key, value) in itemPOJO.data) {
-            val itemData = when (key) {
-                else -> ItemData(itemPOJO.ItemKey, key, value, "String")
-            }
-            itemDatas.add(itemData)
+            if (value != "") itemDatas.add(ItemData(itemPOJO.ItemKey, key, value, "String"))
         }
         for ((index, creatorPOJO) in itemPOJO.creators.withIndex()) {
             itemCreators.add(

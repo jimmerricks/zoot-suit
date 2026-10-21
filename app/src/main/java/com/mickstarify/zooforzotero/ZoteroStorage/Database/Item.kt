@@ -79,7 +79,6 @@ class Item : Parcelable {
                 return itemData.value
             }
         }
-        Log.d("zotero", "ItemData with key $key not found in Item .")
         return null
     }
 
@@ -122,7 +121,8 @@ class Item : Parcelable {
             else -> this.data["title"]
         }
 
-        return (title ?: "unknown")
+        // blank fields aren't stored, so a missing title is a blank one
+        return title ?: ""
     }
 
     fun getAuthor(): String {

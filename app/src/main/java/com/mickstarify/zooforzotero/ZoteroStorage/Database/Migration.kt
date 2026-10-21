@@ -75,6 +75,17 @@ val MIGRATION_5_6 = object: Migration(5,6){
 }
 
 /** Adds AttachmentBase (see AttachmentBase.kt). No foreign key, on purpose. */
+/**
+ * Drops empty fields. Zotero sends every field of an item type, blank or not: in a 22k-item
+ * library 47% of ItemData rows were "", and loading them was most of the startup time.
+ * writeItem skips them from now on; nothing reads a blank field differently from a missing one.
+ */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("DELETE FROM `ItemData` WHERE `value` = ''")
+    }
+}
+
 val MIGRATION_6_7 = object : Migration(6, 7) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL(
