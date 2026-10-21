@@ -36,22 +36,17 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     override lateinit var libraryListViewModel: LibraryListViewModel
     override lateinit var libraryLoadingViewModel: LibraryLoadingScreenViewModel
 
-    val sortMethod = compareBy<Item> {
-        when (model.preferences.getSortMethod(model.state.currentGroup.id)) {
-            SortMethod.TITLE -> it.getTitle().lowercase(Locale.ROOT)
-            SortMethod.DATE -> it.getSortableDateString()
-            SortMethod.DATE_ADDED -> it.getSortableDateAddedString()
-            SortMethod.AUTHOR -> {
-                val authorText = it.getAuthor().lowercase(Locale.ROOT)
-                // force empty authors to the bottom. Just like the zotero desktop client.
-                if (authorText == "") {
-                    "zzz"
-                } else {
-                    authorText
-                }
-            }
+    /** The key an item sorts by under [method]; ties are broken by title. */
+    private fun sortKey(item: Item, method: SortMethod): String = when (method) {
+        SortMethod.TITLE -> item.getTitle().lowercase(Locale.ROOT)
+        SortMethod.DATE -> item.getSortableDateString()
+        SortMethod.DATE_ADDED -> item.getSortableDateAddedString()
+        SortMethod.AUTHOR -> {
+            val authorText = item.getAuthor().lowercase(Locale.ROOT)
+            // force empty authors to the bottom. Just like the zotero desktop client.
+            if (authorText == "") "zzz" else authorText
         }
-    }.thenBy { it.getTitle().lowercase(Locale.ROOT) }
+    }
 
     /** Opens My Library ([GroupInfo.NO_GROUP_ID]) or a group at its top, from the sidebar. */
     override fun openLibrary(groupId: Int) {
@@ -610,11 +605,15 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     // extension function to sort lists of items
+    // Keys are computed once per item, not per comparison: a note's title parses its HTML.
     private fun List<Item>.sort(): List<Item> {
-        if (model.preferences.isSortedAscendingly(model.state.currentGroup.id)) {
-            return this.sortedWith(sortMethod)
-        }
-        return this.sortedWith(sortMethod).reversed()
+        val groupId = model.state.currentGroup.id
+        val method = model.preferences.getSortMethod(groupId)
+        val sorted = this
+            .map { Triple(sortKey(it, method), it.getTitle().lowercase(Locale.ROOT), it) }
+            .sortedWith(compareBy<Triple<String, String, Item>>({ it.first }, { it.second }))
+            .map { it.third }
+        return if (model.preferences.isSortedAscendingly(groupId)) sorted else sorted.reversed()
     }
 
     fun describeAttachment(attachment: Item, onState: (AttachmentLocalState) -> Unit) {

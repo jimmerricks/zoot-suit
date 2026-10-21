@@ -134,7 +134,7 @@ class Item : Parcelable {
     }
 
     fun getSortableDateString(): String {
-        val date = getItemData("date") ?: ""
+        val date = data["date"] ?: ""
         if (date == "") {
             return "ZZZZ"
         }
@@ -156,7 +156,7 @@ class Item : Parcelable {
     }
 
     fun getSortableDateAddedString(): String {
-        return getItemData("dateAdded") ?: "XXXX-XX-XX"
+        return data["dateAdded"] ?: "XXXX-XX-XX"
     }
 
     fun getMd5Key(): String {
