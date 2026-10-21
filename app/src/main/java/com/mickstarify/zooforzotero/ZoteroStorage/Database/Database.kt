@@ -70,6 +70,11 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         return db.groupInfoDao().insertGroupInfos(group)
     }
 
+    /** Forgets a group the user is no longer in (its row only). Call off the main thread. */
+    fun deleteGroup(group: GroupInfo) {
+        db.groupInfoDao().delete(group)
+    }
+
     fun getGroups(): Maybe<List<GroupInfo>> {
         return db.groupInfoDao().getAll()
     }

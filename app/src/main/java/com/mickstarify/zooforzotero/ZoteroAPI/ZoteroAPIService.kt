@@ -24,6 +24,10 @@ import retrofit2.http.Query
 import retrofit2.http.Streaming
 import retrofit2.http.Url
 
+
+/** Most groups asked for at once; Zotero's default page is 25. */
+const val GROUP_LIST_LIMIT = 100
+
 interface ZoteroAPIService {
     @GET("users/{user}/items")
     fun getItems(
@@ -48,7 +52,8 @@ interface ZoteroAPIService {
 
     @GET("users/{user}/groups")
     fun getGroupInfo(
-        @Path("user") userID: String
+        @Path("user") userID: String,
+        @Query("limit") limit: Int = GROUP_LIST_LIMIT
     ): Observable<List<GroupPojo>>
 
     // get items for the group ID

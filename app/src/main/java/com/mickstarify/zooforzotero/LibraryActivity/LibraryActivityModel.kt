@@ -14,6 +14,7 @@ import com.mickstarify.zooforzotero.ZoteroAPI.AlreadyUploadedException
 import io.reactivex.rxjava3.core.Single
 import com.mickstarify.zooforzotero.ZoteroAPI.RemoteAttachmentChangedException
 import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentFileCheck
+import com.mickstarify.zooforzotero.ZoteroAPI.GROUP_LIST_LIMIT
 import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploadBatch
 import com.mickstarify.zooforzotero.ZoteroAPI.DamagedAttachmentException
 import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploadPreflight
@@ -739,6 +740,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
                 override fun onComplete() {
                     Log.d("zotero", "User has no groups.")
+                    this@LibraryActivityModel.groups = emptyList()
+                    presenter.showGroups()
                 }
 
                 override fun onSubscribe(d: Disposable) {
@@ -755,12 +758,17 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             })
     }
 
+    /**
+     * Lists the groups in the sidebar: first the ones on this device (so they're there
+     * offline), then Zotero's current list, which also drops groups the user has left.
+     * It does not deal with getting items or collections.
+     */
     fun loadGroups() {
-        /* This method loads a list of groups. It does not deal with getting items or catalogs. */
         if (!preferences.isGroupLibrarySyncEnabled()) {
             Log.d("zotero", "group library sync disabled in settings; not loading groups")
             return
         }
+        displayGroupsOnUI()
 
         val groupsObserver = zoteroAPI.getGroupInfo()
         groupsObserver.subscribeOn(Schedulers.io())
@@ -781,9 +789,17 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                         val status = zoteroDatabase.addGroup(it)
                         status.blockingAwait() // wait until the db add is finished.
                     }
+                    // a full page may not be the whole list; then forget nothing
+                    if (groupInfo.size >= GROUP_LIST_LIMIT) return
+                    val current = groupInfo.map { it.id }.toSet()
+                    zoteroDatabase.getGroups().blockingGet()
+                        ?.filter { it.id !in current }
+                        ?.forEach { zoteroDatabase.deleteGroup(it) }
                 }
 
                 override fun onError(e: Throwable) {
+                    // offline or refused: the groups on the device stay listed
+                    Log.e("zotero", "could not refresh the group list: $e")
                 }
 
             })
