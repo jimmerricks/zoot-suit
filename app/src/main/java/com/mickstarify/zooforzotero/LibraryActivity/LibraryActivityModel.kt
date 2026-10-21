@@ -1451,7 +1451,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun getItemsForTag(tagName: String): List<Item> {
-        return applyLibraryFilter(zoteroDB.getItemsForTag(tagName))
+        return filterItems(zoteroDB.getItemsForTag(tagName))
     }
 
     override fun deleteLocalAttachment(attachment: Item) {
