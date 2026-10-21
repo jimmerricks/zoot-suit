@@ -74,13 +74,6 @@ class ZoteroDB(
     @Volatile
     private var itemsByKey: Map<String, Item> = emptyMap()
 
-    // we are adding this prefix stuff so we can have concurrent zoteroDBs that will allow users to store
-    // shared collections.
-    val ITEMS_FILENAME = if (prefix == "") {
-        "items.json"
-    } else {
-        "${prefix}_items.json"
-    }
     val namespace: String = if (prefix == "") {
         "zoteroDB"
     } else {
@@ -106,12 +99,6 @@ class ZoteroDB(
         return timestamp
     }
 
-    fun commitCollectionsToDatabase() {
-        if (collections == null) {
-            throw Exception("Error, ZoteroDB not initialized. Cannot Commit to storage.")
-        }
-        zoteroDatabase.writeCollections(this.collections!!).subscribeOn(Schedulers.io()).subscribe()
-    }
 
     fun loadCollectionsFromDatabase(): Completable {
         return Completable.fromMaybe(zoteroDatabase.getCollections(groupID).doOnSuccess(
@@ -150,23 +137,8 @@ class ZoteroDB(
         })
     }
 
-    fun destroyItemsDatabase(): Completable {
-        this.clearItemsVersion()
-        return zoteroDatabase.deleteAllItemsForGroup(groupID)
-    }
 
-    /* We used to store the library as a json file which was a pain in the arse for handling modifications.*/
-    fun deleteLegacyStorage() {
-        val itemsFile = File(ITEMS_FILENAME)
-        if (itemsFile.exists()) {
-            itemsFile.delete()
-        }
-    }
 
-    fun hasLegacyStorage(): Boolean {
-        val itemsFile = context.getFileStreamPath(ITEMS_FILENAME)
-        return (itemsFile.exists())
-    }
 
     fun getAttachments(itemKey: String): List<Item> {
         if (items == null) {
@@ -379,10 +351,6 @@ class ZoteroDB(
         }
     }
 
-    fun getSubCollectionsFor(collectionKey: String): List<Collection> {
-        return collections?.filter { it.key == collectionKey }?.firstOrNull()?.getSubCollections()
-            ?: LinkedList()
-    }
 
     fun deleteItem(key: String) {
         val newItems = LinkedList<Item>()
@@ -398,9 +366,6 @@ class ZoteroDB(
         return itemsByKey[itemKey]
     }
 
-    fun hasMd5Key(item: Item, onlyWebdav: Boolean = false): Boolean {
-        return getMd5Key(item, onlyWebdav) != ""
-    }
 
     fun getMd5Key(item: Item, onlyWebdav: Boolean = false): String {
         if (attachmentInfo == null) {
@@ -420,30 +385,6 @@ class ZoteroDB(
         return attachmentInfo.md5Key
     }
 
-    fun migrateItemsFromOldStorage(): Completable {
-        val gson = Gson()
-        val typeToken = object : TypeToken<List<ItemPOJO>>() {}.type
-        val itemPojos: List<ItemPOJO>
-        try {
-            val itemsJsonReader = InputStreamReader(context.openFileInput(ITEMS_FILENAME))
-            itemPojos = gson.fromJson(itemsJsonReader, typeToken)
-            itemsJsonReader.close()
-
-        } catch (e: Exception) {
-            Log.e("zotero", "error loading items from storage, deleting file.")
-            this.deleteLegacyStorage()
-            throw Exception("error loading items")
-        }
-        return zoteroDatabase.writeItemPOJOs(groupID, itemPojos).andThen(
-            this.loadCollectionsFromDatabase()
-        ).andThen(
-            this.loadItemsFromDatabase()
-        ).andThen(Completable.fromAction {
-            val libraryVersion = this.getLibraryVersion()
-            this.deleteLegacyStorage()
-            this.setItemsVersion(libraryVersion)
-        })
-    }
 
     fun updateAttachmentMetadata(
         itemKey: String,
@@ -468,26 +409,7 @@ class ZoteroDB(
         return zoteroDatabase.writeAttachmentInfo(attachmentInfo)
     }
 
-    fun deleteItems(itemKeys: List<String>): Completable {
-        return Completable.fromAction(
-            Action {
-                for (itemKey in itemKeys) {
-                    zoteroDatabase.deleteItem(itemKey).blockingAwait()
-                }
-            }
-        )
-        // todo work out a way to update live data.
-    }
 
-    fun deleteCollections(collectionKeys: List<String>): Completable {
-        return Completable.fromAction(
-            Action {
-                for (collectionKey in collectionKeys) {
-                    zoteroDatabase.deleteCollection(collectionKey).blockingAwait()
-                }
-            }
-        )
-    }
 
     fun getTrashItems(): List<Item> {
         if (this.trashItems == null){
