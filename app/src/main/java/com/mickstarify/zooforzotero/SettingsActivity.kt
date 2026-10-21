@@ -9,6 +9,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
@@ -19,6 +20,9 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import com.mickstarify.zooforzotero.LibraryActivity.WebDAV.WebDAVSetup
+import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorage
+import com.mickstarify.zooforzotero.SyncSetup.domain.SignOut
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.STORAGE_ACCESS_REQUEST
 import dagger.hilt.android.AndroidEntryPoint
@@ -31,6 +35,12 @@ class SettingsActivity : AppCompatActivity() {
 
     @Inject
     lateinit var myPreferenceManager: PreferenceManager
+
+    @Inject
+    lateinit var authenticationStorage: AuthenticationStorage
+
+    @Inject
+    lateinit var zoteroDatabase: ZoteroDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // white status bar icons: the toolbar colour shows through the status bar
@@ -72,6 +82,10 @@ class SettingsActivity : AppCompatActivity() {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
 
+            val settings = requireActivity() as SettingsActivity
+            findPreference<Preference>("sign_out")?.summary =
+                "Signed in as ${settings.authenticationStorage.getUsername()}"
+
             val httpTimeoutPreference: EditTextPreference? = findPreference("http_write_timeout")
 
             httpTimeoutPreference?.setOnBindEditTextListener { editText ->
@@ -110,6 +124,9 @@ class SettingsActivity : AppCompatActivity() {
                 val intent = Intent(requireContext(), WebDAVSetup::class.java)
                 startActivity(intent)
                 return true
+            } else if (preference.key == "sign_out") {
+                (requireActivity() as SettingsActivity).confirmSignOut()
+                return true
             } else {
                 return super.onPreferenceTreeClick(preference)
             }
@@ -139,6 +156,19 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    fun confirmSignOut() {
+        AlertDialog.Builder(this)
+            .setTitle("Sign out?")
+            .setMessage(
+                "This device forgets your Zotero login, your libraries and the app's " +
+                        "settings, WebDAV login included. Edits waiting to sync are lost: " +
+                        "upload them first. Files in an attachment folder you chose stay there."
+            )
+            .setPositiveButton("Sign out") { _, _ -> SignOut.signOut(this, zoteroDatabase) }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun updateWebDAVPreferenceUI(flag: Boolean) {

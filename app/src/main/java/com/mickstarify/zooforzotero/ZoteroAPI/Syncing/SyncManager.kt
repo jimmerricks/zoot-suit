@@ -124,7 +124,7 @@ class SyncManager (
                         syncChangeListener.createErrorAlert(
                             "API key no longer valid",
                             "Zotero rejected this app's API key (it may have been revoked). " +
-                                    "To sign in again, clear the app's data in Android's app settings."
+                                    "To sign in again, choose Settings → Sign out."
                         ) {}
                     } else {
                         reportError("Couldn't sync collections", e)
