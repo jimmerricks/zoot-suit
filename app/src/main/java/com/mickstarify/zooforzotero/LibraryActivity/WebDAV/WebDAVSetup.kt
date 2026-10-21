@@ -102,11 +102,12 @@ class WebDAVSetup : AppCompatActivity() {
         }
 
         loadConfig()
+        settingsBefore = SettingsSnapshot()
 
         val submitButton = findViewById<Button>(R.id.button_webdav_connect)
 
         submitButton.setOnClickListener {
-            saveConfig()
+            if (!saveConfig()) return@setOnClickListener
 
             val address = textInputLayout_host.editText?.text.toString()
             val username = textInputLayout_user.editText?.text.toString()
@@ -125,7 +126,39 @@ class WebDAVSetup : AppCompatActivity() {
         }
     }
 
-    private fun saveConfig() {
+    /**
+     * The WebDAV settings as this screen found them. The connection test reads the settings
+     * being tried from the preferences, so they are saved first; if the test fails they are
+     * put back, and a setup that worked before keeps working.
+     */
+    private inner class SettingsSnapshot {
+        val enabled = preferenceManager.isWebDAVEnabled()
+        val address = preferenceManager.getWebDAVAddress()
+        val username = preferenceManager.getWebDAVUsername()
+        val password = preferenceManager.getWebDAVPassword()
+        val verifySSL = preferenceManager.getVerifySSLForWebDAV()
+        val addZoteroToUrl = preferenceManager.getWebDAVAddZoteroToUrl()
+        val authMode = preferenceManager.getWebDAVAuthMode()
+        val connectTimeout = preferenceManager.getWebDAVConnectTimeout()
+        val readTimeout = preferenceManager.getWebDAVReadTimeout()
+        val writeTimeout = preferenceManager.getWebDAVWriteTimeout()
+
+        fun restore() {
+            preferenceManager.setWebDAVAuthentication(address, username, password)
+            preferenceManager.setVerifySSLForWebDAV(verifySSL)
+            preferenceManager.setWebDAVAddZoteroToUrl(addZoteroToUrl)
+            preferenceManager.setWebDAVAuthMode(authMode)
+            preferenceManager.setWebDAVConnectTimeout(connectTimeout)
+            preferenceManager.setWebDAVReadTimeout(readTimeout)
+            preferenceManager.setWebDAVWriteTimeout(writeTimeout)
+            preferenceManager.setWebDAVEnabled(enabled)
+        }
+    }
+
+    private lateinit var settingsBefore: SettingsSnapshot
+
+    /** Saves the form for the connection test; false if a field is invalid (nothing saved). */
+    private fun saveConfig(): Boolean {
         var host = textInputLayout_host.editText!!.text.toString()
         val username = textInputLayout_user.editText!!.text.toString()
         val password = textInputLayout_password.editText!!.text.toString()
@@ -144,7 +177,7 @@ class WebDAVSetup : AppCompatActivity() {
         } catch (e: NumberFormatException) {
             textInputLayout_connectTimeout.error = "Enter a whole number of milliseconds, 0 or more."
             Toast.makeText(this, "Check the highlighted field.", Toast.LENGTH_SHORT).show()
-            return
+            return false
         }
 
         val readTimeout: Long
@@ -156,7 +189,7 @@ class WebDAVSetup : AppCompatActivity() {
         } catch (e: NumberFormatException) {
             textInputLayout_readTimeout.error = "Enter a whole number of milliseconds, 0 or more."
             Toast.makeText(this, "Check the highlighted field.", Toast.LENGTH_SHORT).show()
-            return
+            return false
         }
 
         val writeTimeout: Long
@@ -168,7 +201,7 @@ class WebDAVSetup : AppCompatActivity() {
         } catch (e: NumberFormatException) {
             textInputLayout_writeTimeout.error = "Enter a whole number of milliseconds, 0 or more."
             Toast.makeText(this, "Check the highlighted field.", Toast.LENGTH_SHORT).show()
-            return
+            return false
         }
 
         preferenceManager.setWebDAVAuthentication(host, username = username, password = password)
@@ -178,8 +211,7 @@ class WebDAVSetup : AppCompatActivity() {
         preferenceManager.setWebDAVReadTimeout(readTimeout)
         preferenceManager.setWebDAVWriteTimeout(writeTimeout)
         // auth mode gets written at time of select, no need to write here.
-
-
+        return true
     }
 
     private fun loadConfig() {
@@ -265,6 +297,7 @@ class WebDAVSetup : AppCompatActivity() {
                 }
 
                 override fun onError(e: Throwable) {
+                    settingsBefore.restore()
                     notifyFailed("Check the address, username and password.\n\nDetails: ${e.message ?: e}")
                     hideProgressDialog()
                 }
@@ -305,6 +338,7 @@ class WebDAVSetup : AppCompatActivity() {
     fun setWebDAVAuthentication(address: String, username: String, password: String) {
         preferenceManager.setWebDAVAuthentication(address, username, password)
         preferenceManager.setWebDAVEnabled(true)
+        settingsBefore = SettingsSnapshot()
         Toast.makeText(this, "WebDAV server connected.", Toast.LENGTH_SHORT).show()
     }
 
