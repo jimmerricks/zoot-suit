@@ -538,6 +538,11 @@ class LibraryActivity : AppCompatActivity(),
 
     private var doubleBackToExitPressedOnce = false
     override fun onBackPressed() {
+        val drawer = findViewById<DrawerLayout>(R.id.drawerlayout_library)
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START)
+            return
+        }
         presenter.backButtonPressed()
         Handler().postDelayed(Runnable { doubleBackToExitPressedOnce = false }, 2000)
     }
