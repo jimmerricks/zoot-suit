@@ -19,12 +19,14 @@
         android:text="Item has" />
 
     <CheckBox
+        style="@style/DialogChoice"
         android:id="@+id/checkBox_filter_has_pdf"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="PDF attachment" />
 
     <CheckBox
+        style="@style/DialogChoice"
         android:id="@+id/checkBox_filter_has_notes"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -35,12 +37,14 @@
         android:text="On this device" />
 
     <CheckBox
+        style="@style/DialogChoice"
         android:id="@+id/checkBox_filter_on_device"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="PDF downloaded" />
 
     <CheckBox
+        style="@style/DialogChoice"
         android:id="@+id/checkBox_filter_edited"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

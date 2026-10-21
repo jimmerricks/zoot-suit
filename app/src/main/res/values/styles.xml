@@ -10,4 +10,10 @@
         <item name="android:textColor">?attr/colorAccent</item>
         <item name="android:textStyle">bold</item>
     </style>
+
+    <!-- A checkbox or radio option in the filter and sort dialogs: one line of text, so
+         36dp high instead of the theme's 48dp touch-target minimum. -->
+    <style name="DialogChoice">
+        <item name="android:minHeight">36dp</item>
+    </style>
 </resources>

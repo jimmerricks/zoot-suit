@@ -4,7 +4,7 @@
 <CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/text1"
     android:layout_width="match_parent"
-    android:layout_height="48dp"
+    android:layout_height="36dp"
     android:checkMark="@null"
     android:drawableStart="?android:attr/listChoiceIndicatorMultiple"
     android:drawablePadding="0dp"

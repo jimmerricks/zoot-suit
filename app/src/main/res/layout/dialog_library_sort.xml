@@ -18,6 +18,7 @@
         android:layout_height="wrap_content">
 
         <RadioButton
+            style="@style/DialogChoice"
             android:id="@+id/radioButton_sort_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -25,6 +26,7 @@
             android:text="Title" />
 
         <RadioButton
+            style="@style/DialogChoice"
             android:id="@+id/radioButton_sort_author"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -32,6 +34,7 @@
             android:text="Author" />
 
         <RadioButton
+            style="@style/DialogChoice"
             android:id="@+id/radioButton_sort_date"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -39,6 +42,7 @@
             android:text="Date" />
 
         <RadioButton
+            style="@style/DialogChoice"
             android:id="@+id/radioButton_sort_date_added"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -57,12 +61,14 @@
         android:paddingBottom="8dp">
 
         <RadioButton
+            style="@style/DialogChoice"
             android:id="@+id/radioButton_sort_ascending"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Ascending (A to Z, oldest first)" />
 
         <RadioButton
+            style="@style/DialogChoice"
             android:id="@+id/radioButton_sort_descending"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
