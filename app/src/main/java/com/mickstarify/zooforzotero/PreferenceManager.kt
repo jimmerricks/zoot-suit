@@ -108,6 +108,19 @@ class PreferenceManager @Inject constructor(context: Context) {
     fun showSubcollectionItems(): Boolean =
         sharedPreferences.getBoolean("show_subcollection_items", false)
 
+    /** Where the library screen was (library and collection id), to reopen it at startup. */
+    fun getLibraryPlace(): Pair<Int, String>? {
+        val collection = sharedPreferences.getString("library_place_collection", null) ?: return null
+        return Pair(sharedPreferences.getInt("library_place_group", -1), collection)
+    }
+
+    fun setLibraryPlace(groupId: Int, collection: String) {
+        sharedPreferences.edit()
+            .putInt("library_place_group", groupId)
+            .putString("library_place_collection", collection)
+            .apply()
+    }
+
     /** Whether the sidebar's Group Libraries heading is open. */
     fun isSidebarGroupsExpanded(): Boolean =
         sharedPreferences.getBoolean("sidebar_groups_expanded", true)

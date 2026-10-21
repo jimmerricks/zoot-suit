@@ -97,6 +97,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     fun refreshSidebar() {
         val groupId = model.state.currentGroup.id
         val current = model.getCurrentCollection()
+        if (current != "unset") model.preferences.setLibraryPlace(groupId, current)
         val tree = CollectionTree(model.getCollections())
         var expanded = model.preferences.getSidebarExpandedCollections(groupId)
         val hiddenBy = tree.ancestorsOf(current).filter { it !in expanded }

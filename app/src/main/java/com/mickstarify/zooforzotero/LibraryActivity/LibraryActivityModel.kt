@@ -1138,7 +1138,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
 
     // the group the user asked to open; its load switches the list to it (see finishLibrarySync)
-    private var openingGroupId: Int? = null
+    private var openingGroup: GroupInfo? = null
+    // a collection to open in that group once it's loaded (restoring the place at startup)
+    private var openingGroupCollection: String? = null
 
     /**
      * Opens a group, or refreshes the open one ([refresh]). A group synced before opens
@@ -1148,7 +1150,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
      */
     override fun startGroupSync(group: GroupInfo, refresh: Boolean) {
         val db = zoteroGroupDB.getGroup(group.id)
-        if (!refresh) openingGroupId = group.id
+        if (!refresh) openingGroup = group
         if (!refresh && (db.isPopulated() || db.getLastSyncedTimestamp() != 0L)) {
             finishLibrarySync(db) {
                 if (shouldIUpdateLibrary(db) && !syncManager.isSyncing()) {
@@ -1161,7 +1163,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         if (syncManager.isSyncing()) {
             Log.e("zotero", "cannot sync groups, still in a sync")
             presenter.makeToastAlert("Cannot open groups yet, still syncing library.")
-            openingGroupId = null
+            openingGroup = null
             return
         }
         syncManager.startCompleteSync(db, refresh)
@@ -1277,19 +1279,28 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 if (db.groupID == GroupInfo.NO_GROUP_ID) {
                     presenter.receiveCollections(getCollections())
                     if (state.currentCollection == "unset") {
+                        val place = preferences.getLibraryPlace() // before "all" overwrites it
                         presenter.setCollection("all")
+                        place?.let { restorePlace(it) }
                     } else {
                         presenter.redisplayItems()
                     }
-                } else if (openingGroupId == db.groupID || state.currentGroup.id == db.groupID) {
+                } else if (openingGroup?.id == db.groupID || state.currentGroup.id == db.groupID) {
                     zoteroDBPicker.groupId = db.groupID
                     // opening the group; a refresh of the open group keeps its place
-                    if (state.currentGroup.id != db.groupID) {
-                        getGroupById(db.groupID)?.let { navigator.openLibrary(it) }
+                    val opening = openingGroup
+                    if (opening != null && state.currentGroup.id != db.groupID) {
+                        navigator.openLibrary(opening)
                     }
-                    openingGroupId = null
+                    openingGroup = null
                     presenter.receiveCollections(getCollections())
-                    presenter.redisplayItems()
+                    val restore = openingGroupCollection
+                    openingGroupCollection = null
+                    if (restore != null && isPlaceInOpenLibrary(restore)) {
+                        presenter.setCollection(restore)
+                    } else {
+                        presenter.redisplayItems()
+                    }
                 }
                 // else: a background refresh of a group the user has since left: loaded, not shown
                 if (db.items?.size == 0) {
@@ -1306,6 +1317,38 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 onFinish()
             }.subscribe()
     }
+
+    /**
+     * Reopens where the library screen was when the app last closed: a collection, or a
+     * group and a collection in it. Called once My Library has loaded at startup, so
+     * Back leads from there to My Library. A group opens only while group libraries
+     * are on, and from the device if it was synced before.
+     */
+    private fun restorePlace(place: Pair<Int, String>) {
+        val (groupId, collection) = place
+        if (groupId == GroupInfo.NO_GROUP_ID) {
+            if (collection != LibraryNavigator.ALL && isPlaceInOpenLibrary(collection)) {
+                presenter.setCollection(collection)
+            }
+            return
+        }
+        if (!preferences.isGroupLibrarySyncEnabled()) return
+        zoteroDatabase.getGroups()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ groups ->
+                val group = groups.firstOrNull { it.id == groupId } ?: return@subscribe
+                // only if nothing else was opened meanwhile
+                if (state.isUsingGroup() || state.currentCollection != LibraryNavigator.ALL) return@subscribe
+                if (collection != LibraryNavigator.GROUP_ALL) openingGroupCollection = collection
+                startGroupSync(group)
+            }, { Log.e(TAG, "could not restore the open group: $it") })
+    }
+
+    /** Whether [collection] (a collection key or a fixed view) exists in the open library. */
+    private fun isPlaceInOpenLibrary(collection: String): Boolean =
+        SidebarView.entries.any { it.collectionId == collection } ||
+                getCollectionFromKey(collection) != null
 
     private var doubleBackToExitPressedOnce = false
     override fun loadPriorState() {
