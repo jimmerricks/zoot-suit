@@ -151,6 +151,26 @@ class ZoteroAPI(
         .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
         .build().create(ZoteroAPIService::class.java)
 
+    private var webdavClient: Pair<String, Webdav>? = null
+
+    /**
+     * The WebDAV client for the current settings. One per settings, not one per call:
+     * every Webdav builds its own OkHttp client, so each download, .prop check and
+     * upload used to open a new connection (TLS handshake, auth challenge) to the server.
+     */
+    @Synchronized
+    private fun webdav(): Webdav {
+        val p = preferencesManager
+        val settings = listOf(
+            p.getWebDAVAddress(), p.getWebDAVUsername(), p.getWebDAVPassword(),
+            p.getVerifySSLForWebDAV(), p.getWebDAVAuthMode(), p.getWebDAVConnectTimeout(),
+            p.getWebDAVReadTimeout(), p.getWebDAVWriteTimeout(),
+            p.isWebDAVBackupBeforeUploadEnabled()
+        ).joinToString("\u0000")
+        webdavClient?.let { (key, client) -> if (key == settings) return client }
+        return Webdav(p).also { webdavClient = Pair(settings, it) }
+    }
+
     fun downloadItemRx(
         item: Item,
         groupID: Int = GroupInfo.NO_GROUP_ID,
@@ -162,16 +182,10 @@ class ZoteroAPI(
             Log.d("zotero", "got download request for item that isn't attachment")
         }
 
-        val preferenceManager = PreferenceManager(context)
-
         // we will delegate to a webdav download if the user has webdav enabled.
         // When the user has webdav enabled on personal account or for groups are the only two conditions.
-        if (!useGroup && preferenceManager.isWebDAVEnabled()) {
-            val webdav = Webdav(
-                preferenceManager
-            )
-
-            return webdav.downloadFileRx(item, context, attachmentStorageManager)
+        if (!useGroup && preferencesManager.isWebDAVEnabled()) {
+            return webdav().downloadFileRx(item, context, attachmentStorageManager)
             //stops here.
         }
 
@@ -366,7 +380,7 @@ class ZoteroAPI(
 
     /** The attachment's .prop on the WebDAV server (with ETag), null if there is none. */
     fun getWebdavRemoteProp(attachment: Item, context: Context): RemoteProp? {
-        return Webdav(PreferenceManager(context)).getRemoteProp(attachment)
+        return webdav().getRemoteProp(attachment)
     }
 
     fun patchItem(item: Item, patch: JsonObject, lastModifiedVersion: Int = item.getVersion()): Completable {
@@ -649,7 +663,7 @@ class ZoteroAPI(
         md5: String,
         mtime: Long
     ): Completable {
-        return Webdav(PreferenceManager(context))
+        return webdav()
             .uploadAttachment(attachment, attachmentStorageManager, expected, md5, mtime)
     }
 
