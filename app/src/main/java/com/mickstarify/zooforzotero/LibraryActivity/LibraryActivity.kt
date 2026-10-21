@@ -279,7 +279,7 @@ class LibraryActivity : AppCompatActivity(),
         alert.setIcon(R.drawable.ic_error_black_24dp)
         alert.setTitle(title)
         alert.setMessage(message)
-        alert.setPositiveButton("Ok") { _, _ -> onClick() }
+        alert.setPositiveButton("OK") { _, _ -> onClick() }
         try {
             alert.show()
         } catch (exception: WindowManager.BadTokenException) {
@@ -358,7 +358,7 @@ class LibraryActivity : AppCompatActivity(),
     fun updateAttachmentDownloadProgress(progress: Int, total: Int) {
         if (progressDialog == null) {
             progressDialog = ProgressDialog(this)
-            progressDialog?.setTitle("Downloading File")
+            progressDialog?.setTitle("Downloading")
             progressDialog?.setButton("Cancel") { dialogInterface, _ ->
                 presenter.cancelAttachmentDownload()
             }
@@ -375,7 +375,7 @@ class LibraryActivity : AppCompatActivity(),
                 }
             }
 
-            progressDialog?.setMessage("Downloading your Attachment. $progressString")
+            progressDialog?.setMessage(progressString.ifEmpty { "Starting…" })
         }
         progressDialog?.show()
     }
@@ -393,11 +393,10 @@ class LibraryActivity : AppCompatActivity(),
             uploadProgressDialog?.setCancelable(false)
         }
         uploadProgressDialog?.setTitle(
-            if (total == 1) "Uploading Attachment" else "Uploading $position of $total"
+            if (total == 1) "Uploading" else "Uploading $position of $total"
         )
         uploadProgressDialog?.setMessage(
-            "Uploading ${attachment.data["filename"]}. " +
-                    "This may take a while, do not close the app."
+            "${attachment.data["filename"] ?: attachment.getTitle()}\n\nKeep the app open until it finishes."
         )
         uploadProgressDialog?.show()
     }
@@ -414,7 +413,6 @@ class LibraryActivity : AppCompatActivity(),
         onNoClick: () -> Unit
     ) {
         val alert = AlertDialog.Builder(this)
-        alert.setIcon(R.drawable.ic_error_black_24dp)
         alert.setTitle(title)
         alert.setMessage(message)
         alert.setPositiveButton(yesText) { _, _ -> onYesClick() }
@@ -465,9 +463,9 @@ class LibraryActivity : AppCompatActivity(),
     override fun showAttachmentMenu(item: Item) {
         val actions = listOf<Pair<String, () -> Unit>>(
             "Open" to { presenter.openAttachment(item) },
-            "Download to device" to { presenter.downloadAttachmentOnly(item) },
-            "Upload my changes" to { presenter.uploadChanges(item) },
-            "Delete local copy" to { presenter.deleteLocalAttachment(item) },
+            "Download" to { presenter.downloadAttachmentOnly(item) },
+            "Upload changes" to { presenter.uploadChanges(item) },
+            "Delete from this device" to { presenter.deleteLocalAttachment(item) },
         )
         try {
             AlertDialog.Builder(this)

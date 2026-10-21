@@ -297,13 +297,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     override fun attachmentDownloadError(message: String) {
         view.hideAttachmentDownloadProgress()
         if (message == "") {
-            createErrorAlert(
-                "Error getting Attachment", "There was an error " +
-                        "downloading the attachment from the Zotero Servers.\n" +
-                        "Please check your internet connection."
-            ) { }
+            createErrorAlert("Couldn't download the file", "Check your connection and try again.") { }
         } else {
-            createErrorAlert("Error getting Attachment", message) { }
+            createErrorAlert("Couldn't download the file", message) { }
         }
     }
 

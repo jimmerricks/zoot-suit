@@ -68,23 +68,24 @@ class ItemAttachmentEntry(
 
             val linkMode = attachment?.getItemData("linkMode")
 
-            filename.text = attachment?.data?.get("filename") ?: "unknown"
+            filename.text = attachment?.data?.get("filename") ?: "Untitled attachment"
             showState()
             if (linkMode == "linked_file") { // this variant uses title as a filename.
-                filename.text = "[Linked] ${attachment?.getItemData("title")}"
+                filename.text = "Linked file: ${attachment?.getItemData("title")}"
 
             } else if (linkMode == "linked_url") {
-                filename.text = "[Linked Url] ${attachment?.getItemData("title")}"
+                filename.text = "Link: ${attachment?.getItemData("title")}"
                 layout.setOnClickListener {
                     val url = attachment?.getItemData("url")
                     AlertDialog.Builder(context)
-                        .setMessage("Would you like to open this URL: $url")
-                        .setPositiveButton("Yes") { dialog, which ->
+                        .setTitle("Open this link?")
+                        .setMessage(url)
+                        .setPositiveButton("Open") { dialog, which ->
                             val intent = Intent(Intent.ACTION_VIEW)
                             intent.setData(Uri.parse(url))
                             startActivity(intent)
                         }
-                        .setNegativeButton("No", { _, _ -> })
+                        .setNegativeButton("Cancel", { _, _ -> })
                         .show()
                 }
             }

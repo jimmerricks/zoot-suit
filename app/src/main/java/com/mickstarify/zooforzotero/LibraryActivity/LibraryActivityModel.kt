@@ -254,9 +254,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 val intent = attachmentStorageManager.openAttachment(attachment)
                 presenter.startActivity(intent)
             } catch (exception: ActivityNotFoundException) {
-                presenter.createErrorAlert("No PDF Viewer installed",
-                    "There is no app that handles ${attachment.getFileExtension()} documents available on your device. Would you like to install one?",
-                    onClick = {
+                presenter.createYesNoPrompt("No app opens this file",
+                    "Nothing on this device opens .${attachment.getFileExtension()} files. Install a PDF reader such as Xodo?",
+                    "Get Xodo", "Cancel", onYesClick = {
                         try {
                             presenter.startActivity(
                                 Intent(
@@ -272,17 +272,15 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                                 )
                             )
                         }
-                    })
+                    }, onNoClick = {})
             } catch (e: IllegalArgumentException) {
-                presenter.createErrorAlert("Error opening File",
-                    "There was an error opening your PDF." +
-                            " If you are on a huawei device, this is a known error with their implementation of file" +
-                            " access. Try changing the storage location to a custom path in settings.",
+                presenter.createErrorAlert("Couldn't open the file",
+                    "Android refused access to the file. This is a known problem on Huawei " +
+                            "devices: in Settings, set Attachments Location to Custom Path.",
                     {})
             } catch (e: FileNotFoundException) {
                 presenter.createErrorAlert("File not found",
-                    "There was an error opening your PDF." +
-                            "Please redownload your file.",
+                    "The file is missing from this device. Download it again.",
                     {})
             }
         }
@@ -298,11 +296,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             if (intent != null) {
                 presenter.startActivity(intent)
             } else {
-                presenter.makeToastAlert("Error, could not find linked attachment ${item.data["path"]}")
+                presenter.makeToastAlert("Linked file not found: ${item.data["path"]}")
             }
             return
         }
-        presenter.showLoadingAlertDialog("Opening your attachment")
+        presenter.showLoadingAlertDialog("Opening…")
         // check to see if the attachment exists but is invalid
         val attachmentExists: Boolean
         try {
@@ -312,11 +310,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             )
         } catch (e: Exception) {
             presenter.hideLoadingAlertDialog()
-            presenter.makeToastAlert("could not open attachment, file not found.")
+            presenter.makeToastAlert("File not found on this device.")
             return
         }
         if (attachmentExists) {
-            presenter.showLoadingAlertDialog("Checking for a newer version")
+            presenter.showLoadingAlertDialog("Checking for a newer version…")
             latestZoteroMd5(item)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ latest ->
@@ -391,11 +389,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             AttachmentOpenCheck.Action.ASK_EDITED_STALE -> {
                 presenter.createYesNoPrompt(
                     "Newer version in Zotero",
-                    "This file was changed on another device after you downloaded it, and your " +
-                            "copy here has changes of its own. They can't be uploaded without " +
-                            "overwriting the newer version, so uploading this copy will be refused.\n\n" +
-                            "Download the newer version (your changes on this device are replaced), " +
-                            "or open your copy and save your annotations as a new file.",
+                    "This file changed in Zotero after you downloaded it, and your copy has " +
+                            "edits of its own. Your copy can't be uploaded without overwriting the " +
+                            "newer version.\n\nDownload the newer version (your edits are " +
+                            "replaced), or open your copy and save your annotations as a new file.",
                     "Download newer", "Open my copy", {
                         presenter.updateAttachmentDownloadProgress(0, -1)
                         attachmentStorageManager.deleteAttachment(item)
@@ -416,9 +413,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             !localMd5.equals(latestMd5, ignoreCase = true)
         ) {
             presenter.createYesNoPrompt(
-                "File conflict",
-                "Your local copy is different to the server's. Would you like to redownload the server's copy?",
-                "Yes", "No", {
+                "Different from Zotero's copy",
+                "The file on this device differs from the one in Zotero. Download Zotero's version?",
+                "Download", "Open mine", {
                     presenter.updateAttachmentDownloadProgress(0, -1)
                     attachmentStorageManager.deleteAttachment(item)
                     downloadAttachment(item)
@@ -479,9 +476,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             }
             AttachmentOpenCheck.Action.ASK_EDITED_STALE -> presenter.createYesNoPrompt(
                 "Newer version in Zotero",
-                "This file was changed on another device after you downloaded it, and your " +
-                        "copy here has changes of its own. Downloading the newer version " +
-                        "replaces your changes on this device.",
+                "This file changed in Zotero after you downloaded it, and your copy has " +
+                        "edits of its own. Downloading the newer version replaces your edits.",
                 "Download newer", "Keep my copy", {
                     attachmentStorageManager.deleteAttachment(item)
                     presenter.updateAttachmentDownloadProgress(0, -1)
@@ -521,8 +517,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                     ) {
                         Log.d("zotero", "md5 error on attachment ${zoteroDB.getMd5Key(item)}")
                         presenter.createErrorAlert(
-                            "MD5 Verification Error",
-                            "The downloaded file does not match the accompanying md5 checksum.",
+                            "Download damaged",
+                            "The downloaded file doesn't match Zotero's checksum, so it was " +
+                                    "deleted. Try again.",
                             {})
                         attachmentStorageManager.deleteAttachment(item)
                         return
@@ -563,11 +560,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                     Log.e("zotero", "got error ${e}")
                     if (e is ZoteroNotFoundException) {
                         presenter.attachmentDownloadError(
-                            "The file does not exist on the Zotero server."
+                            "The file isn't in Zotero's storage (or on your WebDAV server)."
                         )
                     } else {
                         presenter.attachmentDownloadError(
-                            "Error Message: ${e.message}"
+                            "Check your connection and try again.\n\nDetails: ${e.message}"
                         )
                     }
                     isDownloading = false
@@ -875,11 +872,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     /** "Upload edited attachments": lists every edited attachment to pick which to upload. */
     fun chooseEditedAttachmentsToUpload() {
         if (state.isUsingGroup()) {
-            presenter.makeToastAlert("Uploading is only supported in My Library.")
+            presenter.makeToastAlert("Uploads work only in My Library, not in groups.")
             return
         }
         if (!preferences.isAttachmentUploadingEnabled()) {
-            presenter.makeToastAlert("Attachment uploading is turned off in settings.")
+            presenter.makeToastAlert("Uploading is off. Turn on “Offer to upload attachments” in Settings.")
             return
         }
         Single.fromCallable {
@@ -987,7 +984,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             }, { e ->
                 Log.e("zotero", "upload batch failed: $e")
                 presenter.stopUploadingAttachmentProgress()
-                presenter.createErrorAlert("Error uploading attachments", e.toString(), {})
+                presenter.createErrorAlert("Upload failed", "Details: ${e.message ?: e}", {})
                 refreshPendingEdits()
                 onDone?.invoke()
             })
@@ -1425,7 +1422,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         val delete = {
             attachmentStorageManager.deleteAttachment(attachment)
             refreshPendingEdits()
-            presenter.makeToastAlert("Deleted the copy of ${attachment.getTitle()} on this device.")
+            presenter.makeToastAlert("Deleted from this device: ${attachment.getTitle()}")
         }
         val base = attachmentBase(attachment)
         val edited = base != null &&
@@ -1433,7 +1430,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         if (edited) {
             presenter.createYesNoPrompt(
                 "Delete your edits?",
-                "This copy has changes that haven't been uploaded yet. Deleting it loses them.",
+                "This copy has edits that haven't been uploaded. Deleting it loses them.",
                 "Delete", "Keep", delete, {}
             )
         } else {

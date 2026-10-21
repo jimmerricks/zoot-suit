@@ -239,7 +239,7 @@ class AttachmentStorageManager @Inject constructor(
         } else {
             intent.setDataAndType(attachmentUri, attachment.data["contentType"])
             intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY
-            intent = Intent.createChooser(intent, "Open File")
+            intent = Intent.createChooser(intent, "Open with")
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
         }
@@ -257,7 +257,7 @@ class AttachmentStorageManager @Inject constructor(
         } else {
             intent.setDataAndType(uri, contentType)
             intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY
-            intent = Intent.createChooser(intent, "Open File")
+            intent = Intent.createChooser(intent, "Open with")
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
         }
