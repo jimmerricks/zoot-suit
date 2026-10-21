@@ -1,12 +1,12 @@
 package com.mickstarify.zooforzotero.common
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -40,11 +40,9 @@ data class ViewModelProvides<STATE, EFFECT, EVENT>(
 @Composable
 fun <STATE, EFFECT, EVENT> BaseViewModel<STATE, EFFECT, EVENT>.provides(): ViewModelProvides<STATE, EFFECT, EVENT> {
     val owner = LocalLifecycleOwner.current
-    val lifecycleAwareState = remember(stateFlow, owner) {
-        stateFlow.flowWithLifecycle(owner.lifecycle, Lifecycle.State.STARTED)
-    }
-
-    val currentStateValue by lifecycleAwareState.collectAsState(stateFlow.value)
+    // collects while STARTED; its initial value is read outside composition (lint:
+    // StateFlowValueCalledInComposition)
+    val currentStateValue by stateFlow.collectAsStateWithLifecycle()
 
     val lifecycleAwareEffect = remember(effect, owner) {
         effect.flowWithLifecycle(owner.lifecycle, Lifecycle.State.STARTED)
