@@ -283,7 +283,9 @@ class WebDAVSetup : AppCompatActivity() {
             var errorMessage = "unset"
             status = webDav.testConnection()
             if (status == false) {
-                throw Exception("Unspecified error.")
+                // testConnection's false is a 404
+                throw Exception("There is no folder at $address. Create it on the server " +
+                        "(Zotero desktop does this when you set up WebDAV), or check the address.")
             }
         }.subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
