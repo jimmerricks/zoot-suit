@@ -176,8 +176,6 @@ class ZoteroAPI(
         }
 
 
-        val outputFileStream = attachmentStorageManager.getItemOutputStream(item)
-
         val observable = Observable.create<DownloadProgress> { emitter ->
 
             val downloader = if (!useGroup) {
@@ -200,31 +198,37 @@ class ZoteroAPI(
                         return
                     }
 
-                    val inputStream = response.body()?.byteStream()
-                    val fileSize = response.body()?.contentLength() ?: 0
-                    if (response.code() == 200) {
-                        val buffer = ByteArray(64768)
-                        var read = inputStream?.read(buffer) ?: 0
-                        var progress: Long = 0
+                    val body = response.body()
+                    val fileSize = body?.contentLength() ?: 0
+                    if (response.code() == 200 && body != null) {
                         val md5Hash = item.data["md5"] ?: ""
                         val mtime = (item.data["mtime"] ?: "0").toLong()
-                        while (read > 0) {
-                            try {
-                                progress += read
+                        // opened only now, so a failed request leaves an existing copy
+                        // alone; closed on every path, which also flushes it
+                        attachmentStorageManager.getItemOutputStream(item).use { out ->
+                            body.byteStream().use { input ->
+                                val buffer = ByteArray(65536)
+                                val reporter = ProgressThrottle()
+                                var progress: Long = 0
+                                var read = input.read(buffer)
+                                while (read > 0) {
+                                    out.write(buffer, 0, read)
+                                    progress += read
+                                    if (reporter.due()) {
+                                        emitter.onNext(
+                                            DownloadProgress(
+                                                progress = progress,
+                                                total = fileSize,
+                                                metadataHash = md5Hash,
+                                                mtime = mtime
+                                            )
+                                        )
+                                    }
+                                    read = input.read(buffer)
+                                }
                                 emitter.onNext(
-                                    DownloadProgress(
-                                        progress = progress,
-                                        total = fileSize,
-                                        metadataHash = md5Hash,
-                                        mtime = mtime
-                                    )
+                                    DownloadProgress(progress = progress, total = fileSize, metadataHash = md5Hash, mtime = mtime)
                                 )
-                                outputFileStream.write(buffer, 0, read)
-                                read = inputStream?.read(buffer) ?: 0
-                            } catch (e: java.io.InterruptedIOException) {
-                                outputFileStream.close()
-                                inputStream?.close()
-                                throw (e)
                             }
                         }
                         emitter.onComplete()
