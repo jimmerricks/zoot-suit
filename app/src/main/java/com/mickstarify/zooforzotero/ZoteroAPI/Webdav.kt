@@ -13,17 +13,17 @@ import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.WebdavAuthMode
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
-import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 import net.lingala.zip4j.ZipFile
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
+import okhttp3.Request
+import okhttp3.ResponseBody
 import okio.buffer
 import okio.sink
 import okio.source
-import java.io.File
-import java.io.InputStream
+import java.io.IOException
 import java.security.SecureRandom
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
@@ -36,97 +36,91 @@ import javax.net.ssl.X509TrustManager
 class Webdav(
     preferenceManager: PreferenceManager
 ) {
-    private var sardine: OkHttpSardine
+    private var client: OkHttpClient
     private var uploader: WebdavUploader
     private val backupBeforeReplace = preferenceManager.isWebDAVBackupBeforeUploadEnabled()
     var address: String
 
 
+    /** Whether the folder at [address] answers a PROPFIND (as Zotero's own check does). */
     fun testConnection(): Boolean {
-        return sardine.exists(address)
+        val request = Request.Builder().url(address)
+            .header("Depth", "0")
+            .method("PROPFIND", null)
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (response.code == 404) return false
+            if (!response.isSuccessful) {
+                throw IOException("The server answered ${response.code} ${response.message}")
+            }
+            return true
+        }
     }
 
-    fun downloadPropToString(webpath: String): String {
-        val reader = sardine.get(webpath).source()
-        val bufferedReader = reader.buffer()
-        val s = bufferedReader.readUtf8()
-        bufferedReader.close()
-        return s
+    /** The body of [url]; ZoteroNotFoundException on 404, IOException on other errors. */
+    private fun get(url: String): ResponseBody {
+        val response = client.newCall(Request.Builder().url(url).get().build()).execute()
+        if (!response.isSuccessful) {
+            response.close()
+            if (response.code == 404) throw ZoteroNotFoundException("$url not found on the WebDAV server")
+            throw IOException("WebDAV server answered ${response.code} for $url")
+        }
+        return response.body ?: throw IOException("empty response for $url")
     }
 
+    fun downloadPropToString(webpath: String): String = get(webpath).use { it.string() }
+
+    /**
+     * Downloads KEY.zip, extracts the attachment from it and writes it to storage. The
+     * zip holds one file, Zotero's; only that entry is extracted, under a fixed name,
+     * so an entry name can't point outside the temporary folder.
+     */
     fun downloadFileRx(
         attachment: Item,
         context: Context,
         attachmentStorageManager: AttachmentStorageManager
     ): Observable<DownloadProgress> {
-        val webpathProp = address + "/${attachment.itemKey.uppercase()}.prop"
-        val webpathZip = address + "/${attachment.itemKey.uppercase()}.zip"
+        val key = attachment.itemKey.uppercase()
+        val webpathProp = "$address/$key.prop"
+        val webpathZip = "$address/$key.zip"
 
         val observable: Observable<DownloadProgress> = Observable.create { emitter ->
+            val zipFile = attachmentStorageManager.createTempFile("$key.zip")
+            val extracted = attachmentStorageManager.createTempFile("$key.download")
             try {
-                val propString = downloadPropToString(webpathProp)
-                val prop = WebdavProp(propString)
-
-                var inputStream: InputStream? = null
-                try {
-                    inputStream = sardine.get(webpathZip)
-                } catch (e: IllegalArgumentException) {
-                    Log.e("zotero", "${e}")
-                    throw(e)
-                } catch (e: Exception) {
-                    Log.e("zotero", "${e}")
-                    throw(e)
-                }
-
-                val zipFile =
-                    attachmentStorageManager.createTempFile(
-                        "${attachment.itemKey.uppercase()}.pdf"
-                    )
-                val downloadOutputStream = zipFile.outputStream()
-
-                val buffer = ByteArray(32768)
-                var read = inputStream.read(buffer)
-                var total: Long = 0
-                while (read > 0) {
-                    try {
-                        total += read
-                        emitter.onNext(DownloadProgress(total, -1, prop.mtime, prop.hash))
-                        downloadOutputStream.write(buffer, 0, read)
-                        read = inputStream.read(buffer)
-                    } catch (e: Exception) {
-                        Log.e("zotero", "exception downloading webdav attachment ${e.message}")
-                        throw RuntimeException("Error downloading webdav attachment ${e.message}")
+                val prop = WebdavProp(downloadPropToString(webpathProp))
+                val reporter = ProgressThrottle()
+                var total = 0L
+                get(webpathZip).byteStream().use { input ->
+                    zipFile.outputStream().use { output ->
+                        val buffer = ByteArray(65536)
+                        var read = input.read(buffer)
+                        while (read > 0) {
+                            output.write(buffer, 0, read)
+                            total += read
+                            if (reporter.due()) {
+                                emitter.onNext(DownloadProgress(total, -1, prop.mtime, prop.hash))
+                            }
+                            read = input.read(buffer)
+                        }
                     }
                 }
-                downloadOutputStream.close()
-                inputStream.close()
-                if (read > 0) {
-                    throw RuntimeException(
-                        "Error did not finish downloading ${
-                            attachment.itemKey.uppercase()
-                        }.zip"
-                    )
-                }
-                val zipFile2 = ZipFile(zipFile)
-                val attachmentFilename =
-                    zipFile2.fileHeaders.firstOrNull()?.fileName
-                        ?: throw Exception("Error empty zipfile.")
-                ZipFile(zipFile).extractAll(context.cacheDir.absolutePath)
-                zipFile.delete() // don't need this anymore.
-                attachmentStorageManager.writeAttachmentFromFile(
-                    File(
-                        context.cacheDir,
-                        attachmentFilename
-                    ), attachment
-                )
-                File(context.cacheDir, attachmentFilename).delete()
+                emitter.onNext(DownloadProgress(total, -1, prop.mtime, prop.hash))
+                val zip = ZipFile(zipFile)
+                val entry = zip.fileHeaders.firstOrNull { !it.isDirectory }
+                    ?: throw IOException("$key.zip is empty")
+                zip.extractFile(entry, extracted.parent, extracted.name)
+                attachmentStorageManager.writeAttachmentFromFile(extracted, attachment)
                 emitter.onComplete()
             } catch (e: Exception) {
-                Log.e("zotero", "big exception hit ${e} || ${emitter.isDisposed}")
-                // this your brain on rxjava. this is to avoid a undeliverable crash on dispose().
+                Log.e("zotero", "WebDAV download of $key failed: $e (disposed: ${emitter.isDisposed})")
+                // after dispose() there's no one to tell; throwing then would be undeliverable
                 if (!emitter.isDisposed) {
                     throw e
                 }
+            } finally {
+                zipFile.delete()
+                extracted.delete()
             }
         }
         return observable
@@ -242,8 +236,7 @@ class Webdav(
             clientBuilder.hostnameVerifier(HostnameVerifier { hostname, session -> true })
         }
 
-        val client = clientBuilder.build()
-        sardine = OkHttpSardine(client)
+        client = clientBuilder.build()
         uploader = WebdavUploader(client, preferenceManager.getWebDAVAddress())
 
         this.address = preferenceManager.getWebDAVAddress()

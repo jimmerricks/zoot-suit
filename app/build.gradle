@@ -130,7 +130,6 @@ dependencies {
 
     // Other utilities
     implementation 'net.lingala.zip4j:zip4j:2.11.5'
-    implementation 'com.github.mickstar:sardine-android:v0.7c'
 
 //    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
 
@@ -156,9 +155,6 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.7.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
 
-    configurations {
-        all*.exclude group: 'xpp3', module: 'xpp3'
-    }
 }
 
 ksp {
