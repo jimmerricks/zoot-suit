@@ -137,12 +137,21 @@ list titles without auto-sizing (sp), then compact rows (32dp icons, 52dp minimu
 Four unused layouts and an unused menu deleted. Filter and sort options 36dp
 (`DialogChoice`); the filter's tag list as tall as its tags, up to 300dp.
 
+Per-library list state and wording pass (2026-10-21, `867a8e1`..`a0a2aa8`): filter
+and sort are stored per library (`PreferenceManager.libraryKey`: My Library keeps
+the old keys, a group appends `_group_<id>`); the model caches filters by group id.
+Settings → Library Sorting removed (it only set My Library's order). An empty list
+explains itself (`EmptyListMessage`) and can clear the filter. User-facing text
+rewritten area by area: sentence case, what happened and what to do, raw errors
+only after "Details:", buttons named by action. Deleting a note and Re-download
+library (a hidden menu item) now ask first.
+
 This also starts the "attachment download/upload" slice of item 2: the upload half
 is now a self-contained pipeline inside the model, ready to move out with the
 download half.
 
 Open, in priority order:
-1. Note deletion has no confirmation and is a permanent API DELETE.
+1. ~~Note deletion has no confirmation~~: asks first (`1a7050e`).
 2. Zotero File Storage path (unused with WebDAV): optional `x-amz-security-token`
    modelled as non-null; `If-Match: *` for first uploads should be
    `If-None-Match: *`; a `421` check meant `412`.
