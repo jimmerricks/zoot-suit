@@ -1,2 +1,9 @@
+# Copy to apikeys.properties (git-ignored) and fill in. Values are quoted.
+# See docs/release-identity.md for where each comes from.
+
+# OAuth 1.0a client registered at https://www.zotero.org/oauth/apps
 zotero_api_key="your_oauth_client_key_here"
 zotero_api_secret="your_oauth_client_secret_here"
+
+# Address the crash dialog emails reports to; leave empty to turn crash reporting off
+crash_report_email=""

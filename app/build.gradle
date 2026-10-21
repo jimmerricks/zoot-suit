@@ -7,9 +7,21 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
+// Per-machine secrets and identity settings, never committed (see
+// docs/release-identity.md): apikeys.properties next to settings.gradle, else
+// environment variables of the same names in upper case (for CI). Every key is
+// optional; a build without them works, but OAuth sign-in and crash reports don't.
 def apikeyPropertiesFile = rootProject.file("apikeys.properties")
 def apikeyProperties = new Properties()
-apikeyProperties.load(new FileInputStream(apikeyPropertiesFile))
+if (apikeyPropertiesFile.exists()) {
+    apikeyPropertiesFile.withInputStream { apikeyProperties.load(it) }
+}
+def localSetting = { String key ->
+    def value = apikeyProperties.getProperty(key) ?: System.getenv(key.toUpperCase()) ?: ""
+    value = value.trim()
+    // the file's values are quoted Java string literals ("..."); env values aren't
+    value.startsWith('"') ? value : "\"${value}\""
+}
 
 android {
     compileSdkVersion 36
@@ -20,8 +32,10 @@ android {
         versionCode 53
         versionName "4.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "zotero_api_key", apikeyProperties['zotero_api_key'])
-        buildConfigField("String", "zotero_api_secret", apikeyProperties['zotero_api_secret'])
+        buildConfigField("String", "zotero_api_key", localSetting("zotero_api_key"))
+        buildConfigField("String", "zotero_api_secret", localSetting("zotero_api_secret"))
+        // where the crash dialog's "Send" emails reports; empty: crash reporting off
+        buildConfigField("String", "crash_report_email", localSetting("crash_report_email"))
     }
     buildTypes {
         release {

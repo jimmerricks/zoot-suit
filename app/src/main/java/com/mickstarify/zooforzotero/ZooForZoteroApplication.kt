@@ -13,7 +13,8 @@ class ZooForZoteroApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        if (!BuildConfig.DEBUG) {
+        // off in debug builds, and when no address is configured (apikeys.properties)
+        if (!BuildConfig.DEBUG && BuildConfig.crash_report_email.isNotBlank()) {
             initAcra {
             //core configuration:
             reportContent = listOf(
@@ -43,7 +44,7 @@ class ZooForZoteroApplication : Application() {
 
             mailSender {
                 //required
-                mailTo = "mickstarify@gmail.com"
+                mailTo = BuildConfig.crash_report_email
                 //defaults to true
                 reportAsFile = true
                 //defaults to ACRA-report.stacktrace
