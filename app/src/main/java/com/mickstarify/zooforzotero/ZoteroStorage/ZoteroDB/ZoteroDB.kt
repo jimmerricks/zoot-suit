@@ -15,6 +15,7 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
 import com.mickstarify.zooforzotero.di.SingletonComponentsEntryPoint
 import dagger.hilt.android.EntryPointAccessors
+import android.os.Process
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.functions.Action
 import io.reactivex.rxjava3.functions.Consumer
@@ -126,10 +127,22 @@ class ZoteroDB(
         val completable =
             Completable.fromAction {
                 val start = System.nanoTime()
-                val loaded = zoteroDatabase.loadItems(groupID)
+                // the user is waiting on this: as urgent as drawing, while it runs (Rx reuses
+                // the thread, so its priority goes back after)
+                val priority = Process.getThreadPriority(Process.myTid())
+                Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY)
+                val loaded = try {
+                    zoteroDatabase.loadItems(groupID)
+                } finally {
+                    Process.setThreadPriority(priority)
+                }
                 Log.d("zotero", "loaded ${loaded.size} items from DB for groupID=$groupID in ${(System.nanoTime() - start) / 1_000_000} ms, setting now.")
                 items = loaded
-            }.andThen(
+            }
+                // off the subscriber's thread, which can be the main one (finishLibrarySync);
+                // Room's Maybe ran on its own executor
+                .subscribeOn(Schedulers.io())
+                .andThen(
                 Completable.fromMaybe(
                     zoteroDatabase.getAttachmentsForGroup(groupID).doOnSuccess(Consumer {
                         Log.d("zotero", "Loading attachmentInfo from Database")
