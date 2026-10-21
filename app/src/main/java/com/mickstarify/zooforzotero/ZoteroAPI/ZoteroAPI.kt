@@ -667,10 +667,17 @@ class ZoteroAPI(
             .uploadAttachment(attachment, attachmentStorageManager, expected, md5, mtime)
     }
 
-    fun updateAttachment(attachment: Item): Completable {
+    /**
+     * Uploads to Zotero File Storage. [baseMd5]: the file this device's edit started from
+     * (last downloaded or uploaded here; "" if there was none). Zotero replaces the file only
+     * if it still has that one, so a newer file from another device is never overwritten.
+     * Not the md5 from the last sync: after an upload from here that is stale until the next
+     * sync, and the next upload got 412.
+     */
+    fun updateAttachment(attachment: Item, baseMd5: String): Completable {
         val attachmentUri: Uri = attachmentStorageManager.getAttachmentUri(attachment)
         // Zotero's precondition: the md5 of the file being replaced, or "no file yet"
-        val oldMd5 = attachment.getMd5Key()
+        val oldMd5 = baseMd5
         val ifMatch = oldMd5.ifEmpty { null }
         val ifNoneMatch = if (oldMd5.isEmpty()) "*" else null
 
@@ -804,8 +811,13 @@ class ZoteroAPI(
                         ZoteroUploadAuthorizationPojo::class.java
                     )
                 }
+            } else if (response.code() == 412) {
+                throw RemoteAttachmentChangedException(
+                    "Zotero has a different version of this file than the one you opened " +
+                            "(it was changed on another device)."
+                )
             } else {
-                throw Exception("Server Response: ${response.code()} ${response.body()}")
+                throw Exception("Zotero server replied: ${response.code()}")
             }
         }
     }

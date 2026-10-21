@@ -1016,7 +1016,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         val upload = if (webdav) {
             uploadWithWebdav(attachment, md5Key, mtime)
         } else {
-            zoteroAPI.updateAttachment(attachment).onErrorResumeNext { e ->
+            val baseMd5 = attachmentBase(attachment) ?: attachment.getMd5Key()
+            zoteroAPI.updateAttachment(attachment, baseMd5).onErrorResumeNext { e ->
                 if (e is AlreadyUploadedException) Completable.complete() else Completable.error(e)
             }
         }
