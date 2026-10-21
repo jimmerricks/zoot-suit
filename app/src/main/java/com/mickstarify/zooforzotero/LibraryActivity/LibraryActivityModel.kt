@@ -663,11 +663,21 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             })
     }
 
+    /** Deletes [note] from Zotero after asking: the API deletes it for good, not to the trash. */
     override fun deleteNote(note: Note) {
         if (state.isUsingGroup()) {
             presenter.makeToastAlert("Sorry, this isn't supported in shared collections.")
             return
         }
+        presenter.createYesNoPrompt(
+            "Delete this note?",
+            "It's deleted from Zotero on all your devices, not moved to the trash. " +
+                    "This can't be undone.",
+            "Delete", "Cancel", { deleteNoteNow(note) }, {}
+        )
+    }
+
+    private fun deleteNoteNow(note: Note) {
         zoteroAPI.deleteItem(note.key, note.version, object : DeleteItemListener {
             override fun success() {
                 presenter.makeToastAlert("Successfully deleted your note.")
