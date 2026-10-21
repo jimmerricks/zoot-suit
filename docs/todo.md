@@ -25,6 +25,41 @@ Release identity: see `release-identity.md`. Test environment:
 - Lint: 0 errors, ~150 warnings (mostly HardcodedText, UseKtx).
 - Earlier open work (handover list in `../../.claude/CLAUDE.md`) still stands.
 
+## Startup time: load only what the list needs (not built)
+Sync is already incremental (`since=` the library version); the cost is reading the
+stored library into memory at every start. On the API 36 emulator with 10k items, 10k
+attachments and 2k notes, reading took ~3 s after blank fields stopped being stored
+(`ec16c94`, from ~4.4 s); the Tab S2 is several times slower. Jim's library: 21,859
+items, ~278k non-blank field rows after that change, 13.7k tag links, 24.6k creators.
+Almost all of it is Room's `@Relation` loading every `ItemData` row of every item into
+objects, though the list shows a handful of fields.
+
+The proposal: load in two stages.
+1. **At startup**, per item only what lists, filters and the default search need:
+   `ItemInfo`, and from `ItemData` just `itemType`, `title` (and `caseName`/`nameOfAct`/
+   `note` for those types), `date`, `dateAdded`, `parentItem`, `contentType`, `linkMode`,
+   `filename`, `inPublications`, `md5`/`mtime` for attachments; plus creators, tags and
+   collections (small tables). One query with `WHERE name IN (…)` instead of the
+   relation, into a lighter list type or into `Item` with `itemData` partly filled.
+2. **On demand**, the rest: when an item's view opens (one item's rows, instant), and
+   in the background after the list shows, for search fields beyond title, creators
+   and year (abstract, publication, other fields) and for the share dialog. The search
+   index already builds lazily; it would wait for (or trigger) stage 2 when such a
+   field is ticked.
+
+What has to change: `Item.data` and `getItemData` assume all fields are there (make
+"full" a state, or a separate type for list rows); `ItemDao.getItemsForGroup` and
+`ZoteroDB.loadItemsFromDatabase`; the item view and share dialog fetch their item;
+`LibrarySearch` knows which fields need stage 2; the sync writer stays as is. The
+gain is uneven: attachments (half of Jim's items) need most of their ~10 fields in
+stage 1, while parent items drop most of theirs, including the long ones (abstract,
+extra, URLs) that are most of the bytes. Before building, count rows and bytes stage 1
+would read on Jim's database (read-only query on the API 24 device) against today's.
+
+Alternative, not exclusive: a **snapshot** file of the in-memory library written after
+each load or sync and read at startup instead of the database; fast to read, but it
+must be kept in step with every sync and edit, and it duplicates the database.
+
 ## Library view controls: ideas, not built
 Search, Filter and Sort now act alike on the list on screen: each narrows or orders
 whatever is shown (a collection, unfiled items, a tag view; not Trash or My
