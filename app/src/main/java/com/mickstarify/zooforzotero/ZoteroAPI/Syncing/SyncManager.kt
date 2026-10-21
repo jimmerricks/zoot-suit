@@ -144,14 +144,6 @@ class SyncManager (
     ) {
         loadingTrash = true
 
-        //TODO Will remove in a future version
-        if (preferenceManager.firstRunForVersion28()){
-            // I have recently fixed the deleted/trash syncing, so we will need a full resync from the beginning
-            // to properly have the changes reflected in Zoo.
-            db.setTrashVersion(0)
-            db.setLastDeletedItemsCheckVersion(0)
-        }
-
         val observable =
             zoteroAPI.getTrashedItems(db.groupID, db.getTrashVersion()).map { response ->
                 for (itemPojo in response.items) {
