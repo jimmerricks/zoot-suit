@@ -245,20 +245,20 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         run {
             try {
                 val intent = attachmentStorageManager.openAttachment(attachment)
-                context.startActivity(intent)
+                presenter.startActivity(intent)
             } catch (exception: ActivityNotFoundException) {
                 presenter.createErrorAlert("No PDF Viewer installed",
                     "There is no app that handles ${attachment.getFileExtension()} documents available on your device. Would you like to install one?",
                     onClick = {
                         try {
-                            context.startActivity(
+                            presenter.startActivity(
                                 Intent(
                                     Intent.ACTION_VIEW,
                                     Uri.parse("market://details?id=com.xodo.pdf.reader")
                                 )
                             )
                         } catch (e: ActivityNotFoundException) {
-                            context.startActivity(
+                            presenter.startActivity(
                                 Intent(
                                     Intent.ACTION_VIEW,
                                     Uri.parse("https://play.google.com/store/apps/details?id=com.xodo.pdf.reader")
@@ -289,7 +289,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         if (item.data["linkMode"] == "linked_file") {
             val intent = attachmentStorageManager.openLinkedAttachment(item)
             if (intent != null) {
-                context.startActivity(intent)
+                presenter.startActivity(intent)
             } else {
                 presenter.makeToastAlert("Error, could not find linked attachment ${item.data["path"]}")
             }

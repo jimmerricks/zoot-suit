@@ -101,6 +101,7 @@ interface Contract {
         fun showLoadingAlertDialog(message: String)
         fun hideLoadingAlertDialog()
         fun finishLibrary()
+        fun startActivity(intent: android.content.Intent)
 
         var libraryListViewModel: LibraryListViewModel
         var libraryLoadingViewModel: LibraryLoadingScreenViewModel

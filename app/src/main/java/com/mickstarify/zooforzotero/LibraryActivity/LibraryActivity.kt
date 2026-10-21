@@ -84,7 +84,8 @@ class LibraryActivity : AppCompatActivity(),
 
         this.setupActionbar()
 
-        presenter = LibraryActivityPresenter(this, this)
+        presenter = ViewModelProvider(this).get(LibraryViewModel::class.java).presenter
+        presenter.attach(this)
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {

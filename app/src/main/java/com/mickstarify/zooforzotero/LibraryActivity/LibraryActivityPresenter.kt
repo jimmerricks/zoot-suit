@@ -1,7 +1,10 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryLoadingScreenViewModel
@@ -15,7 +18,14 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import java.util.LinkedList
 import java.util.Locale
 
-class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Contract.Presenter {
+/**
+ * The library screen's logic. It lives in [LibraryViewModel], so it outlives the
+ * activity; [view] is whichever activity is on screen (see [attach]).
+ */
+class LibraryActivityPresenter(private val context: Context) : Contract.Presenter {
+    lateinit var view: LibraryActivity
+        private set
+
     override lateinit var libraryListViewModel: LibraryListViewModel
     override lateinit var libraryLoadingViewModel: LibraryLoadingScreenViewModel
 
@@ -484,16 +494,37 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
         view.makeToastAlert(message)
     }
 
-    private val model = LibraryActivityModel(this, context)
+    // created at the first attach: its constructor can already show error dialogs
+    private val model by lazy { LibraryActivityModel(this, context) }
 
-    init {
-        libraryListViewModel =
-            ViewModelProvider(view as LibraryActivity).get(LibraryListViewModel::class.java)
+    private var started = false
+
+    /**
+     * Takes over a newly created activity: the first one starts loading the library;
+     * a recreated one (rotation) is drawn from what the model already holds, so the
+     * library, the open group and Back all survive. See [LibraryViewModel].
+     */
+    fun attach(view: LibraryActivity) {
+        this.view = view
+        libraryListViewModel = ViewModelProvider(view).get(LibraryListViewModel::class.java)
         libraryLoadingViewModel =
-            ViewModelProvider(view as LibraryActivity).get(LibraryLoadingScreenViewModel::class.java)
+            ViewModelProvider(view).get(LibraryLoadingScreenViewModel::class.java)
 
         view.initUI()
 
+        if (!started) {
+            started = true
+            start()
+        } else if (model.isLoaded()) {
+            redisplayItems()
+            refreshSidebar()
+            model.refreshPendingEdits()
+        } else {
+            view.navController.navigate(R.id.libraryLoadingScreen)
+        }
+    }
+
+    private fun start() {
         view.navController.navigate(R.id.libraryLoadingScreen)
         libraryLoadingViewModel.setLoadingMessage("Loading your library")
 
@@ -519,24 +550,42 @@ class LibraryActivityPresenter(val view: LibraryActivity, context: Context) : Co
             model.loadLibraryLocally()
         }
 
-        libraryListViewModel.getOnItemClicked().observe(view) { item ->
+        // observed for the presenter's lifetime, not the activity's: re-observing in a
+        // recreated activity would replay the last click (and reopen an attachment)
+        observe(libraryListViewModel.getOnItemClicked()) { item ->
             this.selectItem(item, longPress = false)
         }
-
-        libraryListViewModel.getOnAttachmentClicked().observe(view) {
+        observe(libraryListViewModel.getOnAttachmentClicked()) {
             this.openAttachment(it)
         }
-
-        libraryListViewModel.getOnCollectionClicked().observe(view) {
+        observe(libraryListViewModel.getOnCollectionClicked()) {
             this.setCollection(it.key)
         }
-        libraryListViewModel.getOnLibraryRefreshRequested().observe(view) {
+        observe(libraryListViewModel.getOnLibraryRefreshRequested()) {
             this.requestLibraryRefresh()
         }
-        libraryListViewModel.getLibraryFilterText().observe(view) {
+        observe(libraryListViewModel.getLibraryFilterText()) {
             Log.d("zotero", "got filter text $it")
             filterEntries(it)
         }
+    }
+
+    private val observers = mutableListOf<() -> Unit>()
+
+    private fun <T> observe(data: LiveData<T>, onChange: (T) -> Unit) {
+        val observer = Observer<T> { onChange(it) }
+        data.observeForever(observer)
+        observers.add { data.removeObserver(observer) }
+    }
+
+    /** The activity is finishing for good; see [LibraryViewModel.onCleared]. */
+    fun onCleared() {
+        observers.forEach { it() }
+        observers.clear()
+    }
+
+    override fun startActivity(intent: Intent) {
+        view.startActivity(intent)
     }
 
     // extension function to sort lists of items
