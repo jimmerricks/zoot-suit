@@ -67,6 +67,10 @@ class LibraryFilterDialog(
             adapter.addAll(shownTags.map { "$it  (${counts[it] ?: 0})" })
             shownTags.forEachIndexed { i, tag -> list.setItemChecked(i, tag in filter.tags) }
             noTags.visibility = if (shownTags.isEmpty()) View.VISIBLE else View.GONE
+            // as tall as its rows (36dp each, dialog_filter_tag_item), up to 300dp, then it scrolls
+            val density = context.resources.displayMetrics.density
+            list.layoutParams.height = (minOf(shownTags.size * 36, 300) * density).toInt()
+            list.requestLayout()
         }
 
         fun update(newFilter: LibraryFilter) {
