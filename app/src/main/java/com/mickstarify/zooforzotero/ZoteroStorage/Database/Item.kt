@@ -301,8 +301,8 @@ interface ItemDao {
     fun getItemsForGroup(groupID: Int): Maybe<List<Item>>
 
     @Transaction
-    @Query("SELECT * FROM itemInfo WHERE `group`=${GroupInfo.NO_GROUP_ID} and `deleted`=1")
-    fun getTrashedItemsForUser(): Maybe<List<Item>>
+    @Query("SELECT * FROM itemInfo WHERE `group`=:groupID and `deleted`=1")
+    fun getTrashedItemsForGroup(groupID: Int): Maybe<List<Item>>
 
     @Query("SELECT parent from ItemTags where `tag`=:tag")
     fun getItemKeysWithTag(tag: String): Maybe<List<String>>

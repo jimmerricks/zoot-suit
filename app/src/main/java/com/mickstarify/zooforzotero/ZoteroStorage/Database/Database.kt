@@ -183,8 +183,8 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         return db.AttachmentInfoDao().getAttachmentsForGroup(groupID)
     }
 
-    fun getItemsFromUserTrash(): Maybe<List<Item>> {
-        return db.itemDao().getTrashedItemsForUser()
+    fun getTrashedItemsForGroup(groupID: Int): Maybe<List<Item>> {
+        return db.itemDao().getTrashedItemsForGroup(groupID)
     }
 
     fun writeAttachmentInfo(
