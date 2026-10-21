@@ -48,6 +48,7 @@ class ZoteroDB(
     var items: List<Item>? = null
         set(value) {
             field = value
+            itemsByKey = value?.associateBy { it.itemKey } ?: emptyMap()
             this.associateItemsWithAttachments()
             this.createCollectionItemMap()
             this.processItems()
@@ -67,6 +68,11 @@ class ZoteroDB(
     private var itemsFromCollections: HashMap<String, MutableList<Item>>? = null
 
     private var trashItems: List<Item>? = null
+
+    // items by key, rebuilt whenever items is set; lookups by key are frequent (per row,
+    // per downloaded attachment) and a scan of a 20k-item library each time adds up
+    @Volatile
+    private var itemsByKey: Map<String, Item> = emptyMap()
 
     // we are adding this prefix stuff so we can have concurrent zoteroDBs that will allow users to store
     // shared collections.
@@ -171,14 +177,10 @@ class ZoteroDB(
             return emptyList()
         }
 
-        return items?.filter { it.itemKey == itemKey }?.firstOrNull()?.attachments ?: emptyList()
+        return itemsByKey[itemKey]?.attachments ?: emptyList()
     }
 
     private fun associateItemsWithAttachments() {
-        val itemsByKey = HashMap<String, Item>()
-        items!!.forEach {
-            itemsByKey[it.itemKey] = it
-        }
         for (item in items!!) {
             if (item.isDownloadable()) {
                 val parentKey = item.data["parentItem"]
@@ -375,7 +377,7 @@ class ZoteroDB(
     }
 
     fun getItemWithKey(itemKey: String): Item? {
-        return items?.filter { it -> it.itemKey == itemKey }?.firstOrNull()
+        return itemsByKey[itemKey]
     }
 
     fun hasMd5Key(item: Item, onlyWebdav: Boolean = false): Boolean {
