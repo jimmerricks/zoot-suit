@@ -40,12 +40,14 @@ class ItemJSONConverter {
                             }
                         }
                         "creators" -> {
+                            // a single-field creator (an organisation) has "name" instead of
+                            // first/last; Zotero keeps it in lastName, so it sorts and shows
                             for (creator: Map<String, String> in value as List<Map<String, String>>) {
                                 creators.add(
                                     CreatorPOJO(
                                         creator["creatorType"] ?: "unknown",
                                         creator["firstName"] ?: "",
-                                        creator["lastName"] ?: ""
+                                        creator["lastName"] ?: creator["name"] ?: ""
                                     )
                                 )
                             }

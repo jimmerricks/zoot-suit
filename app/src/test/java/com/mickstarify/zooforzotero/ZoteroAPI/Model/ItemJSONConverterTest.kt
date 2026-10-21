@@ -1,5 +1,6 @@
 package com.mickstarify.zooforzotero.ZoteroAPI.Model
 
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
@@ -15,6 +16,20 @@ class ItemJSONConverterTest {
     @Test
     fun deserialize() {
         jsonConverter.deserialize(sampleItemJson)
+    }
+
+    @Test
+    fun singleFieldCreatorIsKeptAsLastName() {
+        val items = jsonConverter.deserialize(
+            """[{"key": "ORGAUTH1", "version": 1, "data": {"key": "ORGAUTH1", "version": 1,
+            "itemType": "report", "title": "A report", "creators": [
+            {"creatorType": "author", "name": "World Bank"},
+            {"creatorType": "author", "firstName": "Ann", "lastName": "Smith"}]}}]"""
+        )
+        val creators = items.single().creators
+        assertEquals("World Bank", creators[0].lastName)
+        assertEquals("", creators[0].firstName)
+        assertEquals("Smith", creators[1].lastName)
     }
 
     val sampleItemJson = """
