@@ -92,8 +92,8 @@ The commit history lists every change.
    (or in the file `$KEYSTORE_PROPERTIES` points to): keys `storeFile`,
    `storePassword`, `keyAlias`, `keyPassword`. Without it the APK is unsigned.
 
-Requires JDK 17 or newer. Planned work is in
-[dependency-modernization-plan.md](dependency-modernization-plan.md).
+Requires JDK 17 or newer. Planned work is in [docs/roadmap.md](docs/roadmap.md);
+signing and releases in [docs/releases.md](docs/releases.md).
 
 ## Reporting problems
 
