@@ -96,7 +96,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.mickstarify.zooforzotero.fileprovider.app"
+            android:authorities="${applicationId}.fileprovider.app"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
