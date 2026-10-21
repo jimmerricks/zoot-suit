@@ -655,11 +655,10 @@ class ZoteroAPI(
 
     fun updateAttachment(attachment: Item): Completable {
         val attachmentUri: Uri = attachmentStorageManager.getAttachmentUri(attachment)
-        var oldMd5 = attachment.getMd5Key()
-        if (oldMd5 == "") {
-            Log.d("zotero", "no md5key provided for Item: ${attachment.getTitle()}")
-            oldMd5 = "*"
-        }
+        // Zotero's precondition: the md5 of the file being replaced, or "no file yet"
+        val oldMd5 = attachment.getMd5Key()
+        val ifMatch = oldMd5.ifEmpty { null }
+        val ifNoneMatch = if (oldMd5.isEmpty()) "*" else null
 
         val newMd5 = attachmentStorageManager.calculateMd5(attachment)
         if (oldMd5 == newMd5) {
@@ -671,17 +670,16 @@ class ZoteroAPI(
         val filesize = attachmentStorageManager.getFileSize(attachmentUri)
 
         val authorizationObservable =
-            getUploadAuthorization(attachment, oldMd5, newMd5, filename, filesize, mtime, service)
+            getUploadAuthorization(attachment, ifMatch, ifNoneMatch, newMd5, filename, filesize, mtime, service)
 
 
         val chain = authorizationObservable.map { authorizationPojo ->
             Log.d("zotero", "t ${authorizationPojo.uploadKey}")
             Log.d("zotero", "about to upload ${authorizationPojo.uploadKey}")
-            val requestBody = RequestBody.create(
-                "multipart/form-data".toMediaType(),
-                attachmentStorageManager.readBytes(
-                    attachment
-                )
+            // streamed from the file: reading it into memory first ran out of heap on
+            // large PDFs (the Tab S2 has 2-3 GB of RAM)
+            val requestBody = attachmentStorageManager.uploadBody(
+                attachment, filesize, "application/octet-stream".toMediaType()
             )
             attachmentsService.uploadAttachmentToAmazonMulti(
                 authorizationPojo.url,
@@ -704,10 +702,10 @@ class ZoteroAPI(
                 authorizationPojo.params.x_amz_signature
                     .toRequestBody("multipart/form-data".toMediaType()),
                 authorizationPojo.params.x_amz_security_token
-                    .toRequestBody("multipart/form-data".toMediaType()),
+                    ?.toRequestBody("multipart/form-data".toMediaType()),
                 requestBody
             ).flatMap { amazonResponse ->
-                if (amazonResponse.code() == 421) {
+                if (amazonResponse.code() == 412) {
                     throw PreconditionFailedException("412 Precondition failed when uploading ${attachment.itemKey}")
                 }
                 if (amazonResponse.code() == 201) {
@@ -717,7 +715,8 @@ class ZoteroAPI(
                         attachment.itemKey,
                         authorizationPojo.uploadKey,
                         "upload=${authorizationPojo.uploadKey}",
-                        oldMd5
+                        ifMatch,
+                        ifNoneMatch
                     )
                 } else {
                     throw RuntimeException("Amazon Attachment Server Gave server error: ${amazonResponse.code()}")
@@ -761,7 +760,8 @@ class ZoteroAPI(
 
     private fun getUploadAuthorization(
         item: Item,
-        oldMd5: String,
+        ifMatch: String?,
+        ifNoneMatch: String?,
         newMd5: String,
         filename: String,
         filesize: Long,
@@ -778,7 +778,8 @@ class ZoteroAPI(
             mtime, //this is in milli
             1,
             "Content-Type: application/x-www-form-urlencoded",
-            oldMd5
+            ifMatch,
+            ifNoneMatch
         )
         return observable.map { response ->
             if (response.code() == 200) {

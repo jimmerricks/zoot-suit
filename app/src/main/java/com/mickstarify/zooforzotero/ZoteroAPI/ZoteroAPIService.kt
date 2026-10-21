@@ -190,7 +190,10 @@ interface ZoteroAPIService {
         @Query("mtime") mtime: Long,
         @Query("params") params: Int = 1,
         @Body bodyText: String,
-        @Header("If-Match") oldMd5Key: String
+        // exactly one of the two: If-Match with the server's md5 to replace a file,
+        // If-None-Match: * for an attachment without one (null headers aren't sent)
+        @Header("If-Match") ifMatch: String?,
+        @Header("If-None-Match") ifNoneMatch: String?
     ): Observable<Response<ResponseBody>>
 
     @POST("users/{user}/items/{itemKey}/file")
@@ -199,7 +202,8 @@ interface ZoteroAPIService {
         @Path("itemKey") itemKey: String,
         @Query("upload") uploadKey: String,
         @Body body: String,
-        @Header("If-Match") oldMd5Key: String
+        @Header("If-Match") ifMatch: String?,
+        @Header("If-None-Match") ifNoneMatch: String?
     ): Observable<Response<ResponseBody>>
 
     @POST
@@ -221,7 +225,7 @@ interface ZoteroAPIService {
         @Part("x-amz-credential") x_amz_credential: RequestBody,
         @Part("x-amz-date") x_amz_date: RequestBody,
         @Part("x-amz-signature") x_amz_signature: RequestBody,
-        @Part("x-amz-security-token") x_amz_security_token: RequestBody,
+        @Part("x-amz-security-token") x_amz_security_token: RequestBody?, // null: part left out
         @Part("file") attachmentData: RequestBody
     ): Observable<Response<ResponseBody>>
 }

@@ -11,6 +11,9 @@ import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
+import okhttp3.MediaType
+import okhttp3.RequestBody
+import okio.BufferedSink
 import okio.buffer
 import okio.sink
 import okio.source
@@ -363,9 +366,15 @@ class AttachmentStorageManager @Inject constructor(
         return docFile?.length() ?: throw FileNotFoundException()
     }
 
-    fun readBytes(attachment: Item): ByteArray {
-        return getItemInputStream(attachment).readBytes()
-    }
+    /** The attachment's file as a request body that streams it, [length] bytes. */
+    fun uploadBody(attachment: Item, length: Long, type: MediaType): RequestBody =
+        object : RequestBody() {
+            override fun contentType() = type
+            override fun contentLength() = length
+            override fun writeTo(sink: BufferedSink) {
+                getItemInputStream(attachment).source().use { sink.writeAll(it) }
+            }
+        }
 
     fun writeAttachmentFromFile(file: File, attachment: Item): Uri {
         val outputStream = getItemOutputStream(attachment)
