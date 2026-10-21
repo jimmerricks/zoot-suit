@@ -92,6 +92,43 @@ class LibraryNavigatorTest {
     }
 
     @Test
+    fun `leaving groups returns to My Library's place and drops group history`() {
+        val nav = LibraryNavigator()
+        nav.setCollection("all")
+        nav.setCollection("BOOKS")
+        nav.openLibrary(group(42))
+        nav.setCollection("GROUPCOLL")
+
+        assertTrue(nav.leaveGroups())
+
+        assertFalse(nav.isUsingGroup())
+        assertEquals("BOOKS", nav.currentCollection())
+        assertEquals(listOf("unset", "all", "BOOKS"), nav.states.map { it.currentCollection })
+    }
+
+    @Test
+    fun `leaving groups from a group opened first lands on My Library's top`() {
+        val nav = LibraryNavigator()
+        nav.openLibrary(group(42))
+
+        assertTrue(nav.leaveGroups())
+
+        assertEquals("all", nav.currentCollection())
+        assertFalse(nav.isUsingGroup())
+    }
+
+    @Test
+    fun `leaving groups outside a group only drops their history`() {
+        val nav = LibraryNavigator()
+        nav.openLibrary(group(42))
+        nav.openLibrary(null)
+
+        assertFalse(nav.leaveGroups())
+
+        assertEquals(listOf("unset", "all"), nav.states.map { it.currentCollection })
+    }
+
+    @Test
     fun `opening the library already shown is a no-op`() {
         val nav = LibraryNavigator()
         nav.openLibrary(group(42))

@@ -58,6 +58,19 @@ class LibraryNavigator {
         return true
     }
 
+    /**
+     * Forgets every place in a group (group libraries were turned off), so neither the
+     * list nor Back can be in one. Returns whether the current place was in a group;
+     * if so, My Library's place below it, or its top, is current now.
+     */
+    fun leaveGroups(): Boolean {
+        val wasInGroup = isUsingGroup()
+        // the root state is never in a group, so the stack can't empty
+        states.removeAll { it.isUsingGroup() }
+        if (wasInGroup && states.size == 1) setCollection(ALL)
+        return wasInGroup
+    }
+
     fun currentCollection(): String = current.currentCollection
 
     fun isUsingGroup(): Boolean = current.isUsingGroup()

@@ -43,7 +43,7 @@
         <SwitchPreference
             android:defaultValue="false"
             android:key="group_library_sync_enabled"
-            android:summary="Show and sync group libraries. Your API key needs read access to groups. Takes effect when the library is reopened."
+            android:summary="Show and sync group libraries. Your API key needs read access to groups."
             android:title="Group libraries" />
 
         <SwitchPreference

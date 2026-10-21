@@ -808,6 +808,27 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     /**
+     * Applies Settings → Group libraries at once. On: the groups are listed. Off: they
+     * go from the sidebar, an open group closes (back to My Library) and Back forgets
+     * places in groups. Groups only sync when opened, so nothing else depends on it.
+     */
+    fun setGroupLibrariesEnabled(enabled: Boolean) {
+        if (enabled) {
+            loadGroups()
+            return
+        }
+        groups = emptyList()
+        openingGroup = null
+        openingGroupCollection = null
+        if (navigator.leaveGroups()) {
+            usePersonalLibrary()
+            presenter.receiveCollections(getCollections())
+            presenter.redisplayItems()
+        }
+        presenter.showGroups()
+    }
+
+    /**
      * Works out, off the main thread, which attachments are on the device and which have
      * edits to sync; shows the edit count in the toolbar and both on the list's PDF icons,
      * and redraws the list if the filter depends on either and they changed.

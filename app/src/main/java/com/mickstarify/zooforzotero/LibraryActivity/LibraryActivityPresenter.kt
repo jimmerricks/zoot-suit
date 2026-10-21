@@ -72,8 +72,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         view.hideAttachmentUploadProgress()
     }
 
-    // the setting as the list last showed it; Settings is another activity
+    // the settings as the screen last applied them; Settings is another activity
     private var subcollectionItemsShown: Boolean? = null
+    private var groupLibrariesShown: Boolean? = null
 
     override fun onResume() {
         if (model.isLoaded()) {
@@ -83,6 +84,11 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             if (shown != null && shown != model.preferences.showSubcollectionItems()) {
                 redisplayItems()
             }
+            val groupsOn = model.preferences.isGroupLibrarySyncEnabled()
+            if (groupLibrariesShown != null && groupsOn != groupLibrariesShown) {
+                model.setGroupLibrariesEnabled(groupsOn)
+            }
+            groupLibrariesShown = groupsOn
         }
     }
 
@@ -530,6 +536,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     private fun start() {
+        groupLibrariesShown = model.preferences.isGroupLibrarySyncEnabled()
         title.value = "Loading"
         view.navController.navigate(R.id.libraryLoadingScreen)
         libraryLoadingViewModel.setLoadingMessage("Loading your library")
