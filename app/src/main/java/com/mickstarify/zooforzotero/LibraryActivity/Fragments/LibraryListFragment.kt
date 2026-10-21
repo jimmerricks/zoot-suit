@@ -72,14 +72,23 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         inflater.inflate(R.menu.activity_library_actionbar, menu)
         super.onCreateOptionsMenu(menu, inflater)
 
+        // While the search field is open it takes the toolbar's width. Filter and Sort move
+        // to the overflow (else opening the overflow demotes them there behind the toolbar's
+        // back: icons and overflow entries at once, and after closing the search every icon
+        // stays in the overflow). Closing rebuilds the menu from XML, icons included.
         val menuItem = menu.findItem(R.id.search)
         menuItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
             override fun onMenuItemActionExpand(item: MenuItem): Boolean {
+                for (id in intArrayOf(R.id.library_filter, R.id.filter_menu)) {
+                    menu.findItem(id)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+                }
                 return true
             }
 
             override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
-                (requireActivity() as LibraryActivity).presenter.closeQuery()
+                val activity = requireActivity() as LibraryActivity
+                activity.presenter.closeQuery()
+                activity.invalidateOptionsMenu()
                 return true
             }
         })
