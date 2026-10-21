@@ -21,7 +21,27 @@ sealed class SidebarRow {
 
     data class View(val view: SidebarView, val isSelected: Boolean) : SidebarRow()
 
-    object Divider : SidebarRow()
+    /** A line between sections; [section] names the one below it. */
+    data class Divider(val section: String) : SidebarRow()
+
+    /** Stable identity across redraws, for animating changes. */
+    val id: String
+        get() = when (this) {
+            is Library -> "library:$groupId"
+            is Heading -> "heading:$title"
+            is CollectionEntry -> "collection:$key"
+            is View -> "view:${view.name}"
+            is Divider -> "divider:$section"
+        }
+
+    /** Whether this is the row for what the list shows. */
+    val isCurrent: Boolean
+        get() = when (this) {
+            is Library -> isSelected
+            is CollectionEntry -> isSelected
+            is View -> isSelected
+            else -> false
+        }
 }
 
 /** The fixed views under the collections, with the collection id the navigator uses. */
@@ -65,7 +85,7 @@ object SidebarRows {
         }
 
         if (tree.roots.isNotEmpty()) {
-            rows.add(SidebarRow.Divider)
+            rows.add(SidebarRow.Divider("collections"))
             val groupName = groups.firstOrNull { it.id == activeGroupId }?.name
             rows.add(SidebarRow.Heading(if (groupName == null) "Collections" else "$groupName · Collections"))
             val seen = HashSet<String>()
@@ -86,7 +106,7 @@ object SidebarRows {
             addTree(tree.roots, 0)
         }
 
-        rows.add(SidebarRow.Divider)
+        rows.add(SidebarRow.Divider("views"))
         SidebarView.entries
             .filter { it != SidebarView.MY_PUBLICATIONS || activeGroupId == GroupInfo.NO_GROUP_ID }
             .forEach { rows.add(SidebarRow.View(it, it.collectionId == currentCollection)) }

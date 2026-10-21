@@ -135,11 +135,19 @@ class LibraryActivity : AppCompatActivity(),
         navController.navigate(R.id.libraryListFragment)
     }
 
-    /** Redraws the sidebar; see [SidebarRows]. Scrolls the selected row into view. */
+    private var sidebarSelection: String? = null
+
+    /**
+     * Redraws the sidebar; see [SidebarRows]. When the selection moved (Back, a search
+     * result), scrolls the new one into view; expanding or collapsing doesn't scroll.
+     */
     fun showSidebar(rows: List<SidebarRow>) {
-        sidebarAdapter.submit(rows)
-        val selected = sidebarAdapter.selectedPosition()
-        if (selected >= 0) {
+        val selected = rows.indexOfFirst { it.isCurrent }
+        val selection = rows.getOrNull(selected)?.id
+        val moved = selection != sidebarSelection
+        sidebarSelection = selection
+        sidebarAdapter.submitList(rows) {
+            if (!moved || selected < 0) return@submitList
             (sidebar.layoutManager as LinearLayoutManager).let {
                 if (selected < it.findFirstCompletelyVisibleItemPosition() ||
                     selected > it.findLastCompletelyVisibleItemPosition()

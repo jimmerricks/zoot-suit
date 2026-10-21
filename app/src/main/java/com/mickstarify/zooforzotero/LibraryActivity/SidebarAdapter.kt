@@ -9,6 +9,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
@@ -18,7 +20,7 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
  * collections more than one level deep or indent them. Rows come from [SidebarRows].
  */
 class SidebarAdapter(private val listener: Listener) :
-    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    ListAdapter<SidebarRow, RecyclerView.ViewHolder>(DIFF) {
 
     interface Listener {
         fun onLibrarySelected(groupId: Int)
@@ -28,25 +30,9 @@ class SidebarAdapter(private val listener: Listener) :
         fun onViewSelected(view: SidebarView)
     }
 
-    private var rows: List<SidebarRow> = emptyList()
-
-    fun submit(rows: List<SidebarRow>) {
-        this.rows = rows
-        notifyDataSetChanged()
-    }
-
-    /** Position of the selected row, to scroll it into view; -1 if none. */
-    fun selectedPosition(): Int = rows.indexOfFirst {
-        (it is SidebarRow.Library && it.isSelected) ||
-                (it is SidebarRow.CollectionEntry && it.isSelected) ||
-                (it is SidebarRow.View && it.isSelected)
-    }
-
-    override fun getItemCount() = rows.size
-
-    override fun getItemViewType(position: Int) = when (rows[position]) {
+    override fun getItemViewType(position: Int) = when (getItem(position)) {
         is SidebarRow.Heading -> TYPE_HEADING
-        SidebarRow.Divider -> TYPE_DIVIDER
+        is SidebarRow.Divider -> TYPE_DIVIDER
         else -> TYPE_ROW
     }
 
@@ -62,12 +48,12 @@ class SidebarAdapter(private val listener: Listener) :
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        when (val row = rows[position]) {
+        when (val row = getItem(position)) {
             is SidebarRow.Heading -> (holder as HeadingHolder).bind(row)
             is SidebarRow.Library -> (holder as RowHolder).bind(row)
             is SidebarRow.CollectionEntry -> (holder as RowHolder).bind(row)
             is SidebarRow.View -> (holder as RowHolder).bind(row)
-            SidebarRow.Divider -> {}
+            is SidebarRow.Divider -> {}
         }
     }
 
@@ -165,6 +151,11 @@ class SidebarAdapter(private val listener: Listener) :
     }
 
     companion object {
+        private val DIFF = object : DiffUtil.ItemCallback<SidebarRow>() {
+            override fun areItemsTheSame(old: SidebarRow, new: SidebarRow) = old.id == new.id
+            override fun areContentsTheSame(old: SidebarRow, new: SidebarRow) = old == new
+        }
+
         private const val TYPE_ROW = 0
         private const val TYPE_HEADING = 1
         private const val TYPE_DIVIDER = 2

@@ -36,7 +36,7 @@ class SidebarRowsTest {
             is SidebarRow.CollectionEntry -> " ".repeat(row.depth) + (if (row.isSelected) "*" else "") +
                     row.name + when { !row.hasChildren -> ""; row.isExpanded -> " v"; else -> " >" }
             is SidebarRow.View -> (if (row.isSelected) "*" else "") + row.view.title
-            SidebarRow.Divider -> "--"
+            is SidebarRow.Divider -> "--"
         }
     }
 
