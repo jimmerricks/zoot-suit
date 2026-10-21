@@ -470,17 +470,16 @@ class AttachmentStorageManager @Inject constructor(
         } else if (storageMode == StorageMode.EXTERNAL_CACHE) {
             // logic using File api is much simpler
             for (i in directories.indices) {
-                var path = directories.slice(i..directories.size - 1).joinToString("/")
-                if (path.first() == '/') {
-                    path = path.slice(1..path.length - 1)
-                }
+                val path = directories.slice(i..directories.size - 1).joinToString("/")
+                    .trimStart('/')
+                if (path.isEmpty()) continue
                 Log.d("zotero", "checking path $path")
                 var document = File(context.externalCacheDir, path)
                 if (document.exists()) {
                     val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         FileProvider.getUriForFile(
                             context,
-                            "${context.packageName}.fileprovider",
+                            "${context.packageName}.fileprovider.app",
                             document
                         )
                     } else {
