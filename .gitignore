@@ -2,8 +2,14 @@
 *.apk
 *.ap_
 
-# zoo
+# secrets and per-machine build settings: never committed (docs/release-identity.md)
 apikeys.properties
+keystore.properties
+*.jks
+*.keystore
+
+# scratch files from the Docker tooling
+.scratch/
 
 # files for the dex VM
 *.dex
