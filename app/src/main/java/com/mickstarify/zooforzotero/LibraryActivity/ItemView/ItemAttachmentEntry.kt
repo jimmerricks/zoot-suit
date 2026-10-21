@@ -59,6 +59,10 @@ class ItemAttachmentEntry(
         val icon = requireView().findViewById<ImageView>(R.id.imageView_attachment_icon)
         stateView = requireView().findViewById(R.id.textView_attachment_state)
 
+        // a download, delete or upload while the item is open changes the device's
+        // attachment states (refreshPendingEdits); redraw this one's state with them
+        libraryViewModel.getAttachmentStates().observe(viewLifecycleOwner) { showState() }
+
         libraryViewModel.getOnItemClicked().observe(viewLifecycleOwner) { item ->
             attachment = item.attachments.filter { it.itemKey == itemKey }.firstOrNull()
             if (attachment == null) {
