@@ -170,12 +170,16 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     /**
-     * The open library's list filter. Each library has its own, kept in preferences so it
-     * survives closing the dialog and the app.
+     * The open library's list filter. Each library has its own. With "Keep the filter"
+     * on, it is saved and stays when another collection opens; off (the default), it
+     * clears then, and the app starts without one. See [clearOnCollectionChange].
      */
     var libraryFilter: LibraryFilter
-        get() = state.currentGroup.id.let { id ->
-            savedFilters.getOrPut(id) { preferences.getLibraryFilter(id) }
+        get() {
+            clearOnCollectionChange()
+            return savedFilters.getOrPut(state.currentGroup.id) {
+                if (preferences.keepFilter()) preferences.getLibraryFilter(state.currentGroup.id) else LibraryFilter()
+            }
         }
         set(value) {
             val id = state.currentGroup.id
@@ -186,14 +190,46 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     /**
      * The open library's search, narrowing every list like [libraryFilter]; "" for none.
-     * Each library has its own, kept while the app runs (unlike the filter, not saved).
+     * Each library has its own, kept or cleared like the filter ("Keep the search").
      */
     var librarySearch: String
-        get() = searches[state.currentGroup.id] ?: ""
+        get() {
+            clearOnCollectionChange()
+            return searches.getOrPut(state.currentGroup.id) {
+                if (preferences.keepSearch()) preferences.getLibrarySearch(state.currentGroup.id) else ""
+            }
+        }
         set(value) {
-            searches[state.currentGroup.id] = value.trim()
+            val id = state.currentGroup.id
+            searches[id] = value.trim()
+            preferences.setLibrarySearch(id, value.trim())
         }
     private val searches = mutableMapOf<Int, String>() // by library (group id)
+
+    /** The library and collection the search and filter were last read for. */
+    private var shownCollection: Pair<Int, String>? = null
+
+    /**
+     * Clears the search and the filter, unless set to be kept, when the collection (or
+     * the library) differs from the last one they were read for. Tag views and Back
+     * within the same collection keep them. Called by their getters, which every list,
+     * dialog and subtitle reads after navigation has settled.
+     */
+    private fun clearOnCollectionChange() {
+        val now = state.currentGroup.id to state.currentCollection
+        val before = shownCollection
+        shownCollection = now
+        if (before == null || before == now) return
+        val id = now.first
+        if (!preferences.keepSearch()) {
+            searches[id] = ""
+            preferences.setLibrarySearch(id, "")
+        }
+        if (!preferences.keepFilter()) {
+            savedFilters[id] = LibraryFilter()
+            preferences.setLibraryFilter(id, LibraryFilter())
+        }
+    }
 
     /**
      * The items the list shows, after search and filter; null if the current list doesn't go

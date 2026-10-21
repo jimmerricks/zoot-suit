@@ -70,6 +70,18 @@
 
         <SwitchPreference
             android:defaultValue="false"
+            android:key="keep_search"
+            android:summary="Off: the search clears when you open another collection. On: it stays, for each library separately, until you clear it."
+            android:title="Keep the search across collections" />
+
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="keep_filter"
+            android:summary="Off: the filter clears when you open another collection. On: it stays, for each library separately, until you clear it."
+            android:title="Keep the filter across collections" />
+
+        <SwitchPreference
+            android:defaultValue="false"
             android:key="check_md5sum_before_attachment_open"
             android:summary="Compare a file with Zotero's checksum before opening it. Slower for large files."
             android:title="Check files before opening" />

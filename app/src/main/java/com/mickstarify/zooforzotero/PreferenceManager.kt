@@ -90,6 +90,20 @@ class PreferenceManager @Inject constructor(context: Context) {
             .apply()
     }
 
+    /** Whether the search stays when another collection opens (else it clears); see [getLibrarySearch]. */
+    fun keepSearch(): Boolean = sharedPreferences.getBoolean("keep_search", false)
+
+    /** Whether the filter stays when another collection opens (else it clears). */
+    fun keepFilter(): Boolean = sharedPreferences.getBoolean("keep_filter", false)
+
+    /** A library's search, saved like its filter; "" for none. */
+    fun getLibrarySearch(groupId: Int): String =
+        sharedPreferences.getString(libraryKey("library_search", groupId), null) ?: ""
+
+    fun setLibrarySearch(groupId: Int, search: String) {
+        sharedPreferences.edit { putString(libraryKey("library_search", groupId), search) }
+    }
+
     /** Collections expanded in the sidebar, per library (My Library = NO_GROUP_ID). */
     fun getSidebarExpandedCollections(groupId: Int): Set<String> =
         sharedPreferences.getStringSet("sidebar_expanded_collections_$groupId", null)?.toSet()
