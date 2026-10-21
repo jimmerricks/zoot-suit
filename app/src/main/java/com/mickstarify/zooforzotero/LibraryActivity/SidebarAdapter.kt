@@ -111,7 +111,7 @@ class SidebarAdapter(private val listener: Listener) :
             chevron.setOnClickListener(null)
             show(
                 row.name,
-                if (row.groupId == GroupInfo.NO_GROUP_ID) R.drawable.ic_menu_gallery else R.drawable.baseline_group_24,
+                if (row.groupId == GroupInfo.NO_GROUP_ID) R.drawable.baseline_library_books_24 else R.drawable.baseline_group_24,
                 selected = row.isSelected, bold = row.isActive
             ) { listener.onLibrarySelected(row.groupId) }
         }
