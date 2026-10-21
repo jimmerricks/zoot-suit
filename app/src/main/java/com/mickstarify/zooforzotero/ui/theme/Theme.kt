@@ -3,7 +3,10 @@ package com.mickstarify.zooforzotero.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -59,7 +62,8 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun ZoteroTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    // off: wallpaper colours (Android 12+) would replace the app's indigo on these screens only
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -76,7 +80,8 @@ fun ZoteroTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = android.graphics.Color.TRANSPARENT
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            // white status icons over the indigo top bar, as on the XML screens
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
 
@@ -86,3 +91,12 @@ fun ZoteroTheme(
         content = content
     )
 }
+/** The app's toolbar look (Widget.ZooForZotero.Toolbar): indigo with white title and icons. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun zootTopAppBarColors(): TopAppBarColors = TopAppBarDefaults.topAppBarColors(
+    containerColor = MaterialTheme.colorScheme.primary,
+    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+    actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+)

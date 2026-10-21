@@ -1,5 +1,6 @@
 package com.mickstarify.zooforzotero.SyncSetup.ui.screens
 
+import com.mickstarify.zooforzotero.ui.theme.zootTopAppBarColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,6 +65,7 @@ fun SyncSetupWebViewScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Zotero Authentication") },
+                colors = zootTopAppBarColors(),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")

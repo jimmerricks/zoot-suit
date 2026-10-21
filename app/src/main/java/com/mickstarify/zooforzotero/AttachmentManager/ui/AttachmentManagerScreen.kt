@@ -1,5 +1,6 @@
 package com.mickstarify.zooforzotero.AttachmentManager.ui
 
+import com.mickstarify.zooforzotero.ui.theme.zootTopAppBarColors
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -51,6 +52,7 @@ fun AttachmentManagerScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Attachment Manager") },
+                colors = zootTopAppBarColors(),
                 navigationIcon = {
                     IconButton(onClick = { 
                         if (isDownloading) {
