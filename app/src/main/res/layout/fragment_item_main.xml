@@ -10,7 +10,7 @@
         android:id="@+id/constraintLayout_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp">
+        android:layout_marginTop="16dp">
 
         <TextView
             android:id="@+id/textView_item_toolbar_title"
@@ -18,8 +18,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:text="Name Goes Here."
-            android:textSize="20sp"
-            android:textStyle="bold"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/imageButton_add_notes"
             app:layout_constraintStart_toStartOf="parent"
@@ -35,24 +34,25 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true"
-            android:scaleType="fitCenter"
+            android:contentDescription="Add note"
+            android:scaleType="center"
             app:layout_constraintBottom_toBottomOf="@+id/imageButton_share_item"
             app:layout_constraintEnd_toStartOf="@+id/imageButton_share_item"
             app:layout_constraintTop_toTopOf="@+id/imageButton_share_item"
-            app:srcCompat="@drawable/toolbar_note_add_2x" />
+            app:srcCompat="@drawable/baseline_note_add_24" />
 
         <ImageButton
             android:id="@+id/imageButton_share_item"
-            style="@android:style/Widget.Material.ImageButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginEnd="16dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="@android:color/darker_gray"
+            android:contentDescription="Share"
+            android:scaleType="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/baseline_share_white_48" />
+            app:srcCompat="@drawable/baseline_share_24" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -68,16 +68,17 @@
                 android:id="@+id/item_fragment_scrollview_ll_attachments"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_margin="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="16dp"
                 android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/textView_attachments_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Attachments"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    style="@style/DialogSectionHeader"
+                    android:text="Attachments" />
             </LinearLayout>
 
             <LinearLayout
@@ -90,10 +91,11 @@
                     android:id="@+id/textView_information_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_margin="16dp"
-                    android:text="Information"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="16dp"
+                    style="@style/DialogSectionHeader"
+                    android:text="Information" />
 
             </LinearLayout>
 
@@ -102,7 +104,9 @@
                 android:id="@+id/item_fragment_scrollview_ll_notes"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_margin="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="16dp"
                 android:orientation="vertical">
 
 
@@ -110,16 +114,17 @@
                     android:id="@+id/textView_notes_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Notes"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    style="@style/DialogSectionHeader"
+                    android:text="Notes" />
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/item_fragment_scrollview_ll_tags"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="16dp"
                 android:orientation="vertical">
 
 
@@ -127,9 +132,8 @@
                     android:id="@+id/textView_tags_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Tags"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    style="@style/DialogSectionHeader"
+                    android:text="Tags" />
             </LinearLayout>
 
         </LinearLayout>

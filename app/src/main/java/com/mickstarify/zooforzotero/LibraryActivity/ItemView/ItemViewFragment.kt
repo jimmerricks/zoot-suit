@@ -12,7 +12,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.textfield.TextInputEditText
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.EditNoteDialog
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListener
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.onEditNoteChangeListener
@@ -124,17 +123,12 @@ class ItemViewFragment : BottomSheetDialogFragment(),
             attachments = item.attachments
             notes = item.notes
 
-            addTextEntry("Item Type", item.data["itemType"] ?: "Unknown")
-            addTextEntry("title", item.getTitle())
-            if (item.creators.isNotEmpty()) {
-                this.addCreators(item.getSortedCreators())
-            } else {
-                // empty creator.
-                this.addCreators(listOf(Creator("null", "", "", "", -1)))
-            }
+            addTextEntry("Item Type", ItemFieldLabel.of(item.data["itemType"] ?: "Unknown"))
+            addTextEntry("Title", item.getTitle())
+            this.addCreators(item.getSortedCreators())
             for ((key, value) in item.data) {
                 if (value != "" && key != "itemType" && key != "title") {
-                    addTextEntry(key, value)
+                    addTextEntry(ItemFieldLabel.of(key), value)
                 }
             }
             this.addAttachments(attachments)
@@ -202,40 +196,15 @@ class ItemViewFragment : BottomSheetDialogFragment(),
         val textLabel = textLayout.findViewById<TextView>(R.id.textView_label)
         textLabel.text = label
 
-//        val editText = textLayout.findViewById<TextInputEditText>(R.id.editText_itemInfo)
-//        editText.setText(content)
         val textViewInfo = textLayout.findViewById<TextView>(R.id.textView_item_info)
         textViewInfo.setText(content)
     }
 
+    /** Each creator as a field, like Zotero: its role ("Author", "Editor") and "Last, First". */
     private fun addCreators(creators: List<Creator>) {
-        val itemViewLayout =
-            requireView().findViewById<LinearLayout>(R.id.item_fragment_scrollview_ll_layout)
-
-        val inflator = LayoutInflater.from(requireContext())
-
-        val creatorLayout = LinearLayout(requireContext())
-        creatorLayout.orientation = LinearLayout.VERTICAL
-        creatorLayout.layoutParams =
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-
-        itemViewLayout.addView(creatorLayout)
-
-        creators.forEachIndexed { index, creator ->
-            val parent = inflator.inflate(R.layout.fragment_item_authors_entry, creatorLayout)
-            val view = (parent as ViewGroup).getChildAt(index)
-
-            val creatorType = view.findViewById<TextView>(R.id.textView_creator_type)
-            val lastName = view.findViewById<TextInputEditText>(R.id.editText_lastname)
-            val firstName = view.findViewById<TextInputEditText>(R.id.editText_firstname)
-
-            creatorType.text = creator.creatorType
-            lastName.setText(creator.lastName ?: "")
-            firstName.setText(creator.firstName ?: "")
-
+        for (creator in creators) {
+            val name = ItemFieldLabel.creatorName(creator.firstName, creator.lastName)
+            if (name.isNotEmpty()) addTextEntry(ItemFieldLabel.of(creator.creatorType), name)
         }
     }
 

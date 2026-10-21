@@ -12,8 +12,8 @@
 
     <ImageView
             android:id="@+id/imageView_note_icon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:layout_weight="1"
@@ -31,7 +31,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="@string/hello_blank_fragment"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
             app:layout_constraintBottom_toBottomOf="@+id/imageView_note_icon"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/imageView_note_icon"
