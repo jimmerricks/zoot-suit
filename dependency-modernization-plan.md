@@ -134,7 +134,8 @@ Visual pass (2026-10-21): Compose screens' toolbars indigo (`zootTopAppBarColors
 no dynamic colour); filter-dialog tags with the box at the start; item view with one
 outlined field style, `ItemFieldLabel` names, section headings and vector icons;
 list titles without auto-sizing (sp), then compact rows (32dp icons, 52dp minimum).
-Four unused layouts and an unused menu deleted.
+Four unused layouts and an unused menu deleted. Filter and sort options 36dp
+(`DialogChoice`); the filter's tag list as tall as its tags, up to 300dp.
 
 This also starts the "attachment download/upload" slice of item 2: the upload half
 is now a self-contained pipeline inside the model, ready to move out with the
