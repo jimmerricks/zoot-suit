@@ -132,12 +132,14 @@ class ZoteroDB(
                 val priority = Process.getThreadPriority(Process.myTid())
                 Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY)
                 val loaded = try {
-                    zoteroDatabase.loadItems(groupID)
+                    zoteroDatabase.loadItems(groupID, listFieldsOnly = true)
                 } finally {
                     Process.setThreadPriority(priority)
                 }
                 Log.d("zotero", "loaded ${loaded.size} items from DB for groupID=$groupID in ${(System.nanoTime() - start) / 1_000_000} ms, setting now.")
+                allFieldsLoaded = false
                 items = loaded
+                loadRestOfFields(loaded)
             }
                 // off the subscriber's thread, which can be the main one (finishLibrarySync);
                 // Room's Maybe ran on its own executor
@@ -389,6 +391,41 @@ class ZoteroDB(
             }
         }
         items = newItems
+    }
+
+    /** Whether every item has all its fields: false from a load until [loadRestOfFields] is done. */
+    @Volatile
+    var allFieldsLoaded = true
+        private set
+
+    /** Called (on a background thread) when [allFieldsLoaded] turns true. */
+    @Volatile
+    var onAllFieldsLoaded: (() -> Unit)? = null
+
+    /**
+     * Gives the items of a load the fields it left out (see ZoteroDatabase.loadItems), in
+     * the background, so the list shows first. A newer load makes this one moot.
+     */
+    private fun loadRestOfFields(loaded: List<Item>) {
+        Thread {
+            try {
+                val start = System.nanoTime()
+                val rest = zoteroDatabase.loadRestOfFields(groupID)
+                for (item in loaded) if (!item.hasAllFields) item.complete(rest[item.itemKey] ?: emptyList())
+                Log.d("zotero", "rest of the fields for groupID=$groupID in ${(System.nanoTime() - start) / 1_000_000} ms")
+                if (items === loaded) {
+                    allFieldsLoaded = true
+                    onAllFieldsLoaded?.invoke()
+                }
+            } catch (e: Exception) {
+                Log.e("zotero", "loading the rest of the fields failed: $e")
+            }
+        }.start()
+    }
+
+    /** Gives [item] the fields left out at load now, e.g. because it is being opened. */
+    fun completeItem(item: Item) {
+        if (!item.hasAllFields) item.complete(zoteroDatabase.loadRestOfFields(item.itemKey))
     }
 
     fun getItemWithKey(itemKey: String): Item? {

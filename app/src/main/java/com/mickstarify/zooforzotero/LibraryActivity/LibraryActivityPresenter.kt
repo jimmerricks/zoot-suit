@@ -365,6 +365,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             val note = Note(item)
             view.showNote(note)
         } else {
+            model.completeItem(item)
             model.selectedItem = item
             view.showItemDialog()
         }

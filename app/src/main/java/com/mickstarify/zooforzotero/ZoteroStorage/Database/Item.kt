@@ -73,14 +73,7 @@ class Item : Parcelable {
         return itemInfo.version
     }
 
-    fun getItemData(key: String): String? {
-        for (itemData in itemData) {
-            if (itemData.name == key) {
-                return itemData.value
-            }
-        }
-        return null
-    }
+    fun getItemData(key: String): String? = data[key]
 
     val itemKey: String
         get() = itemInfo.itemKey
@@ -92,7 +85,7 @@ class Item : Parcelable {
     var mappedData: MutableMap<String, String>? = null
 
     @delegate:Ignore
-    val data: Map<String, String> by lazy {
+    private val loadedData: Map<String, String> by lazy {
         if (mappedData == null) {
             mappedData = HashMap()
             for (iData in itemData) {
@@ -100,6 +93,32 @@ class Item : Parcelable {
             }
         }
         mappedData!!
+    }
+
+    // Set once, from any thread, when the fields left out at startup arrive; see [complete].
+    @Ignore
+    @Volatile
+    private var allData: Map<String, String>? = null
+
+    /** The item's fields; after a startup load, only those the list needs until [hasAllFields]. */
+    val data: Map<String, String>
+        get() = allData ?: loadedData
+
+    /**
+     * False for an item loaded with the list's fields only (startup: a regular item's
+     * ZoteroDatabase.LIST_FIELDS, an attachment's all but its note); the rest follow in the
+     * background (ZoteroDB.loadItemsFromDatabase), or at once for an item that is opened
+     * (ZoteroDB.completeItem). Notes and items loaded any other way have all their fields.
+     */
+    @Ignore
+    @Volatile
+    var hasAllFields: Boolean = true
+
+    /** Adds the fields left out at load; readers see the old or the complete map, never half. */
+    fun complete(rest: List<ItemData>) {
+        if (hasAllFields) return
+        allData = HashMap(loadedData).apply { for (d in rest) put(d.name, d.value) }
+        hasAllFields = true
     }
 
     private fun stripHtml(html: String): String {
@@ -298,6 +317,31 @@ interface ItemDao {
 
     // One query per table for a library's items (not trashed), joined in ZoteroDatabase.loadItems;
     // Room's @Relation for getItemsForGroup reads the same rows in batches of 999 keys.
+    // The fields loaded at startup: a note's all, an attachment's all but its note (attachment
+    // notes were 7.6 MB of Jim's library and nothing on the list reads them), [names] of other
+    // items. t is the row's item type, found through the (parent, name) key.
+    @Query(
+        "SELECT d.* FROM ItemData d JOIN ItemInfo i ON d.parent = i.itemKey " +
+            "JOIN ItemData t ON t.parent = d.parent AND t.name = 'itemType' " +
+            "WHERE i.`group`=:groupID AND i.`deleted`=0 AND (d.name IN (:names) OR t.value = 'note' " +
+            "OR (t.value = 'attachment' AND d.name <> 'note'))"
+    )
+    fun getListItemDataForGroup(groupID: Int, names: List<String>): List<ItemData>
+
+    // The rest: what getListItemDataForGroup left out.
+    @Query(
+        "SELECT d.* FROM ItemData d JOIN ItemInfo i ON d.parent = i.itemKey " +
+            "JOIN ItemData t ON t.parent = d.parent AND t.name = 'itemType' " +
+            "WHERE i.`group`=:groupID AND i.`deleted`=0 AND d.name NOT IN (:names) AND t.value <> 'note' " +
+            "AND (t.value <> 'attachment' OR d.name = 'note')"
+    )
+    fun getRestOfItemDataForGroup(groupID: Int, names: List<String>): List<ItemData>
+
+    // one item's rest: everything outside [names]; for an attachment that includes fields it
+    // already has, which complete() simply sets again
+    @Query("SELECT * FROM ItemData WHERE parent = :itemKey AND name NOT IN (:names)")
+    fun getRestOfItemData(itemKey: String, names: List<String>): List<ItemData>
+
     @Query("SELECT * FROM ItemInfo WHERE `group`=:groupID AND `deleted`=0")
     fun getItemInfosForGroup(groupID: Int): List<ItemInfo>
 

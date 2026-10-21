@@ -137,5 +137,23 @@ class LibrarySearchTest {
         assertFalse(index.isFor(library.toList(), fields))
         assertFalse(index.isFor(library, all))
         assertFalse(index.isFor(null, fields))
+        assertFalse(index.isFor(library, fields, allFields = false))
+    }
+
+    @Test
+    fun `an item loaded with the list's fields gets the rest later, all at once`() {
+        val partial = item("EEEE5555", mapOf("title" to "Distinction")).apply { hasAllFields = false }
+        assertEquals(null, partial.data["abstractNote"])
+        assertEquals(emptyList<String>(), keys(LibrarySearch.Index(listOf(partial), setOf(Field.ABSTRACT), false).search("taste")))
+
+        partial.complete(listOf(ItemData("EEEE5555", "abstractNote", "A critique of taste", "String")))
+        assertTrue(partial.hasAllFields)
+        assertEquals("Distinction", partial.data["title"])
+        assertEquals("A critique of taste", partial.getItemData("abstractNote"))
+        assertEquals(listOf("EEEE5555"), keys(LibrarySearch.Index(listOf(partial), setOf(Field.ABSTRACT)).search("taste")))
+
+        // a complete item ignores a second batch
+        partial.complete(listOf(ItemData("EEEE5555", "abstractNote", "other", "String")))
+        assertEquals("A critique of taste", partial.data["abstractNote"])
     }
 }

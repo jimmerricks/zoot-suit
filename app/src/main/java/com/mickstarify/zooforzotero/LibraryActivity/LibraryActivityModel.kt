@@ -498,8 +498,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     private fun searchIndex(): LibrarySearch.Index? {
         val items = zoteroDB.items ?: return null
         val fields = preferences.getSearchFields()
-        searchIndex?.takeIf { it.isFor(items, fields) }?.let { return it }
-        return LibrarySearch.Index(items, fields).also { searchIndex = it }
+        // fields beyond title, creators and year arrive after startup; rebuilt when they have
+        val allFields = zoteroDB.allFieldsLoaded || fields.none { it.needsAllFields }
+        searchIndex?.takeIf { it.isFor(items, fields, allFields) }?.let { return it }
+        return LibrarySearch.Index(items, fields, allFields).also { searchIndex = it }
     }
 
     /** Builds the search index in the background while the search dialog is open. */
@@ -1291,6 +1293,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         presenter.redisplayItems()
     }
 
+    /** Gives [item] the fields left out at startup, before it is shown in full. */
+    fun completeItem(item: Item) = zoteroDB.completeItem(item)
+
     fun getCurrentCollection(): String {
         return navigator.currentCollection()
     }
@@ -1363,6 +1368,14 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             Log.d(TAG, "loadCollectionsFromDatabase completed - loaded ${db.collections?.size ?: 0} collections")
         }
 
+        // a search in fields that load after startup is redone once they have
+        db.onAllFieldsLoaded = {
+            Handler(Looper.getMainLooper()).post {
+                if (db === zoteroDB && librarySearch.isNotEmpty() &&
+                    preferences.getSearchFields().any { it.needsAllFields }
+                ) presenter.redisplayItems()
+            }
+        }
         val loadItems = db.loadItemsFromDatabase().doOnError { e ->
             Log.e(TAG, "loading Items from db got error $e")
             db.items = LinkedList()

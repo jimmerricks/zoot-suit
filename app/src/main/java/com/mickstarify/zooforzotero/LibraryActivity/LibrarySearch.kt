@@ -18,15 +18,16 @@ import java.util.Locale
 object LibrarySearch {
 
     /** What a search looks in; the dialog offers each. Title, creators and year is Zotero's default mode. */
-    enum class Field(val label: String) {
+    enum class Field(val label: String, val needsAllFields: Boolean = false) {
         TITLE("Title"),
         CREATORS("Creators"),
         YEAR("Year"),
-        PUBLICATION("Publication and publisher"),
-        ABSTRACT("Abstract"),
+        // fields a regular item only has once the rest have loaded after startup
+        PUBLICATION("Publication and publisher", needsAllFields = true),
+        ABSTRACT("Abstract", needsAllFields = true),
         TAGS("Tags"),
         NOTES("Notes"),
-        OTHER("Other fields (DOI, ISBN, place, URL, extra, …)"),
+        OTHER("Other fields (DOI, ISBN, place, URL, extra, …)", needsAllFields = true),
     }
 
     val DEFAULT_FIELDS: Set<Field> = setOf(Field.TITLE, Field.CREATORS, Field.YEAR)
@@ -105,9 +106,10 @@ object LibrarySearch {
     /**
      * The searchable text of one library's top-level items (child attachments and notes
      * are left out: they are never rows in the list). Immutable; build it again when the
-     * library or the fields change, see [isFor].
+     * library or the fields change, or when the items' remaining fields have loaded
+     * ([allFields] false: built before that, for fields that need them), see [isFor].
      */
-    class Index(val source: List<Item>, val fields: Set<Field>) {
+    class Index(val source: List<Item>, val fields: Set<Field>, val allFields: Boolean = true) {
         private val items: Array<Item>
         private val texts: Array<String>
 
@@ -117,7 +119,8 @@ object LibrarySearch {
             texts = Array(top.size) { searchText(top[it], fields) }
         }
 
-        fun isFor(source: List<Item>?, fields: Set<Field>) = source === this.source && fields == this.fields
+        fun isFor(source: List<Item>?, fields: Set<Field>, allFields: Boolean = true) =
+            source === this.source && fields == this.fields && allFields == this.allFields
 
         /** Items containing every term of [query], in library order. No terms, no results. */
         fun search(query: String): List<Item> {
