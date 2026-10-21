@@ -37,7 +37,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     override lateinit var libraryLoadingViewModel: LibraryLoadingScreenViewModel
 
     val sortMethod = compareBy<Item> {
-        when (model.preferences.getSortMethod()) {
+        when (model.preferences.getSortMethod(model.state.currentGroup.id)) {
             SortMethod.TITLE -> it.getTitle().lowercase(Locale.ROOT)
             SortMethod.DATE -> it.getSortableDateString()
             SortMethod.DATE_ADDED -> it.getSortableDateAddedString()
@@ -213,6 +213,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     override fun getAllTags(): List<Pair<String, Int>> {
         return if (model.isLoaded()) model.getAllTags() else emptyList()
     }
+
+    /** The open library: GroupInfo.NO_GROUP_ID for My Library, else the group's id. */
+    fun currentLibraryId(): Int = model.state.currentGroup.id
 
     fun getLibraryFilter(): LibraryFilter = model.libraryFilter
 
@@ -603,7 +606,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     // extension function to sort lists of items
     private fun List<Item>.sort(): List<Item> {
-        if (model.preferences.isSortedAscendingly()) {
+        if (model.preferences.isSortedAscendingly(model.state.currentGroup.id)) {
             return this.sortedWith(sortMethod)
         }
         return this.sortedWith(sortMethod).reversed()

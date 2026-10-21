@@ -1,6 +1,7 @@
 package com.mickstarify.zooforzotero
 
 import com.mickstarify.zooforzotero.LibraryActivity.LibraryFilter
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import android.content.Context
 import android.util.Log
 import androidx.core.content.edit
@@ -11,17 +12,10 @@ import javax.inject.Inject
 class PreferenceManager @Inject constructor(context: Context) {
     val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
-    fun setSortMethod(method: String) {
-        val sortMethod = stringToSortMethod(method)
-        this.setSortMethod(sortMethod)
-    }
-
-    fun setSortMethod(method: SortMethod) {
-        val methodString = sortMethodToString(method)
-        val editor = sharedPreferences.edit()
-        editor.putString("sort_method", methodString)
-        editor.apply()
-    }
+    /*
+     * Sort and filter are kept per library: My Library under the keys these settings
+     * always had, a group under the same keys with "_group_<id>" appended (libraryKey).
+     */
 
     fun sortMethodToString(method: SortMethod): String {
         return when (method) {
@@ -42,55 +36,56 @@ class PreferenceManager @Inject constructor(context: Context) {
         }
     }
 
-    fun getSortMethod(): SortMethod {
-        val methodString = sharedPreferences.getString("sort_method", "TITLE") ?: "TITLE"
-
+    /** A library's sort; a group never sorted yet uses My Library's. */
+    fun getSortMethod(groupId: Int): SortMethod {
+        val methodString = sharedPreferences.getString(libraryKey("sort_method", groupId), null)
+            ?: sharedPreferences.getString("sort_method", "TITLE") ?: "TITLE"
         return stringToSortMethod(methodString)
     }
 
-    fun isSortedAscendingly(): Boolean {
-        /* We will define ascending as going from smallest to largest. As such, A-Z will be defined
-        * as ascending and  Z-A will be descending.
-        * Similarly, Ascending will refer to older dates to newer ones.
-        * Ascending will be represented as an up arrow.*/
-        val direction = sharedPreferences.getString("SORT_DIRECTION", "DEFAULT")
-        return when (direction) {
-            SORT_METHOD_ASCENDING -> true
-            SORT_METHOD_DESCENDING -> false
-            else -> true // ascending will be default.
-        }
-    }
-
-    fun setSortDirection(direction: String) {
-        if (direction != SORT_METHOD_DESCENDING && direction != SORT_METHOD_ASCENDING) {
-            Log.e(
-                "zotero",
-                "got request to change sort method to $direction which is not understood"
-            )
-            return
-        }
-        val editor = sharedPreferences.edit()
-        editor.putString("SORT_DIRECTION", direction)
-        editor.apply()
-    }
-
-    /** The library list's filter (tags, device state); see LibraryFilter. */
-    fun getLibraryFilter(): LibraryFilter = LibraryFilter(
-        tags = sharedPreferences.getStringSet("library_filter_tags", null)?.toSet() ?: emptySet(),
-        onDevice = sharedPreferences.getBoolean("library_filter_on_device", false),
-        editedHere = sharedPreferences.getBoolean("library_filter_edited_here", false),
-        // the sort dialog's former "only show items with…" options, same keys
-        hasPdf = getIsShowingOnlyPdfs(),
-        hasNotes = getIsShowingOnlyNotes(),
-    )
-
-    fun setLibraryFilter(filter: LibraryFilter) {
+    fun setSortMethod(groupId: Int, method: SortMethod) {
         sharedPreferences.edit()
-            .putStringSet("library_filter_tags", HashSet(filter.tags))
-            .putBoolean("library_filter_on_device", filter.onDevice)
-            .putBoolean("library_filter_edited_here", filter.editedHere)
-            .putBoolean("is_showing_only_with_pdfs", filter.hasPdf)
-            .putBoolean("is_showing_only_with_notes", filter.hasNotes)
+            .putString(libraryKey("sort_method", groupId), sortMethodToString(method)).apply()
+    }
+
+    /**
+     * Ascending is smallest to largest: A–Z, older dates before newer ones. The default.
+     * A group never sorted yet uses My Library's order.
+     */
+    fun isSortedAscendingly(groupId: Int): Boolean {
+        val direction = sharedPreferences.getString(libraryKey("SORT_DIRECTION", groupId), null)
+            ?: sharedPreferences.getString("SORT_DIRECTION", null)
+        return direction != SORT_METHOD_DESCENDING
+    }
+
+    fun setSortAscending(groupId: Int, ascending: Boolean) {
+        sharedPreferences.edit().putString(
+            libraryKey("SORT_DIRECTION", groupId),
+            if (ascending) SORT_METHOD_ASCENDING else SORT_METHOD_DESCENDING
+        ).apply()
+    }
+
+    /** A library's list filter (tags, device state); see LibraryFilter. Empty by default. */
+    fun getLibraryFilter(groupId: Int): LibraryFilter {
+        fun flag(key: String) = sharedPreferences.getBoolean(libraryKey(key, groupId), false)
+        return LibraryFilter(
+            tags = sharedPreferences.getStringSet(libraryKey("library_filter_tags", groupId), null)
+                ?.toSet() ?: emptySet(),
+            onDevice = flag("library_filter_on_device"),
+            editedHere = flag("library_filter_edited_here"),
+            // the sort dialog's former "only show items with…" options, same keys
+            hasPdf = flag("is_showing_only_with_pdfs"),
+            hasNotes = flag("is_showing_only_with_notes"),
+        )
+    }
+
+    fun setLibraryFilter(groupId: Int, filter: LibraryFilter) {
+        sharedPreferences.edit()
+            .putStringSet(libraryKey("library_filter_tags", groupId), HashSet(filter.tags))
+            .putBoolean(libraryKey("library_filter_on_device", groupId), filter.onDevice)
+            .putBoolean(libraryKey("library_filter_edited_here", groupId), filter.editedHere)
+            .putBoolean(libraryKey("is_showing_only_with_pdfs", groupId), filter.hasPdf)
+            .putBoolean(libraryKey("is_showing_only_with_notes", groupId), filter.hasNotes)
             .apply()
     }
 
@@ -127,14 +122,6 @@ class PreferenceManager @Inject constructor(context: Context) {
 
     fun setSidebarGroupsExpanded(value: Boolean) {
         sharedPreferences.edit().putBoolean("sidebar_groups_expanded", value).apply()
-    }
-
-    fun getIsShowingOnlyPdfs(): Boolean {
-        return sharedPreferences.getBoolean("is_showing_only_with_pdfs", false)
-    }
-
-    fun getIsShowingOnlyNotes(): Boolean {
-        return sharedPreferences.getBoolean("is_showing_only_with_notes", false)
     }
 
     /** On by default: Zotero keeps no file history, so this is the only undo for an upload. */
@@ -403,6 +390,10 @@ class PreferenceManager @Inject constructor(context: Context) {
     companion object {
         val SORT_METHOD_ASCENDING = "ASCENDING"
         val SORT_METHOD_DESCENDING = "DESCENDING"
+
+        /** The key of a per-library setting: [base] for My Library, suffixed for a group. */
+        fun libraryKey(base: String, groupId: Int): String =
+            if (groupId == GroupInfo.NO_GROUP_ID) base else "${base}_group_$groupId"
     }
 
 }

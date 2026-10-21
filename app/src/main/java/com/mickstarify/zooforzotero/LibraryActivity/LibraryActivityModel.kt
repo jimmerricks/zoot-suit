@@ -159,14 +159,20 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return filtered
     }
 
-    /** The list's filter, kept in preferences so it survives closing the dialog and the app. */
+    /**
+     * The open library's list filter. Each library has its own, kept in preferences so it
+     * survives closing the dialog and the app.
+     */
     var libraryFilter: LibraryFilter
-        get() = savedFilter ?: preferences.getLibraryFilter().also { savedFilter = it }
-        set(value) {
-            savedFilter = value
-            preferences.setLibraryFilter(value)
+        get() = state.currentGroup.id.let { id ->
+            savedFilters.getOrPut(id) { preferences.getLibraryFilter(id) }
         }
-    private var savedFilter: LibraryFilter? = null // read lazily: preferences is set in init
+        set(value) {
+            val id = state.currentGroup.id
+            savedFilters[id] = value
+            preferences.setLibraryFilter(id, value)
+        }
+    private val savedFilters = mutableMapOf<Int, LibraryFilter>() // by library (group id)
 
     /**
      * The items the list shows, after the filter; null if the current list doesn't go

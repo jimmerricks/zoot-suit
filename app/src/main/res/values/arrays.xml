@@ -5,18 +5,6 @@
     <string-array name="sync_options_values">
         <item>zoteroapi</item>
     </string-array>
-    <string-array name="sort_options_entries">
-        <item>Title</item>
-        <item>Author</item>
-        <item>Date</item>
-        <item>Date added</item>
-    </string-array>
-    <string-array name="sort_options_values">
-        <item>TITLE</item>
-        <item>AUTHOR</item>
-        <item>DATE</item>
-        <item>DATE_ADDED</item>
-    </string-array>
 
     <string-array name="attachment_storage_location_entries">
         <item>External Cache</item>

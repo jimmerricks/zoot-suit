@@ -13,16 +13,18 @@ import com.mickstarify.zooforzotero.R
  * Sort order for the library list, laid out and behaving like [LibraryFilterDialog]: every
  * tap is saved and applied at once through [onChange], so the list behind the dialog
  * follows. Cancel (or Back) restores the order the dialog opened with; Done keeps it.
+ * The order belongs to the library [groupId] (My Library = GroupInfo.NO_GROUP_ID).
  */
 class LibrarySortDialog(
     private val context: Context,
+    private val groupId: Int,
     private val onChange: () -> Unit,
 ) {
     private val preferences = PreferenceManager(context)
 
     fun show() {
-        val initialMethod = preferences.getSortMethod()
-        val initialAscending = preferences.isSortedAscendingly()
+        val initialMethod = preferences.getSortMethod(groupId)
+        val initialAscending = preferences.isSortedAscendingly(groupId)
 
         val view: View = LayoutInflater.from(context).inflate(R.layout.dialog_library_sort, null)
         val methods = view.findViewById<RadioGroup>(R.id.radioGroup_sort_method)
@@ -33,12 +35,12 @@ class LibrarySortDialog(
         methodButtons.first { it.tag == preferences.sortMethodToString(initialMethod) }.isChecked = true
         order.check(if (initialAscending) R.id.radioButton_sort_ascending else R.id.radioButton_sort_descending)
 
-        fun setOrder(ascending: Boolean) = preferences.setSortDirection(
-            if (ascending) PreferenceManager.SORT_METHOD_ASCENDING else PreferenceManager.SORT_METHOD_DESCENDING
-        )
+        fun setOrder(ascending: Boolean) = preferences.setSortAscending(groupId, ascending)
 
         methods.setOnCheckedChangeListener { group, id ->
-            preferences.setSortMethod(group.findViewById<RadioButton>(id).tag as String)
+            preferences.setSortMethod(
+                groupId, preferences.stringToSortMethod(group.findViewById<RadioButton>(id).tag as String)
+            )
             onChange()
         }
         order.setOnCheckedChangeListener { _, id ->
@@ -47,7 +49,7 @@ class LibrarySortDialog(
         }
 
         fun restore() {
-            preferences.setSortMethod(initialMethod)
+            preferences.setSortMethod(groupId, initialMethod)
             setOrder(initialAscending)
             onChange()
         }
