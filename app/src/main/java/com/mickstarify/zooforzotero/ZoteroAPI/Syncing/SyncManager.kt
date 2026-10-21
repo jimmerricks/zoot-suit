@@ -4,7 +4,7 @@ import android.util.Log
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.ZoteroAPI.APIKeyRevokedException
 import com.mickstarify.zooforzotero.ZoteroAPI.LibraryVersionMisMatchException
-import com.mickstarify.zooforzotero.ZoteroAPI.Model.CollectionPOJO
+import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPICollectionsResponse
 import com.mickstarify.zooforzotero.ZoteroAPI.NetworkErrors
 import com.mickstarify.zooforzotero.ZoteroAPI.UpToDateException
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
@@ -94,19 +94,23 @@ class SyncManager (
 
     private fun loadCollections(db: ZoteroDB) {
         loadingCollections = true
-        val libraryVersion = db.getLibraryVersion()
-        zoteroAPI.getCollections(libraryVersion, db.groupID).map { collectionPojos ->
+        val sinceVersion = db.getCollectionsVersion()
+        zoteroAPI.getCollections(sinceVersion, db.groupID).map { response ->
             // we will write collections to the database as we receive them.
             // this will be done using the rxjava thread.
-            if (collectionPojos.size > 0) {
-                val collectionObjects = collectionPojos.map { Collection(it, db.groupID) }
+            if (response.collections.isNotEmpty()) {
+                val collectionObjects = response.collections.map { Collection(it, db.groupID) }
                 zoteroDatabase.writeCollections(collectionObjects).blockingAwait()
             }
-            collectionPojos
+            response
         }.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
-            .subscribe(object : Observer<List<CollectionPOJO>> {
+            .subscribe(object : Observer<ZoteroAPICollectionsResponse> {
+                var version = -1
                 override fun onComplete() {
                     Log.d("zotero", "finished getting collections.")
+                    // only now are they complete up to this version; on an error the
+                    // stored version stays and the next sync asks again
+                    if (version > 0) db.setCollectionsVersion(version)
                     finishGetCollections(db)
                 }
 
@@ -128,8 +132,8 @@ class SyncManager (
                     finishGetCollections(db)
                 }
 
-                override fun onNext(t: List<CollectionPOJO>) {
-                    // todo add progress to collection downloading.
+                override fun onNext(response: ZoteroAPICollectionsResponse) {
+                    if (version == -1) version = response.lastModifiedVersion
                 }
 
             })

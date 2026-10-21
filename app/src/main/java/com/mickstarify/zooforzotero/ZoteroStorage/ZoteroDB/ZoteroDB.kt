@@ -276,7 +276,24 @@ class ZoteroDB(
         val sharedPreferences = context.getSharedPreferences(namespace, MODE_PRIVATE)
         val editor = sharedPreferences.edit()
         editor.putInt("ItemsLibraryVersion", libraryVersion)
+        // a reset items version means a full resync; collections start over with it
+        if (libraryVersion <= 0) editor.remove("CollectionsLibraryVersion")
         editor.apply()
+    }
+
+    /**
+     * The library version the collections on this device are complete up to. Separate
+     * from the items' version so that a failed collections request is retried at the
+     * next sync rather than skipped by it. Until a sync stores one (installs from before
+     * it existed), it follows the items' version, as before.
+     */
+    fun getCollectionsVersion(): Int =
+        context.getSharedPreferences(namespace, MODE_PRIVATE)
+            .getInt("CollectionsLibraryVersion", getLibraryVersion())
+
+    fun setCollectionsVersion(version: Int) {
+        context.getSharedPreferences(namespace, MODE_PRIVATE).edit()
+            .putInt("CollectionsLibraryVersion", version).apply()
     }
 
     fun setDownloadProgress(progress: ItemsDownloadProgress) {
@@ -355,6 +372,7 @@ class ZoteroDB(
                 context.getSharedPreferences(namespace, MODE_PRIVATE)
             val editor = sharedPreferences.edit()
             editor.remove("ItemsLibraryVersion")
+            editor.remove("CollectionsLibraryVersion")
             editor.apply()
         } catch (e: Exception) {
             Log.e(context.packageName, "error clearing items version from local db.")

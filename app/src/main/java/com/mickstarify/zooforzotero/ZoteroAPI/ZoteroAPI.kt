@@ -513,20 +513,21 @@ class ZoteroAPI(
 
             val collections = response.body() ?: LinkedList()
             val totalResults = response.headers()["Total-Results"]?.toInt() ?: 0
-            ZoteroAPICollectionsResponse(false, collections, totalResults)
+            val lastModifiedVersion = response.headers()["Last-Modified-Version"]?.toInt() ?: -1
+            ZoteroAPICollectionsResponse(false, collections, totalResults, lastModifiedVersion)
         }
     }
 
     fun getCollections(
         libraryVersion: Int,
         groupID: Int = GroupInfo.NO_GROUP_ID
-    ): Observable<List<CollectionPOJO>> {
+    ): Observable<ZoteroAPICollectionsResponse> {
         /* This method provides access to the zotero api collections endpoint.
         *  It allows for both user personal access as well as shared collections (group) access.
         *  You must specify useGroup, as well as provide a groupID*/
 
-        val observable = Observable.create(object : ObservableOnSubscribe<List<CollectionPOJO>> {
-            override fun subscribe(emitter: ObservableEmitter<List<CollectionPOJO>>) {
+        val observable = Observable.create(object : ObservableOnSubscribe<ZoteroAPICollectionsResponse> {
+            override fun subscribe(emitter: ObservableEmitter<ZoteroAPICollectionsResponse>) {
 
                 val s = getCollectionFromIndex(
                     groupID,
@@ -534,7 +535,7 @@ class ZoteroAPI(
                 )
                 val response = s.blockingSingle()
                 val total = response.totalResults
-                emitter.onNext(response.collections)
+                emitter.onNext(response)
                 var itemCount = response.collections.size
                 while (itemCount < total) {
                     val r = getCollectionFromIndex(
@@ -544,7 +545,7 @@ class ZoteroAPI(
                     ).blockingSingle()
                     if (r.collections.isEmpty()) break // see getItems
                     itemCount += r.collections.size
-                    emitter.onNext(r.collections)
+                    emitter.onNext(r)
                 }
                 emitter.onComplete()
             }

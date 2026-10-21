@@ -5,5 +5,6 @@ import com.mickstarify.zooforzotero.ZoteroAPI.Model.CollectionPOJO
 data class ZoteroAPICollectionsResponse(
     val isCached: Boolean,
     val collections: List<CollectionPOJO>,
-    val totalResults: Int
+    val totalResults: Int,
+    val lastModifiedVersion: Int = -1
 )
