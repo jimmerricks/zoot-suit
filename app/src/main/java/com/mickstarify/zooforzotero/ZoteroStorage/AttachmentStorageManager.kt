@@ -25,6 +25,8 @@ import javax.inject.Singleton
 
 const val STORAGE_ACCESS_REQUEST = 1  // The request code
 
+private const val EXTERNAL_STORAGE_PROVIDER = "com.android.externalstorage.documents"
+
 /* This classes handles the data storage for all attachments. */
 
 
@@ -61,8 +63,8 @@ class AttachmentStorageManager @Inject constructor(
     }
 
     fun checkIfAttachmentExists(item: Item, checkMd5: Boolean = true): Boolean {
-        val filename = getFilenameForItem(item)
         if (storageMode == StorageMode.EXTERNAL_CACHE) {
+            val filename = getFilenameForItem(item)
             val outputDir = File(context.externalCacheDir, item.itemKey.uppercase())
             if (!outputDir.exists() || outputDir.isDirectory == false) {
                 return false
@@ -79,23 +81,7 @@ class AttachmentStorageManager @Inject constructor(
             }
 
         } else if (storageMode == StorageMode.CUSTOM) {
-            val location = preferenceManager.getCustomAttachmentStorageLocation()
-            val rootDocFile = DocumentFile.fromTreeUri(context, Uri.parse(location))
-            var directory = rootDocFile?.findFile(item.itemKey.uppercase())
-
-            if (directory == null || directory.isDirectory == false) {
-                return false
-            }
-            val file = directory?.findFile(filename)
-//            val helper = SAFHelper(location)
-//            val file = DocumentFile.fromSingleUri(context, helper.getUriForItem(item.itemKey.uppercase(), filename))
-
-//            Log.d("zotero", "actual URI: ${file?.uri}")
-//            Log.d("zotero", "my     URI: ${helper.getUriForItem(item.itemKey.uppercase(), filename)}")
-
-            if (file == null) {
-                return false
-            }
+            val file = findCustomAttachment(item) ?: return false
             if (file.length() == 0L) {
                 file.delete()
                 return false
@@ -168,7 +154,6 @@ class AttachmentStorageManager @Inject constructor(
     }
 
     fun getAttachmentUri(item: Item): Uri {
-        val filename = getFilenameForItem(item)
         if (storageMode == StorageMode.EXTERNAL_CACHE) {
             val file = getAttachmentFile(item)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -182,15 +167,33 @@ class AttachmentStorageManager @Inject constructor(
             }
 
         } else if (storageMode == StorageMode.CUSTOM) {
-            val documentTree = DocumentFile.fromTreeUri(context, getCustomStorageTreeURI())
-            val directory = documentTree?.findFile(item.itemKey.uppercase())
-            val file = directory?.findFile(filename) ?: throw FileNotFoundException()
-            if (file.exists()) {
-                return file.uri
-            }
-            throw FileNotFoundException()
+            return findCustomAttachment(item)?.uri ?: throw FileNotFoundException()
         }
         throw Exception("not implemented")
+    }
+
+    /**
+     * [item]'s file in the Custom Path folder, or null if it isn't there.
+     *
+     * DocumentFile.findFile lists the whole folder through the provider on every call;
+     * the attachment folder holds one subfolder per downloaded attachment and this runs
+     * once per attachment (edit checks, badges, sizes), so it grew quadratically. On
+     * the device's own storage (ExternalStorageProvider) a document id is the file's
+     * path, "primary:Zotero/KEY/name.pdf", so the file's URI can be built and checked
+     * with a single query. Other providers have opaque ids and keep the listing.
+     */
+    private fun findCustomAttachment(item: Item): DocumentFile? {
+        val tree = getCustomStorageTreeURI()
+        val key = item.itemKey.uppercase()
+        val filename = getFilenameForItem(item)
+        if (tree.authority == EXTERNAL_STORAGE_PROVIDER) {
+            val treeId = DocumentsContract.getTreeDocumentId(tree)
+            val uri = DocumentsContract.buildDocumentUriUsingTree(tree, "$treeId/$key/$filename")
+            return DocumentFile.fromSingleUri(context, uri)?.takeIf { it.exists() }
+        }
+        val directory = DocumentFile.fromTreeUri(context, tree)?.findFile(key)
+            ?.takeIf { it.isDirectory } ?: return null
+        return directory.findFile(filename)?.takeIf { it.exists() }
     }
 
     fun askUserForPath(activity: Activity) {
