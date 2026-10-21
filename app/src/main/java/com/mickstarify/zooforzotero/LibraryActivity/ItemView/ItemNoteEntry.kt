@@ -74,7 +74,7 @@ class ItemNoteEntry() : Fragment() {
                     AlertDialog.Builder(this@ItemNoteEntry.context)
                         .setTitle("Note")
                         .setItems(
-                            arrayOf("View Note", "Edit Note", "Delete Note")
+                            arrayOf("View", "Edit", "Delete")
                         ) { _dialog, item ->
                             when (item) {
                                 0 -> noteView.show()

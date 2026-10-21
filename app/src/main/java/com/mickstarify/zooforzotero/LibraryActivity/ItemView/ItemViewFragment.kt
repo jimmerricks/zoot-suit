@@ -44,7 +44,7 @@ class ItemViewFragment : BottomSheetDialogFragment(),
     private fun showShareItemDialog() {
         val item = libraryViewModel.getOnItemClicked().value
         if (item == null) {
-            Toast.makeText(requireContext(), "Item not loaded yet.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "The item is still loading.", Toast.LENGTH_SHORT).show()
         } else {
             ShareItemDialog(item).show(context, this)
         }
@@ -84,7 +84,7 @@ class ItemViewFragment : BottomSheetDialogFragment(),
                     if (item == null) {
                         Toast.makeText(
                             requireContext(),
-                            "Error, item unloaded from memory, please backup text and reopen app.",
+                            "Note not saved: the item was closed. Open it and try again.",
                             Toast.LENGTH_SHORT
                         ).show()
                         return

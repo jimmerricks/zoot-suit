@@ -15,7 +15,7 @@ class NoteView(val context: Context, val note: Note, val listener: NoteInteracti
         val dialog = AlertDialog.Builder(context)
             .setTitle("Note")
             .setMessage(Html.fromHtml(note.note))
-            .setPositiveButton("Dismiss", { _, _ -> })
+            .setPositiveButton("Close", { _, _ -> })
             .setNeutralButton("Edit", { _, _ -> showNoteEditingDialog() })
             .show()
         try{

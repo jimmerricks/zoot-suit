@@ -593,7 +593,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     override fun createNote(note: Note) {
         if (state.isUsingGroup()) {
-            presenter.makeToastAlert("Sorry, this isn't supported in shared collections.")
+            presenter.makeToastAlert("Notes can be added only in My Library, not in groups.")
             return
         }
         zoteroAPI.uploadNote(note)
@@ -603,7 +603,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 override fun onComplete() {
                     presenter.hideBasicSyncAnimation()
                     syncManager.startItemsSync(db = zoteroDB)
-                    presenter.makeToastAlert("Successfully created your note")
+                    presenter.makeToastAlert("Note added.")
                 }
 
                 override fun onSubscribe(d: Disposable) {
@@ -611,9 +611,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 }
 
                 override fun onError(e: Throwable) {
+                    presenter.hideBasicSyncAnimation()
                     presenter.createErrorAlert(
-                        "Error creating note",
-                        "An error occurred while trying to create your note. Message: $e"
+                        "Couldn't add the note",
+                        "Check your connection and try again.\n\nDetails: ${e.message ?: e}"
                     ) {}
                 }
             })
@@ -623,7 +624,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     override fun modifyNote(note: Note) {
         if (state.isUsingGroup()) {
-            presenter.makeToastAlert("Sorry, this isn't supported in shared collections.")
+            presenter.makeToastAlert("Notes can be edited only in My Library, not in groups.")
             return
         }
         zoteroAPI.modifyNote(note, zoteroDB.getLibraryVersion())
@@ -633,7 +634,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 override fun onComplete() {
                     presenter.hideBasicSyncAnimation()
                     syncManager.startItemsSync(db = zoteroDB)
-                    presenter.makeToastAlert("Successfully modified your note")
+                    presenter.makeToastAlert("Note saved.")
                 }
 
                 override fun onSubscribe(d: Disposable) {
@@ -643,19 +644,20 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 override fun onError(e: Throwable) {
                     if (e is ItemLockedException) {
                         presenter.createErrorAlert(
-                            "Error modifying note",
-                            "The note you are editing has been locked or you do not have permission to change it."
+                            "Couldn't save the note",
+                            "The note is locked, or your API key can't change it."
                         ) {}
                     } else if (e is ItemChangedSinceException) {
                         presenter.createErrorAlert(
-                            "Error modifying note",
-                            "The version on Zotero's servers is newer than your local copy. Please refresh your library."
+                            "Couldn't save the note",
+                            "The note changed in Zotero since this device last synced. Pull down " +
+                                    "to sync, then edit it again."
                         ) {}
 
                     } else {
                         presenter.createErrorAlert(
-                            "Error modifying note",
-                            "An error occurred while trying to create your note. Message: $e"
+                            "Couldn't save the note",
+                            "Check your connection and try again.\n\nDetails: ${e.message ?: e}"
                         ) {}
                     }
                     presenter.hideBasicSyncAnimation()
@@ -666,7 +668,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     /** Deletes [note] from Zotero after asking: the API deletes it for good, not to the trash. */
     override fun deleteNote(note: Note) {
         if (state.isUsingGroup()) {
-            presenter.makeToastAlert("Sorry, this isn't supported in shared collections.")
+            presenter.makeToastAlert("Notes can be deleted only in My Library, not in groups.")
             return
         }
         presenter.createYesNoPrompt(
@@ -680,30 +682,30 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     private fun deleteNoteNow(note: Note) {
         zoteroAPI.deleteItem(note.key, note.version, object : DeleteItemListener {
             override fun success() {
-                presenter.makeToastAlert("Successfully deleted your note.")
+                presenter.makeToastAlert("Note deleted.")
                 zoteroDB.deleteItem(note.key)
                 presenter.refreshItemView()
             }
 
             override fun failedItemLocked() {
                 presenter.createErrorAlert(
-                    "Error Deleting Note", "The item is locked " +
-                            "and you do not have permission to delete this note."
+                    "Couldn't delete the note",
+                    "The note is locked, or your API key can't change it."
                 ) {}
             }
 
             override fun failedItemChangedSince() {
                 presenter.createErrorAlert(
-                    "Error Deleting Note",
-                    "Your local copy of this note is out of date. " +
-                            "Please refresh your library to delete this note."
+                    "Couldn't delete the note",
+                    "The note changed in Zotero since this device last synced. Pull down to " +
+                            "sync, then try again."
                 ) {}
             }
 
             override fun failed(code: Int) {
                 presenter.createErrorAlert(
-                    "Error Deleting Note", "There was an error " +
-                            "deleting your note. The server responded : $code"
+                    "Couldn't delete the note",
+                    "Zotero answered with an error (HTTP $code). Try again later."
                 ) {}
             }
         })
