@@ -752,7 +752,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     var isDownloading: Boolean = false
-    var currentlyDownloadingAttachment: Item? = null
 
     override fun getUnfiledItems(): List<Item> {
         if (!zoteroDB.isPopulated()) {
