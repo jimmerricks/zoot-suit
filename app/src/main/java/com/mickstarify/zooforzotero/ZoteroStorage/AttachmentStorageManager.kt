@@ -377,14 +377,10 @@ class AttachmentStorageManager @Inject constructor(
         }
 
     fun writeAttachmentFromFile(file: File, attachment: Item): Uri {
-        val outputStream = getItemOutputStream(attachment)
-        val inputSource = file.inputStream().source()
-
-        val outputSinkBuffer = outputStream.sink().buffer()
-        outputSinkBuffer.writeAll(inputSource)
-        outputSinkBuffer.close()
-        inputSource.close()
-        outputStream.close()
+        // closing the sink closes the output stream too
+        file.inputStream().source().use { input ->
+            getItemOutputStream(attachment).sink().buffer().use { it.writeAll(input) }
+        }
         return getAttachmentUri(attachment)
     }
 
