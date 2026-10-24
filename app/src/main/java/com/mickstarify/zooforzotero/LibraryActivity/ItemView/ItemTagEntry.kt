@@ -51,12 +51,6 @@ class ItemTagEntry : Fragment() {
         remove.contentDescription = "Remove tag $tagText"
         remove.setOnClickListener { tagText?.let { listener?.tagRemovePressed(it) } }
 
-        view.setOnClickListener {
-            if (tagText != null){
-                listener?.tagPressed(tagText!!)
-            }
-        }
-
         return view
     }
 
@@ -66,7 +60,6 @@ class ItemTagEntry : Fragment() {
     }
 
     interface OnTagEntryInteractionListener {
-        fun tagPressed(tag: String)
         fun tagRemovePressed(tag: String)
     }
 

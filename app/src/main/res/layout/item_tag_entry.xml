@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A tag in the item dialog: tapping it opens the tag's items; the cross removes it from
-     the item (hidden where tags can't be edited, in groups). -->
+<!-- A tag in the item dialog, not clickable; the cross removes it from the item (hidden
+     where tags can't be edited, in groups). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/constraintLayout_notes_entry"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?android:attr/selectableItemBackground"
-    android:clickable="true"
-    android:focusable="true"
     android:gravity="center_vertical"
     android:minHeight="36dp"
     android:orientation="horizontal"

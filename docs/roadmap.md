@@ -70,8 +70,6 @@ For the library screen's search, filter and sort:
 
 - A chip bar under the toolbar while a search or filter is active, each chip
   clearable on its own, replacing the subtitle.
-- Tapping a tag in the item view adds it to the filter instead of opening a separate
-  tag view.
 - A "whole library" option in search (it currently narrows the list on screen).
 - Back clearing an active search first.
 

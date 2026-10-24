@@ -324,7 +324,6 @@ class ItemViewFragment : DialogFragment(),
         fun onNoteEdit(note: Note)
         fun onNoteDelete(note: Note)
         fun shareText(shareText: String)
-        fun onTagOpenListener(tag: String)
         fun onTagAdd(item: Item, tag: String)
         fun onTagRemove(item: Item, tag: String)
 
@@ -344,11 +343,6 @@ class ItemViewFragment : DialogFragment(),
 
     override fun shareItem(shareText: String) {
         listener?.shareText(shareText)
-    }
-
-    override fun tagPressed(tag: String) {
-        listener?.onTagOpenListener(tag)
-        this.dismiss()
     }
 
     override fun tagRemovePressed(tag: String) {

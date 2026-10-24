@@ -585,10 +585,6 @@ class LibraryActivity : AppCompatActivity(),
         startActivity(shareIntent)
     }
 
-    override fun onTagOpenListener(tag: String) {
-        presenter.onTagOpen(tag)
-    }
-
     override fun onTagAdd(item: Item, tag: String) = presenter.editTag(item, tag, add = true)
 
     override fun onTagRemove(item: Item, tag: String) = presenter.editTag(item, tag, add = false)

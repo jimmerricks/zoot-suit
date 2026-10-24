@@ -97,7 +97,6 @@ interface Contract {
         fun backButtonPressed()
         fun addFilterState(query: String)
         fun openMyPublications()
-        fun onTagOpen(tagName: String)
         fun getAllTags(): List<Pair<String, Int>>
         fun showLoadingAlertDialog(message: String)
         fun hideLoadingAlertDialog()

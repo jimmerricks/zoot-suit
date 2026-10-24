@@ -250,11 +250,6 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         )
     }
 
-    override fun onTagOpen(tagName: String) {
-        this.addFilterState("tag:${tagName}")
-        showFilter("tag:${tagName}")
-    }
-
     /** Shows the results for a filter state, e.g. "tag:to-read", with its title. */
     private fun showFilter(filterText: String) {
         this.filterEntries(filterText)
