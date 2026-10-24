@@ -58,7 +58,6 @@ interface Contract {
         fun makeToastAlert(message: String)
         fun attachmentDownloadError(message: String = "")
         fun updateAttachmentDownloadProgress(progress: Long, total: Long)
-        fun filterEntries(query: String)
         fun updateLibraryRefreshProgress(
             progress: Int,
             total: Int,
@@ -95,7 +94,6 @@ interface Contract {
         fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit)
         fun requestForceResync()
         fun backButtonPressed()
-        fun addFilterState(query: String)
         fun openMyPublications()
         fun getAllTags(): List<Pair<String, Int>>
         fun showLoadingAlertDialog(message: String)
@@ -129,7 +127,6 @@ interface Contract {
         fun usePersonalLibrary()
         fun getGroupById(groupId: Int): GroupInfo?
         fun loadPriorState()
-        fun getItemsForTag(tagName: String): List<Item>
         fun getAllTags(): List<Pair<String, Int>>
         fun deleteLocalAttachment(attachment: Item)
         fun isFirstSync(): Boolean

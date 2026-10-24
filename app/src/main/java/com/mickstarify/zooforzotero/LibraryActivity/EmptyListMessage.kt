@@ -3,8 +3,8 @@ package com.mickstarify.zooforzotero.LibraryActivity
 /**
  * What the library list says when it has nothing to show, and the label of its button
  * that clears the search and filter, if they are to blame (null: no button). The most
- * likely reason comes first: a search or filter that hides everything, then a tag with
- * no items, then the place itself being empty.
+ * likely reason comes first: a search or filter that hides everything, then the place
+ * itself being empty.
  */
 data class EmptyListMessage(val text: String, val clearLabel: String? = null) {
     companion object {
@@ -13,7 +13,6 @@ data class EmptyListMessage(val text: String, val clearLabel: String? = null) {
          * @param filter the open library's filter
          * @param filterApplies whether the list went through search and filter (not for
          *   Trash and My Publications)
-         * @param query a tag view ("tag:to-read"); "" for none
          * @param collection the current place: a collection key or one of the app's
          *   special keys ("all", "group_all", "unfiled_items", "zooforzotero_Trash", …)
          */
@@ -21,7 +20,6 @@ data class EmptyListMessage(val text: String, val clearLabel: String? = null) {
             search: String,
             filter: LibraryFilter,
             filterApplies: Boolean,
-            query: String,
             collection: String,
         ): EmptyListMessage {
             val searching = filterApplies && search.isNotEmpty()
@@ -33,7 +31,6 @@ data class EmptyListMessage(val text: String, val clearLabel: String? = null) {
                 )
                 searching -> EmptyListMessage("No items here match “$search”.", "Clear search")
                 filtering -> EmptyListMessage("No items match the filter: ${filter.describe()}.", "Clear filter")
-                query.startsWith("tag:") -> EmptyListMessage("No items have the tag “${query.removePrefix("tag:")}”.")
                 else -> EmptyListMessage(
                     when (collection) {
                         "all", "group_all" -> "This library has no items yet. Pull down to sync."

@@ -148,14 +148,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun redisplayItems() {
-        // Redraws whatever the current state shows. Called after a sync finishes and
-        // after sort/filter changes, so it must keep a tag view a tag view.
-        if (model.isLoaded()) {
-            if (model.state.filterText != "") {
-                showFilter(model.state.filterText)
-            } else if (model.getCurrentCollection() != "unset") {
-                setCollection(model.getCurrentCollection())
-            }
+        // Redraws the current place. Called after a sync finishes and after sort/filter changes.
+        if (model.isLoaded() && model.getCurrentCollection() != "unset") {
+            setCollection(model.getCurrentCollection())
         }
     }
 
@@ -201,20 +196,6 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         redisplayItems()
     }
 
-    override fun addFilterState(query: String) {
-        /* This method tells the model to add a filtered state to the the states stack
-        * This will allow a user to use the back button to return to the library before
-        * the filter was initiated. The need for this method is a little contrived but I had to hack
-        * the functionality in so forgive me. */
-
-        val oldState = model.state
-        model.states.add(LibraryModelState().apply {
-            this.currentGroup = oldState.currentGroup
-            this.currentCollection = oldState.currentCollection
-            this.filterText = query
-        })
-    }
-
     override fun getAllTags(): List<Pair<String, Int>> {
         return if (model.isLoaded()) model.getAllTags() else emptyList()
     }
@@ -232,9 +213,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     /**
      * Toolbar subtitle naming the active search and filter with the count, if the list goes
-     * through them; and what the list says if it is empty. [query] is the tag view shown, if any.
+     * through them; and what the list says if it is empty.
      */
-    private fun showFilterSummary(query: String = model.state.filterText) {
+    private fun showFilterSummary() {
         val search = model.librarySearch
         val filter = model.libraryFilter
         val shown = model.lastFilteredItems
@@ -246,16 +227,8 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
                 "${shown.size} " + if (shown.size == 1) "item" else "items",
             ).joinToString(" · ")
         libraryListViewModel.setEmptyMessage(
-            EmptyListMessage.forList(search, filter, shown != null, query, model.getCurrentCollection())
+            EmptyListMessage.forList(search, filter, shown != null, model.getCurrentCollection())
         )
-    }
-
-    /** Shows the results for a filter state, e.g. "tag:to-read", with its title. */
-    private fun showFilter(filterText: String) {
-        this.filterEntries(filterText)
-        if (filterText.startsWith("tag:")) {
-            title.value = "Tag: ${filterText.removePrefix("tag:")}"
-        }
     }
 
     override fun showLoadingAlertDialog(message: String) {
@@ -264,15 +237,6 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     override fun hideLoadingAlertDialog() {
         view.hideLoadingAlertDialog()
-    }
-
-    /** Shows a tag view ("tag:to-read"): the open library's items with that tag. */
-    override fun filterEntries(query: String) {
-        if (!query.startsWith("tag:") || !model.isLoaded()) return
-        model.startListUpdate()
-        val entries = model.getItemsForTag(query.removePrefix("tag:")).sort().map { ListEntry(it) }
-        libraryListViewModel.setItems(entries)
-        showFilterSummary(query)
     }
 
     override fun attachmentDownloadError(message: String) {
@@ -383,7 +347,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     override fun showEditedItem(item: Item) {
         libraryListViewModel.onItemChanged(item)
         // only a list that can depend on tags is redrawn; a large one is slow to redraw
-        if (model.libraryFilter.tags.isNotEmpty() || model.state.filterText.isNotEmpty() ||
+        if (model.libraryFilter.tags.isNotEmpty() ||
             model.librarySearch.isNotEmpty()
         ) redisplayItems()
     }

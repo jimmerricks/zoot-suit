@@ -158,7 +158,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     /**
      * Applies [librarySearch] and [libraryFilter]; every list view goes through here
-     * (collections, unfiled items, tag views), Trash and My Publications excepted.
+     * (collections, unfiled items), Trash and My Publications excepted.
      */
     private fun applyLibraryFilter(items: List<Item>): List<Item> {
         val search = librarySearch
@@ -218,7 +218,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     /**
      * Clears the search and the filter, unless set to be kept, when the collection (or
-     * the library) differs from the last one they were read for. Tag views and Back
+     * the library) differs from the last one they were read for. Back
      * within the same collection keep them. Called by their getters, which every list,
      * dialog and subtitle reads after navigation has settled.
      */
@@ -1597,10 +1597,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             }
             presenter.receiveCollections(getCollections())
             presenter.redisplayItems()
-        } else if (oldState.currentCollection != state.currentCollection ||
-            oldState.filterText != state.filterText
-        ) {
-            // redraws the state we returned to, filter (e.g. a tag view) and title included
+        } else if (oldState.currentCollection != state.currentCollection) {
             presenter.redisplayItems()
         } else {
             Log.e("zotero", "error unable to determine state differences!!")
@@ -1609,10 +1606,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     override fun getAllTags(): List<Pair<String, Int>> {
         return LibraryItemFilter.tagCounts(zoteroDB.getDisplayableItems())
-    }
-
-    override fun getItemsForTag(tagName: String): List<Item> {
-        return filterItems(zoteroDB.getItemsForTag(tagName))
     }
 
     override fun deleteLocalAttachment(attachment: Item) {

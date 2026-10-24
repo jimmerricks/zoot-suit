@@ -38,26 +38,6 @@ class LibraryNavigatorTest {
     }
 
     @Test
-    fun `re-opening the same collection from a filtered view clears the filter`() {
-        val nav = LibraryNavigator()
-        nav.setCollection("all")
-        nav.current.filterText = "tag:to-read"
-        assertTrue(nav.setCollection("all"))
-        assertEquals("", nav.current.filterText)
-        assertEquals("all", nav.currentCollection())
-        assertEquals("tag:to-read", nav.states[nav.states.size - 2].filterText)
-    }
-
-    @Test
-    fun `opening a collection leaves the current filter behind`() {
-        val nav = LibraryNavigator()
-        nav.current.filterText = "tag:to-read"
-        nav.setCollection("all")
-        assertEquals("", nav.current.filterText)
-        assertEquals("tag:to-read", nav.states[nav.states.size - 2].filterText)
-    }
-
-    @Test
     fun `opening a collection stays in the current group`() {
         val nav = LibraryNavigator()
         nav.current.currentGroup = group(42)
