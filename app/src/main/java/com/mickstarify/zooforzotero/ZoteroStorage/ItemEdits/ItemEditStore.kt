@@ -64,8 +64,15 @@ class ItemEditStore(private val database: ZoteroDatabase) {
         if (edits.isNotEmpty()) dao.delete(edits.map { it.id })
     }
 
-    fun beginUpload(itemKey: String) {
+    /**
+     * Marks [itemKey]'s edits as being uploaded and returns them. One transaction, like
+     * [record]'s: an edit recorded at the same time is either in the list or only appended.
+     * Read before marking, a removal could still fold away an add in the list, and the
+     * upload would send the tag back.
+     */
+    fun beginUpload(group: Int, itemKey: String): List<ItemEdit> = database.db.runInTransaction<List<ItemEdit>> {
         uploading.add(itemKey)
+        pendingFor(group, itemKey)
     }
 
     fun endUpload(itemKey: String) {

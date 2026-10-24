@@ -31,9 +31,10 @@ class ItemEditUploader(private val api: ZoteroAPI, private val store: ItemEditSt
 
     fun uploadAll(): Result {
         var result = Result()
-        for ((key, edits) in store.pending(GroupInfo.NO_GROUP_ID)) {
-            store.beginUpload(key)
+        for (key in store.pendingItemKeys(GroupInfo.NO_GROUP_ID)) {
+            val edits = store.beginUpload(GroupInfo.NO_GROUP_ID, key)
             try {
+                if (edits.isEmpty()) continue // undone since the list was read
                 val conflicts = upload(key, edits)
                 result = if (conflicts) result.copy(conflicts = result.conflicts + 1)
                 else result.copy(uploaded = result.uploaded + 1)
