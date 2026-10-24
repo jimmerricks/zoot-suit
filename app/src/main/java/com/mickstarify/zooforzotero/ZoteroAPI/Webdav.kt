@@ -95,7 +95,7 @@ class Webdav(
                     zipFile.outputStream().use { output ->
                         val buffer = ByteArray(65536)
                         var read = input.read(buffer)
-                        while (read > 0) {
+                        while (read > 0 && !emitter.isDisposed) { // stops when cancelled
                             output.write(buffer, 0, read)
                             total += read
                             if (reporter.due()) {
@@ -105,6 +105,8 @@ class Webdav(
                         }
                     }
                 }
+                // cancelled: the zip is partial, and the copy on the device stays as it was
+                if (emitter.isDisposed) return@create
                 emitter.onNext(DownloadProgress(total, -1, prop.mtime, prop.hash))
                 val zip = ZipFile(zipFile)
                 val entry = zip.fileHeaders.firstOrNull { !it.isDirectory }

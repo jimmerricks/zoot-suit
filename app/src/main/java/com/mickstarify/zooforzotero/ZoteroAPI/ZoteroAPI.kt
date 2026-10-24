@@ -229,7 +229,9 @@ class ZoteroAPI(
                                 val reporter = ProgressThrottle()
                                 var progress: Long = 0
                                 var read = input.read(buffer)
-                                while (read > 0) {
+                                // a cancelled download stops here; left running, a retry
+                                // wrote the same file alongside it
+                                while (read > 0 && !emitter.isDisposed) {
                                     out.write(buffer, 0, read)
                                     progress += read
                                     if (reporter.due()) {
@@ -249,6 +251,7 @@ class ZoteroAPI(
                                 )
                             }
                         }
+                        if (emitter.isDisposed) attachmentStorageManager.deleteAttachment(item) // partial
                         emitter.onComplete()
                     } else if (response.code() == 404) {
                         throw ZoteroNotFoundException("Not found on server.")
