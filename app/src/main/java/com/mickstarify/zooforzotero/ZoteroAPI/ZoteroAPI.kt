@@ -52,6 +52,8 @@ class RequestEntityTooLarge(message: String) : RuntimeException(message)
 class ServerAlreadyExistsException(message: String) : RuntimeException(message)
 class ItemLockedException(message: String) : RuntimeException(message)
 class ItemChangedSinceException(message: String) : RuntimeException(message)
+class ItemGoneException(message: String) : RuntimeException(message)
+class WriteAccessDeniedException(message: String) : RuntimeException(message)
 class ZoteroNotFoundException(message: String) : RuntimeException(message)
 
 // The Zotero Web API's maximum page size; it defaults to 25 when omitted.
@@ -399,6 +401,37 @@ class ZoteroAPI(
                     throw Exception("Zotero server gave back code ${response.code()}")
                 }
             }
+        return Completable.fromObservable(observable)
+    }
+
+    /** The item as Zotero has it now, in My Library: its version and its "data" object. */
+    fun getItemData(itemKey: String): Single<Pair<Int, JsonObject>> {
+        return Single.fromObservable(service.getItem(userID, itemKey).map { response ->
+            when (response.code()) {
+                200 -> {}
+                404 -> throw ItemGoneException("$itemKey is no longer in Zotero")
+                else -> throw Exception("Zotero server gave back code ${response.code()} for item $itemKey")
+            }
+            val root = Gson().fromJson(response.body()!!.string(), JsonObject::class.java)
+            Pair(root.get("version").asInt, root.getAsJsonObject("data"))
+        })
+    }
+
+    /**
+     * Changes the properties in [patch] of an item in My Library, if Zotero's copy is still
+     * at [version] (ItemChangedSinceException otherwise).
+     */
+    fun patchItemData(itemKey: String, patch: JsonObject, version: Int): Completable {
+        val observable = service.patchItem(userID, itemKey, patch, version).map { response ->
+            when (response.code()) {
+                200, 204 -> {}
+                403 -> throw WriteAccessDeniedException("This app's API key may only read the library.")
+                404 -> throw ItemGoneException("$itemKey is no longer in Zotero")
+                409 -> throw ItemLockedException("The library is locked.")
+                412 -> throw ItemChangedSinceException("$itemKey changed in Zotero")
+                else -> throw Exception("Zotero server gave back code ${response.code()} for item $itemKey")
+            }
+        }
         return Completable.fromObservable(observable)
     }
 

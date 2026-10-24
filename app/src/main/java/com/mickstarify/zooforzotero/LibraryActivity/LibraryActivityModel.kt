@@ -35,6 +35,10 @@ import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachmentFinder
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.AttachmentInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdit
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditStore
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditUploader
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
 import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ZoteroDB
@@ -105,19 +109,22 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             val pull = {
                 downloadLibrary(doRefresh = true, useSmallLoadingAnimation = useSmallLoadingAnimation)
             }
-            if (isUploading()) {
-                pull()
-                return
-            }
-            Single.fromCallable { findEditedAttachments() }
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ edited ->
-                    if (edited.isEmpty()) pull() else uploadAttachments(edited, onDone = pull)
-                }, { e ->
-                    Log.e("zotero", "looking for edited attachments failed: $e")
+            val attachmentsThenPull: () -> Unit = {
+                if (isUploading()) {
                     pull()
-                })
+                } else {
+                    Single.fromCallable { findEditedAttachments() }
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe({ edited ->
+                            if (edited.isEmpty()) pull() else uploadAttachments(edited, onDone = pull)
+                        }, { e ->
+                            Log.e("zotero", "looking for edited attachments failed: $e")
+                            pull()
+                        })
+                }
+            }
+            uploadItemEdits(onDone = attachmentsThenPull)
         } else {
             this.startGroupSync(state.currentGroup, refresh = true)
         }
@@ -162,7 +169,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         val filter = libraryFilter
         val filtered = if (!filter.isActive) searched else {
             val onDeviceItems = if (filter.onDevice) owningItems(onDeviceKeys) else emptySet()
-            val editedItems = if (filter.editedHere) owningItems(editedKeys) else emptySet()
+            val editedItems = if (filter.editedHere) owningItems(editedKeys) + itemEditKeys else emptySet()
             searched.filter { filter.matches(it, onDeviceItems, editedItems) }
         }
         lastFilteredItems = filtered
@@ -246,6 +253,74 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     /** Attachment keys whose file is on this device / has edits to sync; see refreshPendingEdits. */
     @Volatile private var onDeviceKeys: Set<String> = emptySet()
     @Volatile private var editedKeys: Set<String> = emptySet()
+
+    /** Keys of My Library's items with metadata edits to sync; see refreshPendingEdits. */
+    @Volatile private var itemEditKeys: Set<String> = emptySet()
+
+    private val itemEdits by lazy { ItemEditStore(zoteroDatabase) }
+
+    fun hasPendingEdits(item: Item) = !state.isUsingGroup() && item.itemKey in itemEditKeys
+
+    /**
+     * Adds ([add]) or removes [tag] on [item], on this device at once; Zotero gets it with
+     * the next sync (refreshLibrary), offline or not. My Library only, like notes.
+     */
+    fun editTag(item: Item, tag: String, add: Boolean) {
+        if (state.isUsingGroup()) {
+            presenter.makeToastAlert("Tags can be edited only in My Library, not in groups.")
+            return
+        }
+        val edit = ItemEdit(if (add) ItemEditKind.ADD_TAG else ItemEditKind.REMOVE_TAG, tag)
+        Single.fromCallable { itemEdits.record(GroupInfo.NO_GROUP_ID, item, edit) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ changed ->
+                if (!changed) return@subscribe
+                searchIndex = null // it holds the item's tags
+                // after the count, so the dialog says whether edits are waiting
+                refreshPendingEdits { presenter.showEditedItem(item) }
+            }, { e ->
+                Log.e("zotero", "editing a tag of ${item.itemKey} failed: $e")
+                presenter.createErrorAlert("Couldn't change the tag", "Details: ${e.message ?: e}") {}
+            })
+    }
+
+    /** Uploads My Library's metadata edits, if there are any, says what went wrong, then [onDone]. */
+    private fun uploadItemEdits(onDone: () -> Unit) {
+        Single.fromCallable {
+            if (itemEdits.pending(GroupInfo.NO_GROUP_ID).isEmpty()) ItemEditUploader.Result()
+            else ItemEditUploader(zoteroAPI, itemEdits).uploadAll()
+        }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ result ->
+                // offline is said once by the sync that follows
+                if (result.hasProblems) {
+                    presenter.createErrorAlert("Some edits weren't synced", itemEditProblems(result)) {}
+                }
+                refreshPendingEdits()
+                onDone()
+            }, { e ->
+                Log.e("zotero", "uploading item edits failed: $e")
+                onDone()
+            })
+    }
+
+    private fun itemEditProblems(result: ItemEditUploader.Result): String = listOfNotNull(
+        result.gone.takeIf { it > 0 }?.let {
+            if (it == 1) "1 edited item was deleted in Zotero; its edits were dropped."
+            else "$it edited items were deleted in Zotero; their edits were dropped."
+        },
+        result.conflicts.takeIf { it > 0 }?.let {
+            "$it item${if (it == 1) "" else "s"} had a field changed here and in Zotero; " +
+                "that change stays on this device."
+        },
+        result.failures.takeIf { it.isNotEmpty() }?.let { failures ->
+            "${failures.size} item${if (failures.size == 1) "" else "s"} couldn't be updated; " +
+                "the edits stay on this device and are tried again at the next sync.\n\n" +
+                "Details: ${failures.first().message ?: failures.first()}"
+        },
+    ).joinToString("\n\n")
 
     override fun getGroupById(groupId: Int): GroupInfo? {
         return this.groups?.firstOrNull { it.id == groupId }
@@ -917,23 +992,30 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     /**
      * Works out, off the main thread, which attachments are on the device and which have
      * edits to sync; shows the edit count in the toolbar and both on the list's PDF icons,
-     * and redraws the list if the filter depends on either and they changed.
+     * and redraws the list if the filter depends on either and they changed. Then [onDone].
      */
-    fun refreshPendingEdits() {
+    fun refreshPendingEdits(onDone: () -> Unit = {}) {
         Single.fromCallable {
-            Pair(findOnDeviceAttachmentKeys(), findEditedAttachments().map { it.itemKey }.toSet())
+            Triple(
+                findOnDeviceAttachmentKeys(),
+                findEditedAttachments().map { it.itemKey }.toSet(),
+                itemEdits.pendingItemKeys(GroupInfo.NO_GROUP_ID),
+            )
         }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ (onDevice, edited) ->
-                val changed = onDevice != onDeviceKeys || edited != editedKeys
+            .subscribe({ (onDevice, edited, itemsEdited) ->
+                val changed = onDevice != onDeviceKeys || edited != editedKeys || itemsEdited != itemEditKeys
                 onDeviceKeys = onDevice
                 editedKeys = edited
-                presenter.showPendingEdits(edited.size)
+                itemEditKeys = itemsEdited
+                presenter.showPendingEdits(edited.size + itemsEdited.size)
                 presenter.showAttachmentStates(onDevice, edited)
                 if (changed && libraryFilter.needsDeviceState) presenter.redisplayItems()
+                onDone()
             }, { e ->
                 Log.e("zotero", "checking attachments on the device failed: $e")
+                onDone()
             })
     }
 
@@ -1398,7 +1480,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             Log.d(TAG, "loadItemsFromDatabase completed - loaded ${db.items?.size ?: 0} items")
         }
 
-        loadCollections
+        // a sync wrote Zotero's copies of edited items; edits not uploaded yet go back on
+        val reapplyEdits = Completable.fromAction {
+            if (db.groupID == GroupInfo.NO_GROUP_ID) itemEdits.reapply(db.groupID)
+        }.doOnError { Log.e(TAG, "reapplying item edits failed: $it") }.onErrorComplete()
+
+        reapplyEdits.andThen(loadCollections)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .andThen(loadItems)

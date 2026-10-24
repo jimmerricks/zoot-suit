@@ -121,6 +121,12 @@ class Item : Parcelable {
         hasAllFields = true
     }
 
+    /** Replaces the fields after an edit on this device (ItemEditStore); needs [hasAllFields]. */
+    fun replaceData(fields: Map<String, String>) {
+        check(hasAllFields) { "editing $itemKey before its fields have loaded" }
+        allData = HashMap(fields)
+    }
+
     private fun stripHtml(html: String): String {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
             return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY).toString()

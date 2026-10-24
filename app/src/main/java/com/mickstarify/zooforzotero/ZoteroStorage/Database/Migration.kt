@@ -95,3 +95,17 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
         )
     }
 }
+
+/** Adds PendingItemEdit: metadata edits made on this device, waiting to be uploaded. */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "CREATE TABLE IF NOT EXISTS `PendingItemEdit` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`itemKey` TEXT NOT NULL, `group` INTEGER NOT NULL, `kind` TEXT NOT NULL, " +
+                    "`name` TEXT NOT NULL, `value` TEXT, `oldValue` TEXT, `createdAt` INTEGER NOT NULL)"
+        )
+        database.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_PendingItemEdit_group_itemKey` ON `PendingItemEdit` (`group`, `itemKey`)"
+        )
+    }
+}

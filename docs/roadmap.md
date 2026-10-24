@@ -20,7 +20,12 @@ larger work behind them.
 - Edits to attachments in group libraries are not uploaded (as in Zoo for Zotero).
   Group libraries are requested read-only.
 - No adding items; use Zotero itself.
-- Signing out warns in general terms but doesn't count the edits still waiting to sync.
+- Signing out warns in general terms but doesn't count the edits still waiting to sync
+  (edited attachments and tag edits); tag edits not yet synced are lost.
+- Of an item's metadata, only tags can be edited, and only in My Library. Edits are
+  kept as operations and replayed onto Zotero's copy at sync, so editing other fields
+  can reuse the same path; it needs an editor and a way to settle a field changed both
+  here and elsewhere (detected, not yet shown).
 - The Zotero File Storage upload path has had less testing than WebDAV. Known gaps:
   an optional `x-amz-security-token` is modelled as required, first uploads send
   `If-Match: *` where `If-None-Match: *` is correct, and one status check expects

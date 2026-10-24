@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<!-- A tag in the item dialog: tapping it opens the tag's items; the cross removes it from
+     the item (hidden where tags can't be edited, in groups). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/constraintLayout_notes_entry"
     android:layout_width="match_parent"
@@ -8,18 +9,17 @@
     android:background="?android:attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    tools:context=".LibraryActivity.ItemView.ItemNoteEntry">
+    android:gravity="center_vertical"
+    android:minHeight="36dp"
+    android:orientation="horizontal"
+    tools:context=".LibraryActivity.ItemView.ItemTagEntry">
 
     <ImageView
         android:id="@+id/imageView_tag_icon"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginBottom="6dp"
-        android:layout_weight="1"
-        android:src="@drawable/baseline_label_24"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:importantForAccessibility="no"
+        android:src="@drawable/baseline_label_24" />
 
     <TextView
         android:id="@+id/textView_tag"
@@ -27,12 +27,17 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="8dp"
+        android:layout_weight="1"
         android:ellipsize="end"
         android:maxLines="1"
-        android:text="@string/hello_blank_fragment"
-        android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
-        app:layout_constraintBottom_toBottomOf="@+id/imageView_tag_icon"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/imageView_tag_icon"
-        app:layout_constraintTop_toTopOf="@+id/imageView_tag_icon" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:textAppearance="@style/TextAppearance.AppCompat.Subhead" />
+
+    <ImageButton
+        android:id="@+id/imageButton_remove_tag"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:scaleType="center"
+        android:src="@drawable/baseline_close_24"
+        android:visibility="gone" />
+</LinearLayout>

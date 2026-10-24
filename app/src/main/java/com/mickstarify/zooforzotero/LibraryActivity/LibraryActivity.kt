@@ -589,6 +589,16 @@ class LibraryActivity : AppCompatActivity(),
         presenter.onTagOpen(tag)
     }
 
+    override fun onTagAdd(item: Item, tag: String) = presenter.editTag(item, tag, add = true)
+
+    override fun onTagRemove(item: Item, tag: String) = presenter.editTag(item, tag, add = false)
+
+    override fun canEditTags(): Boolean = presenter.canEditItems()
+
+    override fun libraryTags(): List<String> = presenter.getAllTags().map { it.first }
+
+    override fun hasPendingEdits(item: Item): Boolean = presenter.hasPendingEdits(item)
+
     fun getCurrentScreen(): AvailableScreens {
         return when (navController.currentDestination?.id) {
             R.id.libraryListFragment -> AvailableScreens.LIBRARY_LISTVIEW_SCREEN

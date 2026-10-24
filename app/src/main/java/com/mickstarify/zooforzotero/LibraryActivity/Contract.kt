@@ -72,6 +72,9 @@ interface Contract {
         fun modifyNote(note: Note)
         fun deleteNote(note: Note)
         fun refreshItemView()
+
+        /** [item] changed on this device (a tag edit): redraws its dialog and lists that depend on it. */
+        fun showEditedItem(item: Item)
         fun showGroups()
         fun openLibrary(groupId: Int)
         fun startUploadingAttachmentProgress(attachment: Item, position: Int, total: Int)

@@ -7,12 +7,18 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
+import android.app.AlertDialog
 import androidx.fragment.app.DialogFragment
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.EditNoteDialog
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListener
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.onEditNoteChangeListener
@@ -129,8 +135,6 @@ class ItemViewFragment : DialogFragment(),
             dismiss()
         }
 
-        val textViewTitle = requireView().findViewById<TextView>(R.id.textView_item_toolbar_title)
-        val textViewSubtitle = requireView().findViewById<TextView>(R.id.textView_item_subtitle)
         requireView().findViewById<Button>(R.id.button_item_add_note).setOnClickListener {
             showCreateNoteDialog()
         }
@@ -140,29 +144,41 @@ class ItemViewFragment : DialogFragment(),
         requireView().findViewById<Button>(R.id.button_item_close).setOnClickListener {
             dismiss()
         }
-
-        libraryViewModel.getOnItemClicked().observe(viewLifecycleOwner) { item ->
-            attachments = item.attachments
-            notes = item.notes
-
-            // the item is emitted again when it changes (a note added, say): draw it anew
-            clearEntries()
-            textViewTitle.text = item.getTitle()
-            textViewSubtitle.text = ItemFieldLabel.of(item.data["itemType"] ?: "Unknown")
-            addTextEntry("Title", item.getTitle())
-            this.addCreators(item.getSortedCreators())
-            for ((key, value) in item.data) {
-                if (value != "" && key != "itemType" && key != "title") {
-                    addTextEntry(ItemFieldLabel.of(key), value)
-                }
-            }
-            this.addAttachments(attachments)
-            this.populateNotes(notes)
-            this.populateTags(item.tags.map { it.tag })
-            showSection(R.id.item_fragment_scrollview_ll_attachments, attachments.isNotEmpty())
-            showSection(R.id.item_fragment_scrollview_ll_notes, notes.isNotEmpty())
-            showSection(R.id.item_fragment_scrollview_ll_tags, item.tags.isNotEmpty())
+        requireView().findViewById<View>(R.id.row_add_tag).setOnClickListener {
+            libraryViewModel.getOnItemClicked().value?.let { showAddTagDialog(it) }
         }
+
+        libraryViewModel.getOnItemClicked().observe(viewLifecycleOwner) { render(it) }
+        libraryViewModel.getOnItemChanged().observe(viewLifecycleOwner) { item ->
+            if (item === libraryViewModel.getOnItemClicked().value) render(item)
+        }
+    }
+
+    /** Draws [item]; again whenever it changes, so everything below the headers is redone. */
+    private fun render(item: Item) {
+        attachments = item.attachments
+        notes = item.notes
+        clearEntries()
+        requireView().findViewById<TextView>(R.id.textView_item_toolbar_title).text = item.getTitle()
+        val type = ItemFieldLabel.of(item.data["itemType"] ?: "Unknown")
+        requireView().findViewById<TextView>(R.id.textView_item_subtitle).text =
+            if (listener?.hasPendingEdits(item) == true) "$type · edits waiting to sync" else type
+        addTextEntry("Title", item.getTitle())
+        this.addCreators(item.getSortedCreators())
+        for ((key, value) in item.data) {
+            if (value != "" && key != "itemType" && key != "title") {
+                addTextEntry(ItemFieldLabel.of(key), value)
+            }
+        }
+        this.addAttachments(attachments)
+        this.populateNotes(notes)
+        val editable = listener?.canEditTags() == true
+        this.populateTags(item.tags.map { it.tag }.sortedWith(String.CASE_INSENSITIVE_ORDER), editable)
+        showSection(R.id.item_fragment_scrollview_ll_attachments, attachments.isNotEmpty())
+        showSection(R.id.item_fragment_scrollview_ll_notes, notes.isNotEmpty())
+        // with editing, the section shows even without tags: its "Add tag" row
+        showSection(R.id.item_fragment_scrollview_ll_tags, editable || item.tags.isNotEmpty())
+        showSection(R.id.row_add_tag, editable)
     }
 
     /** Removes every row below the section headers: field views and entry fragments. */
@@ -179,12 +195,49 @@ class ItemViewFragment : DialogFragment(),
         requireView().findViewById<View>(id).visibility = if (show) View.VISIBLE else View.GONE
     }
 
-    private fun populateTags(tags: List<String>) {
+    /**
+     * Asks for a tag to add to [item], suggesting the library's other tags as it is typed.
+     * Added on this device at once; it goes to Zotero with the next sync.
+     */
+    private fun showAddTagDialog(item: Item) {
+        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_tag, null)
+        val field = view.findViewById<AutoCompleteTextView>(R.id.editText_new_tag)
+        val itemTags = item.tags.map { it.tag }.toSet()
+        val suggestions = (listener?.libraryTags() ?: emptyList()).filter { it !in itemTags }
+        field.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, suggestions))
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Add tag")
+            .setView(view)
+            .setPositiveButton("Add", null) // set below: a blank tag keeps the dialog open
+            .setNegativeButton("Cancel", null)
+            .create()
+        val add = {
+            val tag = ItemEdits.cleanTag(field.text.toString())
+            if (tag == null) {
+                field.error = if (field.text.isBlank()) "Type a tag" else "At most ${ItemEdits.MAX_TAG_LENGTH} characters"
+            } else {
+                listener?.onTagAdd(item, tag)
+                dialog.dismiss()
+            }
+        }
+        field.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) { add(); true } else false
+        }
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { add() }
+        }
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        dialog.show()
+        field.requestFocus()
+    }
+
+    private fun populateTags(tags: List<String>, editable: Boolean) {
         val fmt = this.childFragmentManager.beginTransaction()
         for (tag in tags) {
             fmt.add(
                 R.id.item_fragment_scrollview_ll_tags,
-                ItemTagEntry.newInstance(tag)
+                ItemTagEntry.newInstance(tag, editable)
             )
         }
         fmt.commit()
@@ -272,6 +325,15 @@ class ItemViewFragment : DialogFragment(),
         fun onNoteDelete(note: Note)
         fun shareText(shareText: String)
         fun onTagOpenListener(tag: String)
+        fun onTagAdd(item: Item, tag: String)
+        fun onTagRemove(item: Item, tag: String)
+
+        /** Whether tags can be added and removed here (My Library, not a group). */
+        fun canEditTags(): Boolean
+
+        /** The open library's tags, for suggestions. */
+        fun libraryTags(): List<String>
+        fun hasPendingEdits(item: Item): Boolean
     }
 
     companion object {
@@ -287,5 +349,9 @@ class ItemViewFragment : DialogFragment(),
     override fun tagPressed(tag: String) {
         listener?.onTagOpenListener(tag)
         this.dismiss()
+    }
+
+    override fun tagRemovePressed(tag: String) {
+        libraryViewModel.getOnItemClicked().value?.let { listener?.onTagRemove(it, tag) }
     }
 }

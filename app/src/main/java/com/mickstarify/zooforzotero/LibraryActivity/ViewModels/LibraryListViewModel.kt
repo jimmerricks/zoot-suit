@@ -33,6 +33,15 @@ class LibraryListViewModel : ViewModel() {
         this.itemClicked.value = item
     }
 
+    // an event for the presenter, which opens the item's dialog; a redraw goes through itemChanged
+    private val itemChanged = MutableLiveData<Item>()
+
+    /** The open item changed on this device (a tag edit): its dialog redraws. Not a click. */
+    fun getOnItemChanged(): LiveData<Item> = itemChanged
+    fun onItemChanged(item: Item) {
+        itemChanged.value = item
+    }
+
     private val attachmentClicked = MutableLiveData<Item>()
     fun getOnAttachmentClicked(): LiveData<Item> = attachmentClicked
     fun onAttachmentClicked(attachment: Item) {

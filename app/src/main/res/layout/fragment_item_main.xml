@@ -85,6 +85,8 @@
                     style="@style/DialogSectionHeader"
                     android:text="Tags" />
             </LinearLayout>
+
+            <include layout="@layout/item_add_tag_entry" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The add-tag dialog: one field that suggests the library's tags as you type. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="20dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="20dp">
+
+    <AutoCompleteTextView
+        android:id="@+id/editText_new_tag"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:completionThreshold="1"
+        android:hint="Tag"
+        android:imeOptions="actionDone"
+        android:inputType="text"
+        android:maxLength="255" />
+</FrameLayout>

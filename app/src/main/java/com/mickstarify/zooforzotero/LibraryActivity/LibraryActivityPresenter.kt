@@ -379,6 +379,20 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         }
     }
 
+    fun editTag(item: Item, tag: String, add: Boolean) = model.editTag(item, tag, add)
+
+    fun hasPendingEdits(item: Item) = model.hasPendingEdits(item)
+
+    fun canEditItems() = !model.state.isUsingGroup()
+
+    override fun showEditedItem(item: Item) {
+        libraryListViewModel.onItemChanged(item)
+        // only a list that can depend on tags is redrawn; a large one is slow to redraw
+        if (model.libraryFilter.tags.isNotEmpty() || model.state.filterText.isNotEmpty() ||
+            model.librarySearch.isNotEmpty()
+        ) redisplayItems()
+    }
+
     override fun refreshItemView() {
         val item = model.selectedItem
         if (item != null) {
