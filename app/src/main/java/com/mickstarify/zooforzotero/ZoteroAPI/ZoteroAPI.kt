@@ -484,7 +484,7 @@ class ZoteroAPI(
                 val lastModifiedVersion = response.headers()["Last-Modified-Version"]?.toInt() ?: -1
                 val totalResults = response.headers()["Total-Results"]?.toInt() ?: -1
 
-                ZoteroAPIItemsResponse(false, newItems, lastModifiedVersion, totalResults)
+                ZoteroAPIItemsResponse(newItems, lastModifiedVersion, totalResults)
             } else {
                 throw Exception("Server gave back ${response.code()} message: ${response.body()}")
             }
@@ -571,7 +571,7 @@ class ZoteroAPI(
             val collections = response.body() ?: LinkedList()
             val totalResults = response.headers()["Total-Results"]?.toInt() ?: 0
             val lastModifiedVersion = response.headers()["Last-Modified-Version"]?.toInt() ?: -1
-            ZoteroAPICollectionsResponse(false, collections, totalResults, lastModifiedVersion)
+            ZoteroAPICollectionsResponse(collections, totalResults, lastModifiedVersion)
         }
     }
 
@@ -653,7 +653,7 @@ class ZoteroAPI(
                 val lastModifiedVersion = response.headers()["Last-Modified-Version"]?.toInt() ?: -1
                 val totalResults = response.headers()["Total-Results"]?.toInt() ?: -1
 
-                ZoteroAPIItemsResponse(false, newItems, lastModifiedVersion, totalResults)
+                ZoteroAPIItemsResponse(newItems, lastModifiedVersion, totalResults)
             } else {
                 throw Exception("getTrash() Server gave back ${response.code()} message: ${response.body()}")
             }

@@ -205,12 +205,9 @@ class SyncManager (
                 downloadProgress = progress
             )
         itemsObservable.map { response ->
-            // check to see if there are any items.
-            if (response.isCached == false) {
-                Log.d("zotero", "About to write ${response.items.size} items to DB for groupID=${db.groupID}")
-                zoteroDatabase.writeItemPOJOs(db.groupID, response.items).blockingAwait()
-                Log.d("zotero", "Finished writing ${response.items.size} items to DB for groupID=${db.groupID}")
-            }
+            Log.d("zotero", "About to write ${response.items.size} items to DB for groupID=${db.groupID}")
+            zoteroDatabase.writeItemPOJOs(db.groupID, response.items).blockingAwait()
+            Log.d("zotero", "Finished writing ${response.items.size} items to DB for groupID=${db.groupID}")
             response // pass it on.
         }
             .subscribeOn(Schedulers.io())
@@ -237,27 +234,23 @@ class SyncManager (
                 }
 
                 override fun onNext(response: ZoteroAPIItemsResponse) {
-                    if (response.isCached == false) {
-                        this.libraryVersion = response.LastModifiedVersion
-                        this.downloaded += response.items.size
+                    this.libraryVersion = response.LastModifiedVersion
+                    this.downloaded += response.items.size
 
-                        if (this.downloaded < response.totalResults)
-                            db.setDownloadProgress(
-                                ItemsDownloadProgress(
-                                    response.LastModifiedVersion,
-                                    this.downloaded,
-                                    response.totalResults
-                                )
+                    if (this.downloaded < response.totalResults)
+                        db.setDownloadProgress(
+                            ItemsDownloadProgress(
+                                response.LastModifiedVersion,
+                                this.downloaded,
+                                response.totalResults
                             )
-                        if (!useSmallLoadingAnimation) {
-                            syncChangeListener.setSyncProgress(
-                                downloaded,
-                                response.totalResults)
-                        }
-                        Log.d("zotero", "got ${this.downloaded} of ${response.totalResults} items")
-                    } else {
-                        Log.d("zotero", "got back cached response for items.")
+                        )
+                    if (!useSmallLoadingAnimation) {
+                        syncChangeListener.setSyncProgress(
+                            downloaded,
+                            response.totalResults)
                     }
+                    Log.d("zotero", "got ${this.downloaded} of ${response.totalResults} items")
                 }
 
                 override fun onError(e: Throwable) {
