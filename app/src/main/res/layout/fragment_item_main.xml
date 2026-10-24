@@ -1,82 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The item dialog, laid out like the filter and sort dialogs: a title, sections with
+     the dialog section header and compact rows, the dialog's text buttons at the bottom.
+     The middle scrolls; title and buttons stay. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="?android:colorBackground"
+    android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/constraintLayout_toolbar"
+    <TextView
+        android:id="@+id/textView_item_toolbar_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp">
+        android:paddingStart="24dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="24dp"
+        android:ellipsize="end"
+        android:maxLines="3"
+        android:textAppearance="@android:style/TextAppearance.Material.DialogWindowTitle" />
 
-        <TextView
-            android:id="@+id/textView_item_toolbar_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="Name Goes Here."
-            android:textAppearance="@style/TextAppearance.AppCompat.Title"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/imageButton_add_notes"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageButton
-            android:id="@+id/imageButton_add_notes"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="12dp"
-            android:layout_marginBottom="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true"
-            android:contentDescription="Add note"
-            android:scaleType="center"
-            app:layout_constraintBottom_toBottomOf="@+id/imageButton_share_item"
-            app:layout_constraintEnd_toStartOf="@+id/imageButton_share_item"
-            app:layout_constraintTop_toTopOf="@+id/imageButton_share_item"
-            app:srcCompat="@drawable/baseline_note_add_24" />
-
-        <ImageButton
-            android:id="@+id/imageButton_share_item"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="16dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Share"
-            android:scaleType="center"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/baseline_share_24" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    <TextView
+        android:id="@+id/textView_item_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="24dp"
+        android:paddingTop="2dp"
+        android:paddingEnd="24dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textColor="?android:attr/textColorSecondary" />
 
     <androidx.core.widget.NestedScrollView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="8dp">
 
             <LinearLayout
                 android:id="@+id/item_fragment_scrollview_ll_attachments"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="16dp"
+                android:layout_height="wrap_content"
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/textView_attachments_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
                     style="@style/DialogSectionHeader"
                     android:text="Attachments" />
             </LinearLayout>
@@ -88,32 +60,17 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/textView_information_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginEnd="16dp"
                     style="@style/DialogSectionHeader"
                     android:text="Information" />
-
             </LinearLayout>
-
 
             <LinearLayout
                 android:id="@+id/item_fragment_scrollview_ll_notes"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="16dp"
+                android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-
                 <TextView
-                    android:id="@+id/textView_notes_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
                     style="@style/DialogSectionHeader"
                     android:text="Notes" />
             </LinearLayout>
@@ -122,21 +79,51 @@
                 android:id="@+id/item_fragment_scrollview_ll_tags"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="16dp"
                 android:orientation="vertical">
 
-
                 <TextView
-                    android:id="@+id/textView_tags_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
                     style="@style/DialogSectionHeader"
                     android:text="Tags" />
             </LinearLayout>
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
+    <!-- the AlertDialog button bar: neutral button at the start, the others at the end -->
+    <LinearLayout
+        style="?android:attr/buttonBarStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="4dp">
+
+        <Button
+            android:id="@+id/button_item_share"
+            style="?android:attr/buttonBarNeutralButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Share" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/button_item_add_note"
+            style="?android:attr/buttonBarNegativeButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add note" />
+
+        <Button
+            android:id="@+id/button_item_close"
+            style="?android:attr/buttonBarPositiveButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Close" />
+    </LinearLayout>
 </LinearLayout>

@@ -3,15 +3,16 @@ package com.mickstarify.zooforzotero.LibraryActivity.ItemView
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import androidx.fragment.app.DialogFragment
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.EditNoteDialog
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListener
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.onEditNoteChangeListener
@@ -22,11 +23,11 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Creator
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 /**
- * A fragment representing a list of Items.
- * Activities containing this fragment MUST implement the
- * [ItemViewFragment.OnListFragmentInteractionListener] interface.
+ * The item dialog: attachments, fields, notes and tags of the clicked item, styled like
+ * the app's AlertDialogs (filter, sort). Activities containing this fragment MUST
+ * implement [ItemViewFragment.OnItemFragmentInteractionListener].
  */
-class ItemViewFragment : BottomSheetDialogFragment(),
+class ItemViewFragment : DialogFragment(),
     NoteInteractionListener,
     onShareItemListener,
     ItemTagEntry.OnTagEntryInteractionListener {
@@ -39,6 +40,10 @@ class ItemViewFragment : BottomSheetDialogFragment(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // the theme android.app.AlertDialog uses, so card, title and buttons match it
+        val theme = TypedValue()
+        requireContext().theme.resolveAttribute(android.R.attr.alertDialogTheme, theme, true)
+        setStyle(STYLE_NO_TITLE, theme.resourceId)
     }
 
     private fun showShareItemDialog() {
@@ -95,6 +100,15 @@ class ItemViewFragment : BottomSheetDialogFragment(),
             })
     }
 
+    override fun onStart() {
+        super.onStart()
+        // a long abstract would widen the dialog to the screen's edges; keep it as wide as
+        // the other dialogs: Material's 560dp, or nearly the width of a phone
+        val metrics = resources.displayMetrics
+        val width = minOf((560 * metrics.density).toInt(), (metrics.widthPixels * 0.95).toInt())
+        dialog?.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -115,15 +129,26 @@ class ItemViewFragment : BottomSheetDialogFragment(),
             dismiss()
         }
 
-        val addNotesButton = requireView().findViewById<ImageButton>(R.id.imageButton_add_notes)
-        val shareButton = requireView().findViewById<ImageButton>(R.id.imageButton_share_item)
         val textViewTitle = requireView().findViewById<TextView>(R.id.textView_item_toolbar_title)
+        val textViewSubtitle = requireView().findViewById<TextView>(R.id.textView_item_subtitle)
+        requireView().findViewById<Button>(R.id.button_item_add_note).setOnClickListener {
+            showCreateNoteDialog()
+        }
+        requireView().findViewById<Button>(R.id.button_item_share).setOnClickListener {
+            showShareItemDialog()
+        }
+        requireView().findViewById<Button>(R.id.button_item_close).setOnClickListener {
+            dismiss()
+        }
 
         libraryViewModel.getOnItemClicked().observe(viewLifecycleOwner) { item ->
             attachments = item.attachments
             notes = item.notes
 
-            addTextEntry("Item Type", ItemFieldLabel.of(item.data["itemType"] ?: "Unknown"))
+            // the item is emitted again when it changes (a note added, say): draw it anew
+            clearEntries()
+            textViewTitle.text = item.getTitle()
+            textViewSubtitle.text = ItemFieldLabel.of(item.data["itemType"] ?: "Unknown")
             addTextEntry("Title", item.getTitle())
             this.addCreators(item.getSortedCreators())
             for ((key, value) in item.data) {
@@ -134,17 +159,24 @@ class ItemViewFragment : BottomSheetDialogFragment(),
             this.addAttachments(attachments)
             this.populateNotes(notes)
             this.populateTags(item.tags.map { it.tag })
-
-            addNotesButton.setOnClickListener {
-                showCreateNoteDialog()
-            }
-            shareButton.setOnClickListener {
-                showShareItemDialog()
-            }
-
-
-            textViewTitle.text = item.getTitle()
+            showSection(R.id.item_fragment_scrollview_ll_attachments, attachments.isNotEmpty())
+            showSection(R.id.item_fragment_scrollview_ll_notes, notes.isNotEmpty())
+            showSection(R.id.item_fragment_scrollview_ll_tags, item.tags.isNotEmpty())
         }
+    }
+
+    /** Removes every row below the section headers: field views and entry fragments. */
+    private fun clearEntries() {
+        childFragmentManager.executePendingTransactions()
+        val fmt = childFragmentManager.beginTransaction()
+        childFragmentManager.fragments.forEach { fmt.remove(it) }
+        fmt.commitNow()
+        val fields = requireView().findViewById<LinearLayout>(R.id.item_fragment_scrollview_ll_layout)
+        fields.removeViews(1, fields.childCount - 1)
+    }
+
+    private fun showSection(id: Int, show: Boolean) {
+        requireView().findViewById<View>(id).visibility = if (show) View.VISIBLE else View.GONE
     }
 
     private fun populateTags(tags: List<String>) {

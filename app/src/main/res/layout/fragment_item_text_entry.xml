@@ -1,32 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- One field of an item (also each creator): its name small above, the value
-     selectable, in a thin outlined box. -->
+<!-- One field of an item (also each creator), as in Zotero's info pane: its name in a
+     fixed-width column, the value selectable beside it. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="16dp"
-    android:layout_marginTop="4dp"
-    android:layout_marginEnd="16dp"
-    android:layout_marginBottom="4dp"
-    android:background="@drawable/item_field_outline"
-    android:orientation="vertical"
-    android:paddingStart="12dp"
-    android:paddingTop="6dp"
-    android:paddingEnd="12dp"
-    android:paddingBottom="8dp">
+    android:minHeight="32dp"
+    android:orientation="horizontal"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
 
     <TextView
         android:id="@+id/textView_label"
-        android:layout_width="wrap_content"
+        android:layout_width="112dp"
         android:layout_height="wrap_content"
-        android:textAppearance="@style/TextAppearance.AppCompat.Caption" />
+        android:paddingEnd="12dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textColor="?android:attr/textColorSecondary" />
 
     <TextView
         android:id="@+id/textView_item_info"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:autoLink="all"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:textIsSelectable="true"
-        android:textSize="16sp" />
+        android:textIsSelectable="true" />
 </LinearLayout>
