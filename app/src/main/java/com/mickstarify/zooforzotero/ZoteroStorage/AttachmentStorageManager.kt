@@ -126,6 +126,7 @@ class AttachmentStorageManager @Inject constructor(
         val mimeType = item.data["contentType"] ?: "application/pdf"
         if (storageMode == StorageMode.EXTERNAL_CACHE) {
             val file = getAttachmentFile(item)
+            file.parentFile?.mkdirs()
             return file.outputStream()
         } else if (storageMode == StorageMode.CUSTOM) {
             val documentTree = DocumentFile.fromTreeUri(context, getCustomStorageTreeURI())
@@ -332,14 +333,13 @@ class AttachmentStorageManager @Inject constructor(
 
     }
 
-    private fun getAttachmentFile(attachment: Item): File {
-        val filename = getFilenameForItem(attachment)
-        val directory = File(context.externalCacheDir, attachment.itemKey.uppercase())
-        if (!directory.exists()) {
-            directory.mkdirs()
-        }
-        return File(directory, filename)
-    }
+    /**
+     * Where [attachment]'s file is (or would be) in the app's cache folder. Creates nothing:
+     * it used to create the folder, and every attachment whose size or state was looked up
+     * left an empty one, which then counted as downloaded (listDownloadedItemKeys).
+     */
+    private fun getAttachmentFile(attachment: Item): File =
+        File(File(context.externalCacheDir, attachment.itemKey.uppercase()), getFilenameForItem(attachment))
 
     fun getFileSize(attachment: Item): Result<Long> {
         return try {
