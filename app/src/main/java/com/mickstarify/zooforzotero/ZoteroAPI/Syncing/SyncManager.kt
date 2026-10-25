@@ -33,8 +33,12 @@ class SyncManager (
     var loadingItems = false
     var loadingCollections = false
     var loadingTrash = false
+    // past the downloads: deletions, then loading the library from the database
+    private var finishing = false
+    // a sync asked for while one runs (see startCompleteSync)
+    private var queued: Pair<ZoteroDB, Boolean>? = null
     fun isSyncing() : Boolean {
-        return (loadingItems || loadingCollections || loadingTrash)
+        return (loadingItems || loadingCollections || loadingTrash || finishing)
     }
 
     /** Offline makes every request of a sync fail; say so once, as a toast. */
@@ -72,8 +76,12 @@ class SyncManager (
         *   How each stage is reached is somewhat complex but here in this method you will find stage 1.
          */
 
-        if (loadingCollections || loadingItems || loadingTrash) {
-            Log.e("zotero", "Error, we are already loading our library! not doing it again.")
+        if (isSyncing()) {
+            // runs once this one is done: the running sync may be another library's (a
+            // group refreshing), or have fetched before this request's edits went up
+            Log.d("zotero", "sync of ${zoteroDB.groupID} queued behind the running one")
+            queued = Pair(zoteroDB, useSmallLoadingAnimation)
+            syncChangeListener.startSyncAnimation(useSmallLoadingAnimation)
             return
         }
 
@@ -256,6 +264,7 @@ class SyncManager (
                 override fun onError(e: Throwable) {
                     if (e is UpToDateException) {
                         Log.d("zotero", "our items are already up to date.")
+                        syncChangeListener.makeToastAlert("Already up to date.")
                         db.updateDatabaseLastSyncedTimestamp()
                     } else if (e is LibraryVersionMisMatchException) {
                         // we need to redownload items but without the progress.
@@ -300,6 +309,7 @@ class SyncManager (
         if (loadingTrash || loadingCollections || loadingItems) {
             throw Exception("Error cannot proceed to stage 2 if library still loading.")
         }
+        finishing = true
 
         updateDeletedEntries(db)
             .subscribeOn(Schedulers.io())
@@ -311,18 +321,27 @@ class SyncManager (
                 }
 
                 override fun onComplete() {
-                    syncChangeListener.finishLibrarySync(db)
+                    syncChangeListener.finishLibrarySync(db) { finishSync() }
                 }
 
                 override fun onError(e: Throwable) {
                 Log.e("zotero", "there was an error processing deleted Entries, ${e}")
                 reportError("Couldn't sync deletions", e)
                 // finish anyway: it reloads what's stored and stops the sync animation
-                syncChangeListener.finishLibrarySync(db)
+                syncChangeListener.finishLibrarySync(db) { finishSync() }
             }
         })
 
 
+    }
+
+    /** After the library is loaded and the animation stopped: runs a queued sync. */
+    private fun finishSync() {
+        finishing = false
+        queued?.let { (db, small) ->
+            queued = null
+            startCompleteSync(db, small)
+        }
     }
 
     fun updateDeletedEntries(db: ZoteroDB): Completable {
