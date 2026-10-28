@@ -30,7 +30,7 @@ import javax.inject.Singleton
         PendingItemEdit::class,
         FileHash::class
     ),
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 abstract class ZoteroRoomDatabase : RoomDatabase() {
@@ -62,7 +62,8 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         .addMigrations(MIGRATION_8_9)
         .addMigrations(MIGRATION_9_10)
         .addMigrations(MIGRATION_10_11)
-        .addMigrations(MIGRATION_11_12).build()
+        .addMigrations(MIGRATION_11_12)
+        .addMigrations(MIGRATION_12_13).build()
 
     /** md5 of the file this device last downloaded/uploaded for the attachment, or null. */
     fun getAttachmentBase(itemKey: String, group: Int): String? =
@@ -202,31 +203,41 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
             ArrayList<String>(c.count).apply { while (c.moveToNext()) add(c.getString(0)) }
         }
 
-    /** Whether some of library [groupID]'s items have no SortKeys yet (see fillMissingSortKeys). Blocking. */
+    /** Whether some of library [groupID]'s items have no SortKeys yet (see fillMissingKeys). Blocking. */
     fun lacksSortKeys(groupID: Int): Boolean = db.itemDao().lacksSortKeys(groupID)
 
-    /** Computes and stores the SortKeys of the items with [keys] from their stored fields. Blocking. */
-    fun fillSortKeys(keys: List<String>) {
-        val names = listOf("itemType", "title", "caseName", "nameOfAct", "date", "dateAdded")
+    /**
+     * Computes and stores the SortKeys and SearchText of the items with [keys] from their
+     * stored fields, creators and tags: after an edit on the device, or for items from
+     * before they existed. Blocking.
+     */
+    fun fillKeys(keys: List<String>) {
         for (chunk in keys.chunked(500)) {
-            val items = loadSortItems(chunk, names, withCreators = true)
+            val items = loadByKeys(chunk, listFieldsOnly = false)
             db.runInTransaction {
                 for (item in items) {
                     val k = SortKeys.of(item)
-                    db.itemDao().setSortKeys(item.itemKey, k.title, k.author, k.date, k.dateAdded)
+                    val s = SearchText.of(item)
+                    db.itemDao().setKeys(
+                        item.itemKey, k.title, k.author, k.date, k.dateAdded,
+                        s.title, s.creators, s.year, s.publication, s.abstract, s.tags, s.other,
+                    )
                 }
             }
         }
     }
 
-    /** Gives library [groupID]'s items from before MIGRATION_10_11 their SortKeys. Blocking. */
-    fun fillMissingSortKeys(groupID: Int) {
-        val keys = db.itemDao().getKeysWithoutSortKeys(groupID)
+    /** Gives library [groupID]'s items from before MIGRATION_10_11 or MIGRATION_12_13 their keys. Blocking. */
+    fun fillMissingKeys(groupID: Int) {
+        val keys = db.itemDao().getKeysWithoutKeys(groupID)
         if (keys.isEmpty()) return
         val start = System.nanoTime()
-        fillSortKeys(keys)
-        Log.d("zotero", "sort keys for ${keys.size} items of $groupID in ${(System.nanoTime() - start) / 1_000_000} ms")
+        fillKeys(keys)
+        Log.d("zotero", "sort keys and search text for ${keys.size} items of $groupID in ${(System.nanoTime() - start) / 1_000_000} ms")
     }
+
+    /** Whether some of library [groupID]'s items have no SearchText yet (see fillMissingKeys). Blocking. */
+    fun lacksSearchText(groupID: Int): Boolean = db.itemDao().lacksSearchText(groupID)
 
     /** How many items (not trashed) library [groupID] has. Blocking. */
     fun countItems(groupID: Int): Int = db.itemDao().countItems(groupID)
@@ -327,14 +338,16 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
                 )
             )
         }
-        val sortKeys = SortKeys.of(Item().apply {
+        val asStored = Item().apply {
             itemInfo = ItemInfo(itemPOJO.ItemKey, groupID, itemPOJO.version, false)
             itemData = itemDatas
             // as stored: a creator listed twice is one row (the primary key), the later one
             creators = itemCreators.associateBy { Triple(it.firstName, it.lastName, it.creatorType) }.values.toList()
-            tags = emptyList()
+            tags = itemPOJO.tags.distinct().map { ItemTag(itemPOJO.ItemKey, it) }
             collections = emptyList()
-        })
+        }
+        val sortKeys = SortKeys.of(asStored)
+        val searchText = SearchText.of(asStored)
         val itemInfo =
             ItemInfo(
                 itemPOJO.ItemKey, groupID, itemPOJO.version, Boolean.fromInt(itemPOJO.deleted),
@@ -345,6 +358,13 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
                 sortAuthor = sortKeys.author,
                 sortDate = sortKeys.date,
                 sortDateAdded = sortKeys.dateAdded,
+                searchTitle = searchText.title,
+                searchCreators = searchText.creators,
+                searchYear = searchText.year,
+                searchPublication = searchText.publication,
+                searchAbstract = searchText.abstract,
+                searchTags = searchText.tags,
+                searchOther = searchText.other,
             )
         val itemTags = itemPOJO.tags.map { ItemTag(itemPOJO.ItemKey, it) }
         val collections = itemPOJO.collections.map { ItemCollection(it, itemPOJO.ItemKey) }

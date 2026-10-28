@@ -32,9 +32,12 @@ class RoomItemSource(
         // in SQL by the stored sort keys; items from before they existed are sorted here
         // until the library's are filled in (ZoteroDatabase.fillMissingSortKeys)
         val ordered = hasSortKeys(group)
-        val (sql, args) = LibrarySql.keys(query, group, collectionKeys, ordered)
+        // in SQL from the stored SearchText; a library from before it builds an index here
+        val searchInSql = query.search.isNotEmpty() && place.isNarrowed && hasSearchText(group)
+        val searchFields = if (searchInSql) searchFields() else null
+        val (sql, args) = LibrarySql.keys(query, group, collectionKeys, ordered, searchFields)
         var keys = database.queryKeys(sql, args)
-        if (place.isNarrowed) keys = narrow(group, keys, query)
+        if (place.isNarrowed) keys = narrow(group, keys, query, textSearch = !searchInSql)
         if (!ordered) {
             val sortItems = database.loadSortItems(
                 keys, LibrarySort.fieldsRead(query.sort), LibrarySort.readsCreators(query.sort)
@@ -48,11 +51,18 @@ class RoomItemSource(
     // libraries whose items all have SortKeys; writeItem stores them with every item, so
     // one stays complete, but it's checked again after invalidate() all the same
     private val sortKeysComplete = java.util.concurrent.ConcurrentHashMap.newKeySet<Int>()
+    private val searchTextComplete = java.util.concurrent.ConcurrentHashMap.newKeySet<Int>()
 
     /** Whether all of library [group]'s items have SortKeys: a scan of ItemInfo, so it's remembered once true. */
     private fun hasSortKeys(group: Int): Boolean {
         if (group in sortKeysComplete) return true
         return (!database.lacksSortKeys(group)).also { if (it) sortKeysComplete += group }
+    }
+
+    /** The same for SearchText. */
+    private fun hasSearchText(group: Int): Boolean {
+        if (group in searchTextComplete) return true
+        return (!database.lacksSearchText(group)).also { if (it) searchTextComplete += group }
     }
 
     private class DatabaseRows(private val database: ZoteroDatabase, override val keys: List<String>) : LibraryRows {
@@ -63,10 +73,10 @@ class RoomItemSource(
         }
     }
 
-    /** The query's search and device-state filters, which SQL doesn't answer. */
-    private fun narrow(group: Int, keys: List<String>, query: LibraryQuery): List<String> {
+    /** The device-state filters, which SQL doesn't answer, and the search if [textSearch]. */
+    private fun narrow(group: Int, keys: List<String>, query: LibraryQuery, textSearch: Boolean): List<String> {
         var result = keys
-        if (query.search.isNotEmpty()) {
+        if (textSearch && query.search.isNotEmpty()) {
             val matches = searchIndex(group).search(query.search)
             result = result.filter { it in matches }
         }
@@ -124,11 +134,13 @@ class RoomItemSource(
     }
 
     override fun warmSearch() {
-        searchIndex(groupId())
+        val group = groupId()
+        if (!hasSearchText(group)) searchIndex(group)
     }
 
     override fun invalidate() {
         generation.incrementAndGet()
         sortKeysComplete.clear()
+        searchTextComplete.clear()
     }
 }

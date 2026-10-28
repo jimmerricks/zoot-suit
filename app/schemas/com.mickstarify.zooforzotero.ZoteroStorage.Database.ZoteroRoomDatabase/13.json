@@ -1,0 +1,673 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 13,
+    "identityHash": "99dbbdfa56d1caa20f76a6745df01c1a",
+    "entities": [
+      {
+        "tableName": "GroupInfo",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `version` INTEGER NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `type` TEXT NOT NULL, `url` TEXT NOT NULL, `libraryEditing` TEXT NOT NULL, `libraryReading` TEXT NOT NULL, `fileEditing` TEXT NOT NULL, `owner` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "libraryEditing",
+            "columnName": "libraryEditing",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "libraryReading",
+            "columnName": "libraryReading",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileEditing",
+            "columnName": "fileEditing",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "owner",
+            "columnName": "owner",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "Collections",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `version` INTEGER NOT NULL, `name` TEXT NOT NULL, `parentCollection` TEXT NOT NULL, `group` INTEGER NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentCollection",
+            "columnName": "parentCollection",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupParent",
+            "columnName": "group",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      },
+      {
+        "tableName": "RecentlyOpenedAttachment",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`itemKey` TEXT NOT NULL, `version` INTEGER NOT NULL, PRIMARY KEY(`itemKey`))",
+        "fields": [
+          {
+            "fieldPath": "itemKey",
+            "columnName": "itemKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "itemKey"
+          ]
+        }
+      },
+      {
+        "tableName": "ItemInfo",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`itemKey` TEXT NOT NULL, `group` INTEGER NOT NULL, `version` INTEGER NOT NULL, `deleted` INTEGER NOT NULL, `parent` TEXT, `itemType` TEXT, `contentType` TEXT, `sortTitle` TEXT, `sortAuthor` TEXT, `sortDate` TEXT, `sortDateAdded` TEXT, `searchTitle` TEXT, `searchCreators` TEXT, `searchYear` TEXT, `searchPublication` TEXT, `searchAbstract` TEXT, `searchTags` TEXT, `searchOther` TEXT, PRIMARY KEY(`itemKey`, `group`))",
+        "fields": [
+          {
+            "fieldPath": "itemKey",
+            "columnName": "itemKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupParent",
+            "columnName": "group",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deleted",
+            "columnName": "deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parent",
+            "columnName": "parent",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "itemType",
+            "columnName": "itemType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "contentType",
+            "columnName": "contentType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sortTitle",
+            "columnName": "sortTitle",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sortAuthor",
+            "columnName": "sortAuthor",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sortDate",
+            "columnName": "sortDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sortDateAdded",
+            "columnName": "sortDateAdded",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "searchTitle",
+            "columnName": "searchTitle",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "searchCreators",
+            "columnName": "searchCreators",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "searchYear",
+            "columnName": "searchYear",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "searchPublication",
+            "columnName": "searchPublication",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "searchAbstract",
+            "columnName": "searchAbstract",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "searchTags",
+            "columnName": "searchTags",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "searchOther",
+            "columnName": "searchOther",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "itemKey",
+            "group"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_ItemInfo_itemKey",
+            "unique": true,
+            "columnNames": [
+              "itemKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_ItemInfo_itemKey` ON `${TABLE_NAME}` (`itemKey`)"
+          },
+          {
+            "name": "index_ItemInfo_parent",
+            "unique": false,
+            "columnNames": [
+              "parent"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ItemInfo_parent` ON `${TABLE_NAME}` (`parent`)"
+          }
+        ]
+      },
+      {
+        "tableName": "ItemData",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`parent` TEXT NOT NULL, `name` TEXT NOT NULL, `value` TEXT NOT NULL, `valueType` TEXT NOT NULL, PRIMARY KEY(`parent`, `name`), FOREIGN KEY(`parent`) REFERENCES `ItemInfo`(`itemKey`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "parent",
+            "columnName": "parent",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "valueType",
+            "columnName": "valueType",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "parent",
+            "name"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "ItemInfo",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "parent"
+            ],
+            "referencedColumns": [
+              "itemKey"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "ItemCreator",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`parent` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `creatorType` TEXT NOT NULL, `order` INTEGER NOT NULL, PRIMARY KEY(`parent`, `firstName`, `lastName`, `creatorType`), FOREIGN KEY(`parent`) REFERENCES `ItemInfo`(`itemKey`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "parent",
+            "columnName": "parent",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "lastName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "creatorType",
+            "columnName": "creatorType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "order",
+            "columnName": "order",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "parent",
+            "firstName",
+            "lastName",
+            "creatorType"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "ItemInfo",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "parent"
+            ],
+            "referencedColumns": [
+              "itemKey"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "ItemTags",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`parent` TEXT NOT NULL, `tag` TEXT NOT NULL, PRIMARY KEY(`parent`, `tag`), FOREIGN KEY(`parent`) REFERENCES `ItemInfo`(`itemKey`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "parent",
+            "columnName": "parent",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tag",
+            "columnName": "tag",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "parent",
+            "tag"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "ItemInfo",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "parent"
+            ],
+            "referencedColumns": [
+              "itemKey"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "ItemCollection",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`collectionKey` TEXT NOT NULL, `itemKey` TEXT NOT NULL, PRIMARY KEY(`collectionKey`, `itemKey`), FOREIGN KEY(`itemKey`) REFERENCES `ItemInfo`(`itemKey`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "collectionKey",
+            "columnName": "collectionKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemKey",
+            "columnName": "itemKey",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "collectionKey",
+            "itemKey"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_ItemCollection_itemKey_collectionKey",
+            "unique": false,
+            "columnNames": [
+              "itemKey",
+              "collectionKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ItemCollection_itemKey_collectionKey` ON `${TABLE_NAME}` (`itemKey`, `collectionKey`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "ItemInfo",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "itemKey"
+            ],
+            "referencedColumns": [
+              "itemKey"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "AttachmentInfo",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`itemKey` TEXT NOT NULL, `group` INTEGER NOT NULL, `md5Key` TEXT NOT NULL, `mtime` INTEGER NOT NULL, `downloadedFrom` TEXT NOT NULL, PRIMARY KEY(`itemKey`, `group`), FOREIGN KEY(`itemKey`) REFERENCES `ItemInfo`(`itemKey`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "itemKey",
+            "columnName": "itemKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupParent",
+            "columnName": "group",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "md5Key",
+            "columnName": "md5Key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mtime",
+            "columnName": "mtime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "downloadedFrom",
+            "columnName": "downloadedFrom",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "itemKey",
+            "group"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "ItemInfo",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "itemKey"
+            ],
+            "referencedColumns": [
+              "itemKey"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "AttachmentBase",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`itemKey` TEXT NOT NULL, `group` INTEGER NOT NULL, `md5` TEXT NOT NULL, `recordedAt` INTEGER NOT NULL, PRIMARY KEY(`itemKey`, `group`))",
+        "fields": [
+          {
+            "fieldPath": "itemKey",
+            "columnName": "itemKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupParent",
+            "columnName": "group",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "md5",
+            "columnName": "md5",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordedAt",
+            "columnName": "recordedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "itemKey",
+            "group"
+          ]
+        }
+      },
+      {
+        "tableName": "PendingItemEdit",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `itemKey` TEXT NOT NULL, `group` INTEGER NOT NULL, `kind` TEXT NOT NULL, `name` TEXT NOT NULL, `value` TEXT, `oldValue` TEXT, `createdAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemKey",
+            "columnName": "itemKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "group",
+            "columnName": "group",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "oldValue",
+            "columnName": "oldValue",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_PendingItemEdit_group_itemKey",
+            "unique": false,
+            "columnNames": [
+              "group",
+              "itemKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_PendingItemEdit_group_itemKey` ON `${TABLE_NAME}` (`group`, `itemKey`)"
+          }
+        ]
+      },
+      {
+        "tableName": "FileHash",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`itemKey` TEXT NOT NULL, `size` INTEGER NOT NULL, `mtime` INTEGER NOT NULL, `md5` TEXT NOT NULL, PRIMARY KEY(`itemKey`))",
+        "fields": [
+          {
+            "fieldPath": "itemKey",
+            "columnName": "itemKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "size",
+            "columnName": "size",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mtime",
+            "columnName": "mtime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "md5",
+            "columnName": "md5",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "itemKey"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '99dbbdfa56d1caa20f76a6745df01c1a')"
+    ]
+  }
+}

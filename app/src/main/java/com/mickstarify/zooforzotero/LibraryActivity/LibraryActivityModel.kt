@@ -1498,8 +1498,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 Log.e(TAG, "adopting attachment bases failed: $e")
             }
             try {
-                // once, after the upgrade that added them; lists sort in SQL from then on
-                zoteroDatabase.fillMissingSortKeys(db.groupID)
+                // once, after the upgrades that added them; lists sort and search in SQL from then on
+                zoteroDatabase.fillMissingKeys(db.groupID)
             } catch (e: Exception) {
                 Log.e(TAG, "filling in sort keys failed: $e")
             }

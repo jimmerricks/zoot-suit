@@ -7,6 +7,9 @@ import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemPOJO
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdit
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditStore
 import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ZoteroDB
 import com.mickstarify.zooforzotero.di.SingletonComponentsEntryPoint
 import dagger.hilt.android.EntryPointAccessors
@@ -202,14 +205,60 @@ class ItemSourceEquivalenceTest {
         }
     }
 
-    @Test
-    fun searches() {
-        val searches = listOf("governance", "sorlin", "SÖRLIN", "\"power memory\"", "19", "note", "about", "théorie", "méthod", "zzz", "first1")
-        for (fieldSet in listOf(LibrarySearch.DEFAULT_FIELDS, LibrarySearch.Field.entries.toSet())) {
+    private val searches = listOf(
+        "governance", "sorlin", "SÖRLIN", "\"power memory\"", "19", "note", "about", "théorie", "méthod", "zzz",
+        "first1", "to-read", "eq0001", "<p>", "  ", "\"\"", "governance archive",
+    )
+
+    // every field alone, the default set and all of them
+    private val fieldSets = LibrarySearch.Field.entries.map { setOf(it) } +
+            listOf(LibrarySearch.DEFAULT_FIELDS, LibrarySearch.Field.entries.toSet())
+
+    private fun assertSearchesSame() {
+        for (fieldSet in fieldSets) {
             fields = fieldSet
             for (search in searches) for (place in places) {
                 assertSame(LibraryQuery(place, search = search, filter = LibraryFilter(hasPdf = search == "19")))
             }
+        }
+    }
+
+    @Test
+    fun searches() {
+        assertTrue(!database.lacksSearchText(group))
+        assertSearchesSame()
+        fields = LibrarySearch.Field.entries.toSet()
+        assertTrue("the fixture has search hits", room.query(LibraryQuery(LibraryPlace.Library, search = "governance")).size > 0)
+    }
+
+    @Test
+    fun searchesWithoutStoredTextAndAfterFillingItIn() {
+        val sql = database.db.openHelper.writableDatabase
+        sql.execSQL("UPDATE ItemInfo SET searchTitle = NULL WHERE `group` = $group")
+        assertTrue(database.lacksSearchText(group))
+        assertSearchesSame()
+        database.fillMissingKeys(group)
+        assertTrue(!database.lacksSearchText(group))
+        room.invalidate()
+        assertSearchesSame()
+    }
+
+    @Test
+    fun aTagAddedOnTheDeviceIsSearchedAtOnce() {
+        fields = setOf(LibrarySearch.Field.TAGS)
+        val key = topKeys.first { k -> database.loadItemsByKeys(listOf(k)).single().let { it.itemType != "note" && it.itemType != "attachment" } }
+        val item = database.loadItemsByKeys(listOf(key)).single()
+        val query = LibraryQuery(LibraryPlace.Library, search = "Zwölf-Ton")
+        assertEquals(emptyList<String>(), room.query(query).keys)
+        val edits = ItemEditStore(database)
+        try {
+            assertTrue(edits.record(group, item, ItemEdit(ItemEditKind.ADD_TAG, "Zwölf-Ton")))
+            assertEquals(listOf(key), room.query(query).keys)
+            assertEquals(listOf(key), room.query(query.copy(search = "zwolf")).keys)
+            assertTrue(edits.record(group, item, ItemEdit(ItemEditKind.REMOVE_TAG, "Zwölf-Ton")))
+            assertEquals(emptyList<String>(), room.query(query).keys)
+        } finally {
+            edits.remove(edits.pendingFor(group, key))
         }
     }
 
@@ -219,7 +268,7 @@ class ItemSourceEquivalenceTest {
         sql.execSQL("UPDATE ItemInfo SET sortTitle = NULL, sortAuthor = NULL, sortDate = NULL, sortDateAdded = NULL WHERE `group` = $group")
         assertTrue(database.lacksSortKeys(group))
         for (place in places) for (sort in SortMethod.entries) assertSame(LibraryQuery(place, sort = sort, ascending = sort != SortMethod.DATE))
-        database.fillMissingSortKeys(group)
+        database.fillMissingKeys(group)
         assertTrue(!database.lacksSortKeys(group))
         for (place in places) for (sort in SortMethod.entries) assertSame(LibraryQuery(place, sort = sort, ascending = sort != SortMethod.DATE))
     }

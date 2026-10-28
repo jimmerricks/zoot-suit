@@ -36,6 +36,15 @@ class ItemInfo(
     @ColumnInfo(name = "sortAuthor") val sortAuthor: String? = null,
     @ColumnInfo(name = "sortDate") val sortDate: String? = null,
     @ColumnInfo(name = "sortDateAdded") val sortDateAdded: String? = null,
+    // The item's SearchText, so that a search runs in SQL; null until computed, like the
+    // sort keys (items from before MIGRATION_12_13 are filled in when the library opens).
+    @ColumnInfo(name = "searchTitle") val searchTitle: String? = null,
+    @ColumnInfo(name = "searchCreators") val searchCreators: String? = null,
+    @ColumnInfo(name = "searchYear") val searchYear: String? = null,
+    @ColumnInfo(name = "searchPublication") val searchPublication: String? = null,
+    @ColumnInfo(name = "searchAbstract") val searchAbstract: String? = null,
+    @ColumnInfo(name = "searchTags") val searchTags: String? = null,
+    @ColumnInfo(name = "searchOther") val searchOther: String? = null,
 ) : Parcelable {
 
     //@Relation(entity = ItemData::class, parentColumn = "itemKey", entityColumn = "parent")
@@ -432,11 +441,23 @@ interface ItemDao {
     @Query("SELECT itemKey, parent FROM ItemInfo WHERE itemKey IN (:keys) AND deleted = 0")
     fun getParents(keys: List<String>): List<KeyAndParent>
 
-    @Query("UPDATE ItemInfo SET sortTitle = :title, sortAuthor = :author, sortDate = :date, sortDateAdded = :dateAdded WHERE itemKey = :itemKey")
-    fun setSortKeys(itemKey: String, title: String, author: String, date: String, dateAdded: String)
+    @Query(
+        "UPDATE ItemInfo SET sortTitle = :title, sortAuthor = :author, sortDate = :date, sortDateAdded = :dateAdded, " +
+            "searchTitle = :searchTitle, searchCreators = :searchCreators, searchYear = :searchYear, " +
+            "searchPublication = :searchPublication, searchAbstract = :searchAbstract, searchTags = :searchTags, " +
+            "searchOther = :searchOther WHERE itemKey = :itemKey"
+    )
+    fun setKeys(
+        itemKey: String, title: String, author: String, date: String, dateAdded: String,
+        searchTitle: String, searchCreators: String, searchYear: String, searchPublication: String,
+        searchAbstract: String, searchTags: String, searchOther: String,
+    )
 
-    @Query("SELECT itemKey FROM ItemInfo WHERE `group` = :groupID AND sortTitle IS NULL")
-    fun getKeysWithoutSortKeys(groupID: Int): List<String>
+    @Query("SELECT itemKey FROM ItemInfo WHERE `group` = :groupID AND (sortTitle IS NULL OR searchTitle IS NULL)")
+    fun getKeysWithoutKeys(groupID: Int): List<String>
+
+    @Query("SELECT EXISTS (SELECT 1 FROM ItemInfo WHERE `group` = :groupID AND searchTitle IS NULL)")
+    fun lacksSearchText(groupID: Int): Boolean
 
     @Query("SELECT EXISTS (SELECT 1 FROM ItemInfo WHERE `group` = :groupID AND sortTitle IS NULL)")
     fun lacksSortKeys(groupID: Int): Boolean

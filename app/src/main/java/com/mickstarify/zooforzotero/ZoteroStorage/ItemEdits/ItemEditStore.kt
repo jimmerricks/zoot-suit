@@ -38,6 +38,7 @@ class ItemEditStore(private val database: ZoteroDatabase) {
             ItemEditKind.REMOVE_TAG -> dao.deleteTag(key, edit.name)
             ItemEditKind.SET_FIELD -> writeField(key, edit.name, edit.value ?: "")
         }
+        database.fillKeys(listOf(key)) // the title, date or tags sorted and searched by may have changed
         val applied = listOf(edit)
         if (edit.kind == ItemEditKind.SET_FIELD) {
             item.replaceData(ItemEdits.applyToFields(fields, applied))
@@ -97,6 +98,7 @@ class ItemEditStore(private val database: ZoteroDatabase) {
             for (name in fields.keys + wantedFields.keys) {
                 if (fields[name] != wantedFields[name]) writeField(key, name, wantedFields[name] ?: "")
             }
+            database.fillKeys(listOf(key))
         }
     }
 
@@ -104,6 +106,5 @@ class ItemEditStore(private val database: ZoteroDatabase) {
     private fun writeField(itemKey: String, name: String, value: String) {
         if (value.isEmpty()) dao.deleteField(itemKey, name)
         else dao.putField(ItemData(itemKey, name, value, "String"))
-        database.fillSortKeys(listOf(itemKey)) // a title or date may have changed
     }
 }

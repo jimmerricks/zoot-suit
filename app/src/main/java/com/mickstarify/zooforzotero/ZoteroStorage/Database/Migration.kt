@@ -133,7 +133,7 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
 /**
  * Adds ItemInfo's sort keys (SortKeys), so that lists are ordered in SQL. They are
  * computed in Kotlin (a note's title is its text without markup), so they start empty;
- * ZoteroDatabase.fillMissingSortKeys fills them in when a library opens, and until then
+ * ZoteroDatabase.fillMissingKeys fills them in when a library opens, and until then
  * the list sorts as before.
  */
 val MIGRATION_10_11 = object : Migration(10, 11) {
@@ -154,5 +154,20 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
             "CREATE TABLE IF NOT EXISTS `FileHash` (`itemKey` TEXT NOT NULL, `size` INTEGER NOT NULL, " +
                     "`mtime` INTEGER NOT NULL, `md5` TEXT NOT NULL, PRIMARY KEY(`itemKey`))"
         )
+    }
+}
+
+/**
+ * Adds ItemInfo's SearchText columns, so that a search runs in SQL. Like the sort keys
+ * they are computed in Kotlin, so they start empty; ZoteroDatabase.fillMissingKeys fills
+ * them in when a library opens, and until then a search builds its index as before.
+ */
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        for (column in listOf(
+            "searchTitle", "searchCreators", "searchYear", "searchPublication", "searchAbstract", "searchTags", "searchOther"
+        )) {
+            database.execSQL("ALTER TABLE `ItemInfo` ADD COLUMN `$column` TEXT")
+        }
     }
 }
