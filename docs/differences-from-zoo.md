@@ -12,6 +12,8 @@ forked at v4.0.0. The main differences:
 | Upload | Overwrites the server copy | Checks for a newer server version first |
 | Search | Every field, on each keystroke | Chosen fields (title, creators, year by default), indexed; runs on Search |
 | Filtering | One tag at a time | Several tags plus attachment and edit filters |
+| Tags | Read only | Add and remove, offline too; uploaded at the next sync |
+| Large libraries | Whole library held in memory | List, sort and search read from the database |
 | Sidebar | Top-level collections; groups in a flat list | Collection tree; groups with their own collections |
 | Rotation and restart | Reloads the library; restarts in My Library | Keeps your place |
 | Adding items | Zotero Save, ISBN scanner, share target | Removed |
