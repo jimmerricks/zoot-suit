@@ -147,12 +147,19 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return zoteroDB.isPopulated()
     }
 
-    /** Answers the list's queries; reads the open library at each one. */
-    private val itemSource = InMemoryItemSource(
-        library = { zoteroDB },
-        deviceState = { DeviceState(onDeviceKeys, editedKeys, itemEditKeys) },
-        searchFields = { preferences.getSearchFields() },
-    )
+    /**
+     * Answers the list's queries from the database, for the open library (read at each
+     * one). Lazy: zoteroDatabase is set in init, after the properties.
+     */
+    private val itemSource: LibraryItemSource by lazy {
+        RoomItemSource(
+            database = zoteroDatabase,
+            groupId = { zoteroDB.groupID },
+            collections = { getCollections() },
+            deviceState = { DeviceState(onDeviceKeys, editedKeys, itemEditKeys) },
+            searchFields = { preferences.getSearchFields() },
+        )
+    }
 
     // one thread: lists are built in the order asked for, never two at once
     private val listScheduler = Schedulers.from(Executors.newSingleThreadExecutor())
@@ -812,6 +819,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             override fun success() {
                 presenter.makeToastAlert("Note deleted.")
                 zoteroDB.deleteItem(note.key)
+                // the list reads the database; the next sync would remove it there too
+                zoteroDatabase.deleteItem(note.key)
+                    .subscribeOn(Schedulers.io())
+                    .subscribe({ itemSource.invalidate() }, { Log.e(TAG, "deleting note ${note.key} locally failed: $it") })
+                // the open item is a row read before: it still lists the note
+                selectedItem?.notes?.removeAll { it.key == note.key }
                 presenter.refreshItemView()
             }
 
@@ -1444,6 +1457,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 .onErrorComplete())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnComplete {
+                itemSource.invalidate() // the sync may have changed anything
                 presenter.hideBasicSyncAnimation()
                 if (db.groupID == GroupInfo.NO_GROUP_ID) {
                     presenter.receiveCollections(getCollections())
