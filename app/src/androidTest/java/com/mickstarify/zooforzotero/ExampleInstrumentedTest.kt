@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getTargetContext()
-        assertEquals("com.mickstarify.zooforzotero", appContext.packageName)
+        assertEquals("nu.n4.zootsuit.debug", appContext.packageName)
     }
 }
