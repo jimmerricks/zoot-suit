@@ -991,12 +991,39 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     /** Keys of attachments whose file is on this device (non-empty). */
     private fun findOnDeviceAttachmentKeys(): Set<String> {
-        if (!zoteroDB.isPopulated()) return emptySet()
-        return attachmentStorageManager.listDownloadedItemKeys().filter { key ->
-            val item = zoteroDB.getItemWithKey(key) ?: return@filter false
+        if (!isLoaded()) return emptySet()
+        return downloadedAttachments().filterValues { item ->
             attachmentStorageManager.getFileSize(item).getOrDefault(0L) > 0
-        }.toSet()
+        }.keys
     }
+
+    /**
+     * The open library's attachments (not trashed) whose folder is on this device, by key,
+     * read from the database. Kept for [attachmentItem] until the next call. Blocking.
+     */
+    private fun downloadedAttachments(): Map<String, Item> {
+        val group = zoteroDB.groupID
+        val items = libraryItems(group, attachmentStorageManager.listDownloadedItemKeys())
+        downloadedCache = group to items
+        return items
+    }
+
+    @Volatile
+    private var downloadedCache: Pair<Int, Map<String, Item>> = GroupInfo.NO_GROUP_ID to emptyMap()
+
+    /** The open library's attachment [key] (not trashed), or null; from the last [downloadedAttachments], else the database. */
+    private fun attachmentItem(key: String): Item? {
+        val group = zoteroDB.groupID
+        val (cachedGroup, cached) = downloadedCache
+        if (cachedGroup == group) cached[key]?.let { return it }
+        return libraryItems(group, listOf(key))[key]
+    }
+
+    /** Library [group]'s items (not trashed) among [keys], by key, from the database. Blocking. */
+    private fun libraryItems(group: Int, keys: Collection<String>): Map<String, Item> =
+        zoteroDatabase.loadItemsByKeys(keys.toList(), withChildren = false)
+            .filter { it.getGroup() == group && !it.itemInfo.deleted }
+            .associateBy { it.itemKey }
 
     /** "Upload edited attachments": lists every edited attachment to pick which to upload. */
     fun chooseEditedAttachmentsToUpload() {
@@ -1183,7 +1210,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     private val editFinder = EditedAttachmentFinder(
         stampOf = { key ->
-            zoteroDB.getItemWithKey(key)?.let { item ->
+            attachmentItem(key)?.let { item ->
                 runCatching {
                     Pair(
                         attachmentStorageManager.getFileSize(item).getOrThrow(),
@@ -1194,7 +1221,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         },
         md5Of = { key ->
             attachmentStorageManager.calculateMd5(
-                zoteroDB.getItemWithKey(key) ?: throw FileNotFoundException(key)
+                attachmentItem(key) ?: throw FileNotFoundException(key)
             )
         }
     )
@@ -1205,15 +1232,13 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
      * the main thread.
      */
     fun findEditedAttachments(): List<Item> {
-        if (state.isUsingGroup() || !preferences.isAttachmentUploadingEnabled() ||
-            !zoteroDB.isPopulated()
-        ) return emptyList()
+        if (state.isUsingGroup() || !preferences.isAttachmentUploadingEnabled() || !isLoaded()) return emptyList()
+        val downloaded = downloadedAttachments()
         val bases = HashMap<String, String>()
-        for (key in attachmentStorageManager.listDownloadedItemKeys()) {
-            if (zoteroDB.getItemWithKey(key) == null) continue
+        for (key in downloaded.keys) {
             zoteroDatabase.getAttachmentBase(key, zoteroDB.groupID)?.let { bases[key] = it }
         }
-        return editFinder.edited(bases).mapNotNull { zoteroDB.getItemWithKey(it) }
+        return editFinder.edited(bases).mapNotNull { downloaded[it] }
     }
 
     /** Where [item]'s file stands on this device; worked out off the main thread. */
@@ -1248,8 +1273,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         val withBase = zoteroDatabase.attachmentKeysWithBase(db.groupID)
         val onDisk = attachmentStorageManager.listDownloadedItemKeys() - withBase
         if (onDisk.isEmpty()) return
-        db.items?.filter { it.itemType == Item.ATTACHMENT_TYPE && it.itemKey.uppercase() in onDisk }
-            ?.forEach { item ->
+        libraryItems(db.groupID, onDisk).values.filter { it.itemType == Item.ATTACHMENT_TYPE }
+            .forEach { item ->
                 val zoteroMd5 = item.getMd5Key()
                 if (zoteroMd5.isEmpty()) return@forEach
                 val local = runCatching { attachmentStorageManager.calculateMd5(item) }.getOrNull()
