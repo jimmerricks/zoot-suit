@@ -182,8 +182,8 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         redisplayItems()
     }
 
-    override fun getAllTags(): List<Pair<String, Int>> {
-        return if (model.isLoaded()) model.getAllTags() else emptyList()
+    override fun loadTags(onResult: (List<Pair<String, Int>>) -> Unit) {
+        if (model.isLoaded()) model.loadTags(onResult) else onResult(emptyList())
     }
 
     /** The open library: GroupInfo.NO_GROUP_ID for My Library, else the group's id. */

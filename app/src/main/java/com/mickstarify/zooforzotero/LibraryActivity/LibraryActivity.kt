@@ -251,9 +251,12 @@ class LibraryActivity : AppCompatActivity(),
             }
 
             R.id.library_filter -> {
-                LibraryFilterDialog(this, presenter.getLibraryFilter(), presenter.getAllTags()) {
-                    presenter.setLibraryFilter(it)
-                }.show()
+                presenter.loadTags { tags ->
+                    if (isFinishing || isDestroyed) return@loadTags
+                    LibraryFilterDialog(this, presenter.getLibraryFilter(), tags) {
+                        presenter.setLibraryFilter(it)
+                    }.show()
+                }
             }
 
             R.id.pending_edits -> {
@@ -604,7 +607,8 @@ class LibraryActivity : AppCompatActivity(),
 
     override fun canEditTags(): Boolean = presenter.canEditItems()
 
-    override fun libraryTags(): List<String> = presenter.getAllTags().map { it.first }
+    override fun libraryTags(onResult: (List<String>) -> Unit) =
+        presenter.loadTags { tags -> onResult(tags.map { it.first }) }
 
     override fun hasPendingEdits(item: Item): Boolean = presenter.hasPendingEdits(item)
 

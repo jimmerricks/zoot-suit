@@ -1622,8 +1622,15 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         }
     }
 
-    override fun getAllTags(): List<Pair<String, Int>> {
-        return itemSource.tagCounts()
+    // a GROUP BY over every tag: 40 ms on the emulator, too long for the main thread on a tablet
+    override fun loadTags(onResult: (List<Pair<String, Int>>) -> Unit) {
+        Single.fromCallable { itemSource.tagCounts() }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(onResult) { e ->
+                Log.e(TAG, "counting tags failed: $e")
+                onResult(emptyList())
+            }
     }
 
     override fun deleteLocalAttachment(attachment: Item) {

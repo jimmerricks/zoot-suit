@@ -203,8 +203,12 @@ class ItemViewFragment : DialogFragment(),
         val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_tag, null)
         val field = view.findViewById<AutoCompleteTextView>(R.id.editText_new_tag)
         val itemTags = item.tags.map { it.tag }.toSet()
-        val suggestions = (listener?.libraryTags() ?: emptyList()).filter { it !in itemTags }
-        field.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, suggestions))
+        // the suggestions arrive while the dialog is open
+        listener?.libraryTags { tags ->
+            if (!isAdded) return@libraryTags
+            val suggestions = tags.filter { it !in itemTags }
+            field.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, suggestions))
+        }
 
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Add tag")
@@ -330,8 +334,8 @@ class ItemViewFragment : DialogFragment(),
         /** Whether tags can be added and removed here (My Library, not a group). */
         fun canEditTags(): Boolean
 
-        /** The open library's tags, for suggestions. */
-        fun libraryTags(): List<String>
+        /** The open library's tags, for suggestions; [onResult] runs on the main thread. */
+        fun libraryTags(onResult: (List<String>) -> Unit)
         fun hasPendingEdits(item: Item): Boolean
     }
 

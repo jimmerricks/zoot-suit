@@ -94,7 +94,8 @@ interface Contract {
         fun requestForceResync()
         fun backButtonPressed()
         fun openMyPublications()
-        fun getAllTags(): List<Pair<String, Int>>
+        /** The open library's tags with their item counts, read off the main thread; [onResult] runs on it. */
+        fun loadTags(onResult: (List<Pair<String, Int>>) -> Unit)
         fun showLoadingAlertDialog(message: String)
         fun hideLoadingAlertDialog()
         fun finishLibrary()
@@ -121,7 +122,7 @@ interface Contract {
         fun usePersonalLibrary()
         fun getGroupById(groupId: Int): GroupInfo?
         fun loadPriorState()
-        fun getAllTags(): List<Pair<String, Int>>
+        fun loadTags(onResult: (List<Pair<String, Int>>) -> Unit)
         fun deleteLocalAttachment(attachment: Item)
         fun isFirstSync(): Boolean
     }

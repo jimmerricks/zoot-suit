@@ -50,7 +50,8 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         context.applicationContext,
         ZoteroRoomDatabase::class.java, "zotero"
     )
-        .allowMainThreadQueries() // I promise I will use this wisely. So far it's only used for querying tags.
+        // tag counts, the known user, now run off the main thread; kept until other callers are checked
+        .allowMainThreadQueries()
         .addMigrations(MIGRATION_1_2)
         .addMigrations(MIGRATION_2_3)
         .addMigrations(MIGRATION_3_4)
