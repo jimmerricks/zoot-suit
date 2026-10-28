@@ -242,13 +242,17 @@ class SyncManager (
                 }
 
                 override fun onNext(response: ZoteroAPIItemsResponse) {
-                    this.libraryVersion = response.LastModifiedVersion
+                    // The version the download started from, not the latest page's: if the
+                    // library changes while it pages through, items changed meanwhile can
+                    // move to pages already read. Stored as the newer version, they would
+                    // never be fetched; from the first, the next sync fetches them.
+                    if (this.libraryVersion == -1) this.libraryVersion = response.LastModifiedVersion
                     this.downloaded += response.items.size
 
                     if (this.downloaded < response.totalResults)
                         db.setDownloadProgress(
                             ItemsDownloadProgress(
-                                response.LastModifiedVersion,
+                                this.libraryVersion,
                                 this.downloaded,
                                 response.totalResults
                             )
