@@ -19,6 +19,19 @@ object LibrarySort {
         }
     }
 
+    /**
+     * The fields [sortKey] and the title tie-break read under [method]; a note's title is
+     * its text, read for notes only. With [readsCreators], the creators too.
+     */
+    fun fieldsRead(method: SortMethod): List<String> =
+        listOf("itemType", "title", "caseName", "nameOfAct") + when (method) {
+            SortMethod.DATE -> listOf("date")
+            SortMethod.DATE_ADDED -> listOf("dateAdded")
+            SortMethod.TITLE, SortMethod.AUTHOR -> emptyList()
+        }
+
+    fun readsCreators(method: SortMethod) = method == SortMethod.AUTHOR
+
     // Keys are computed once per item, not per comparison: a note's title parses its HTML.
     fun sorted(items: List<Item>, method: SortMethod, ascending: Boolean): List<Item> {
         val sorted = items

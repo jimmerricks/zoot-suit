@@ -5,16 +5,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.mickstarify.zooforzotero.LibraryActivity.EmptyListMessage
+import com.mickstarify.zooforzotero.LibraryActivity.ItemPages
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 /** Attachment keys whose file is on this device, and those of them with edits to sync. */
 data class AttachmentStates(val onDevice: Set<String>, val edited: Set<String>)
 
 class LibraryListViewModel : ViewModel() {
-    private val items = MutableLiveData<List<Item>>()
+    private val items = MutableLiveData<ItemPages>()
 
-    fun getItems(): LiveData<List<Item>> = items
-    fun setItems(items: List<Item>) {
+    fun getItems(): LiveData<ItemPages> = items
+    fun setItems(items: ItemPages) {
         Log.d("zotero", "Setting items ${items.size}")
         this.items.value = items
     }

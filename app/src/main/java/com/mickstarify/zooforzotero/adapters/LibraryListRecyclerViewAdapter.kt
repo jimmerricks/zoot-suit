@@ -9,12 +9,13 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
+import com.mickstarify.zooforzotero.LibraryActivity.ItemPages
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.AttachmentStates
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 class LibraryListRecyclerViewAdapter(
-    var items: List<Item>,
+    var items: ItemPages?,
     val listener: LibraryListInteractionListener
 ) : RecyclerView.Adapter<LibraryListRecyclerViewAdapter.ItemViewHolder>() {
     /** Which PDFs are on this device or edited here; badges the PDF icon. */
@@ -43,7 +44,7 @@ class LibraryListRecyclerViewAdapter(
         holder: ItemViewHolder,
         position: Int
     ) {
-        val item = items[position]
+        val item = items?.get(position) ?: return bindPlaceholder(holder)
         holder.textView_title.text = item.getTitle()
         holder.textView_author.visibility = View.VISIBLE
         holder.textView_author.text = item.getAuthor()
@@ -197,8 +198,17 @@ class LibraryListRecyclerViewAdapter(
         holder.imageView.setImageResource(iconResource)
     }
 
+    /** A row whose item is still being read: blank, and does nothing. */
+    private fun bindPlaceholder(holder: ItemViewHolder) {
+        holder.textView_title.text = ""
+        holder.textView_author.text = ""
+        holder.pdfImage.visibility = View.GONE
+        holder.imageView.setImageResource(R.drawable.treeitem_2x)
+        holder.layout.setOnClickListener(null)
+    }
+
     override fun getItemCount(): Int {
-        return items.size
+        return items?.size ?: 0
     }
 }
 

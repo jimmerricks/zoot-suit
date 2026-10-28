@@ -170,10 +170,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     /**
      * Builds the list for [place] in the open library, after [librarySearch] and
      * [libraryFilter] (Trash and My Publications are shown whole), in the library's sort
-     * order, off the main thread; then sets [lastFilteredItems] and calls [onResult] on
-     * the main thread, unless another list was asked for meanwhile. Call on the main thread.
+     * order, off the main thread, with its first page of rows; then sets
+     * [lastFilteredCount] and calls [onResult] on the main thread, unless another list was
+     * asked for meanwhile. Later pages are read as the list scrolls ([ItemPages]). Call on
+     * the main thread.
      */
-    fun listItems(place: LibraryPlace, onResult: (List<Item>) -> Unit) {
+    fun listItems(place: LibraryPlace, onResult: (ItemPages) -> Unit) {
         val groupId = state.currentGroup.id
         val query = LibraryQuery(
             place = place,
@@ -184,14 +186,18 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             includeSubcollections = preferences.showSubcollectionItems(),
         )
         val generation = ++listGeneration
-        Single.fromCallable { itemSource.query(query) }
+        val start = System.nanoTime()
+        Single.fromCallable {
+            val rows = itemSource.query(query)
+            rows to rows.load(0, minOf(rows.size, ItemPages.PAGE_SIZE))
+        }
             .subscribeOn(listScheduler)
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ items ->
-                Log.d(TAG, "listItems($place) - ${items.size} items")
+            .subscribe({ (rows, firstPage) ->
+                Log.d(TAG, "listItems($place) - ${rows.size} items in ${(System.nanoTime() - start) / 1_000_000} ms")
                 if (generation != listGeneration) return@subscribe
-                lastFilteredItems = if (place.isNarrowed) items else null
-                onResult(items)
+                lastFilteredCount = if (place.isNarrowed) rows.size else null
+                onResult(ItemPages(rows, firstPage, ::loadRows))
             }, { e ->
                 Log.e(TAG, "building the list for $place failed: $e")
                 if (generation == listGeneration) {
@@ -263,10 +269,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     /**
-     * The items the list shows, after search and filter; null if the current list doesn't go
-     * through the filter (trash, My Publications). For counts in the dialog and toolbar.
+     * How many items the list shows, after search and filter; null if the current list
+     * doesn't go through the filter (trash, My Publications). For the toolbar's count.
      */
-    var lastFilteredItems: List<Item>? = null
+    var lastFilteredCount: Int? = null
         private set
 
     /** Attachment keys whose file is on this device / has edits to sync; see refreshPendingEdits. */
@@ -548,6 +554,17 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             return
         }
         openPDF(item)
+    }
+
+    /** Reads rows of a list on the list's thread, for [ItemPages]; null to it if that fails. */
+    private fun loadRows(rows: LibraryRows, from: Int, to: Int, onLoaded: (List<Item?>?) -> Unit) {
+        Single.fromCallable { rows.load(from, to) }
+            .subscribeOn(listScheduler)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ onLoaded(it) }, { e ->
+                Log.e(TAG, "reading rows $from-$to failed: $e")
+                onLoaded(null)
+            })
     }
 
     /** Prepares the search in the background (on the list's thread) while the search dialog is open. */

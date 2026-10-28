@@ -39,10 +39,27 @@ data class DeviceState(
     val itemEdits: Set<String> = emptySet(),
 )
 
+/** A query's items in order: all their keys at once, their rows when asked for. */
+interface LibraryRows {
+    val keys: List<String>
+    val size: Int get() = keys.size
+
+    /** The rows from [from] until [to], aligned with [keys]: null for an item gone meanwhile. Blocking. */
+    fun load(from: Int, to: Int): List<Item?>
+}
+
+/** Rows already in memory. */
+class LoadedRows(private val items: List<Item>) : LibraryRows {
+    override val keys = items.map { it.itemKey }
+    override fun load(from: Int, to: Int): List<Item?> = items.subList(from, to)
+}
+
+fun LibraryRows.loadAll(): List<Item?> = load(0, size)
+
 /** Answers [LibraryQuery]s for the open library. Blocking. */
 interface LibraryItemSource {
     /** The query's items, sorted. */
-    fun query(query: LibraryQuery): List<Item>
+    fun query(query: LibraryQuery): LibraryRows
 
     /** Every tag on the library's top-level items, with the number of items carrying it; by name. */
     fun tagCounts(): List<Pair<String, Int>>

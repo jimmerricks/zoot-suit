@@ -54,7 +54,7 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         setHasOptionsMenu(true)
         viewModel = ViewModelProvider(requireActivity()).get(LibraryListViewModel::class.java)
         val recyclerView = requireView().findViewById<RecyclerView>(R.id.recyclerView)
-        val adapter = LibraryListRecyclerViewAdapter(emptyList(), this)
+        val adapter = LibraryListRecyclerViewAdapter(null, this)
 
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -62,6 +62,8 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         viewModel.getItems().observe(viewLifecycleOwner) { entries ->
             Log.d("zotero", "Loading new set of item (${entries.size} length)")
             adapter.items = entries
+            // rows arrive a page at a time as the list scrolls
+            entries.onPageLoaded = { from, count -> adapter.notifyItemRangeChanged(from, count) }
             adapter.notifyDataSetChanged()
 
             if (entries.size == 0) {

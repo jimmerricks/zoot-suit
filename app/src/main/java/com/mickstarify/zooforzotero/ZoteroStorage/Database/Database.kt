@@ -163,6 +163,27 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         return keys.mapNotNull { key -> infos[key]?.let { assemble(it, data, creators, tags, collections, listFieldsOnly) } }
     }
 
+    /**
+     * The items with [keys], in that order, with only the fields [names] (and a note's
+     * text), and their creators if [withCreators]: enough to order a list before its rows
+     * load. Blocking.
+     */
+    fun loadSortItems(keys: List<String>, names: List<String>, withCreators: Boolean): List<Item> {
+        if (keys.isEmpty()) return emptyList()
+        val dao = db.itemDao()
+        val infos = HashMap<String, ItemInfo>(keys.size * 2)
+        val data = HashMap<String, MutableList<ItemData>>(keys.size * 2)
+        val creators = HashMap<String, MutableList<Creator>>()
+        for (chunk in keys.chunked(KEY_CHUNK)) {
+            for (i in dao.getItemInfos(chunk)) infos[i.itemKey] = i
+            for (d in dao.getSomeItemData(chunk, names)) data.getOrPut(d.parent) { ArrayList(4) }.add(d)
+            if (withCreators) for (c in dao.getCreators(chunk)) creators.getOrPut(c.parent) { ArrayList(2) }.add(c)
+        }
+        return keys.mapNotNull { key ->
+            infos[key]?.let { assemble(it, data, creators, emptyMap(), emptyMap(), listFieldsOnly = true) }
+        }
+    }
+
     /** Runs a query whose first column is an item key; for the list's generated SQL. Blocking. */
     fun queryKeys(sql: String, args: List<Any>): List<String> =
         db.query(SimpleSQLiteQuery(sql, args.toTypedArray())).use { c ->

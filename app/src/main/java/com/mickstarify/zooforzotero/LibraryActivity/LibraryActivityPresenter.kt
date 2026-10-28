@@ -204,13 +204,13 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     private fun showFilterSummary() {
         val search = model.librarySearch
         val filter = model.libraryFilter
-        val shown = model.lastFilteredItems
+        val shown = model.lastFilteredCount
         subtitle.value =
             if ((search.isEmpty() && !filter.isActive) || shown == null) null
             else listOfNotNull(
                 "Search: “$search”".takeIf { search.isNotEmpty() },
                 "Filter: ${filter.describe()}".takeIf { filter.isActive },
-                "${shown.size} " + if (shown.size == 1) "item" else "items",
+                "$shown " + if (shown == 1) "item" else "items",
             ).joinToString(" · ")
         libraryListViewModel.setEmptyMessage(
             EmptyListMessage.forList(search, filter, shown != null, model.getCurrentCollection())
@@ -373,9 +373,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
      * list asked for meanwhile replaces this one (see LibraryActivityModel.listItems).
      */
     private fun showList(place: LibraryPlace) {
-        model.listItems(place) { items ->
-            model.isDisplayingItems = items.isNotEmpty()
-            libraryListViewModel.setItems(items)
+        model.listItems(place) { pages ->
+            model.isDisplayingItems = pages.size > 0
+            libraryListViewModel.setItems(pages)
             showFilterSummary()
         }
     }

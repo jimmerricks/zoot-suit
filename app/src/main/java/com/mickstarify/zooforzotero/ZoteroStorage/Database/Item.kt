@@ -403,6 +403,13 @@ interface ItemDao {
     @Query("SELECT * FROM ItemData WHERE parent IN (:keys)")
     fun getItemData(keys: List<String>): List<ItemData>
 
+    // [names] of [keys], and the text of those that are notes
+    @Query(
+        "SELECT d.* FROM ItemData d JOIN ItemInfo i ON d.parent = i.itemKey WHERE d.parent IN (:keys) " +
+            "AND (d.name IN (:names) OR (d.name = 'note' AND i.itemType = 'note'))"
+    )
+    fun getSomeItemData(keys: List<String>, names: List<String>): List<ItemData>
+
     @Query("SELECT * FROM ItemCreator WHERE parent IN (:keys)")
     fun getCreators(keys: List<String>): List<Creator>
 

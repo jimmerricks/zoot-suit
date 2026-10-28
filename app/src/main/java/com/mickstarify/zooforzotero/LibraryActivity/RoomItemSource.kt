@@ -21,7 +21,7 @@ class RoomItemSource(
     private val searchFields: () -> Set<LibrarySearch.Field>,
 ) : LibraryItemSource {
 
-    override fun query(query: LibraryQuery): List<Item> {
+    override fun query(query: LibraryQuery): LibraryRows {
         val group = groupId()
         val place = query.place
         val collectionKeys = when {
@@ -32,7 +32,19 @@ class RoomItemSource(
         val (sql, args) = LibrarySql.keys(query, group, collectionKeys)
         var keys = database.queryKeys(sql, args)
         if (place.isNarrowed) keys = narrow(group, keys, query)
-        return LibrarySort.sorted(database.loadItemsByKeys(keys), query.sort, query.ascending)
+        // ordered on the few fields the sort reads; whole rows load a page at a time
+        val sortItems = database.loadSortItems(
+            keys, LibrarySort.fieldsRead(query.sort), LibrarySort.readsCreators(query.sort)
+        )
+        return DatabaseRows(database, LibrarySort.sorted(sortItems, query.sort, query.ascending).map { it.itemKey })
+    }
+
+    private class DatabaseRows(private val database: ZoteroDatabase, override val keys: List<String>) : LibraryRows {
+        override fun load(from: Int, to: Int): List<Item?> {
+            val range = keys.subList(from, to)
+            val byKey = database.loadItemsByKeys(range).associateBy { it.itemKey }
+            return range.map { byKey[it] }
+        }
     }
 
     /** The query's search and device-state filters, which SQL doesn't answer. */

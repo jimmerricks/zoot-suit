@@ -148,8 +148,11 @@ class ItemSourceEquivalenceTest {
         // Trash rows in memory never had their children attached; read from the database
         // they do (a trashed item's PDF opens from its row). Only that differs there.
         fun shown(items: List<Item>) = rows(items).map { if (query.place == LibraryPlace.Trash) it.take(3) else it }
-        val expected = shown(memory.query(query))
-        val actual = shown(room.query(query))
+        val expected = shown(memory.query(query).loadAll().map { it!! })
+        val actual = shown(room.query(query).loadAll().map { it!! })
+        // and a page from the middle, as the list reads it
+        val rows = room.query(query)
+        if (rows.size > 10) assertEquals("$query page", rows.keys.subList(5, 10), rows.load(5, 10).map { it!!.itemKey })
         assertEquals("$query", expected, actual)
     }
 
@@ -181,7 +184,7 @@ class ItemSourceEquivalenceTest {
             assertSame(LibraryQuery(place, filter = filter, includeSubcollections = true))
         }
         val nonEmpty = room.query(LibraryQuery(LibraryPlace.Library, filter = LibraryFilter(hasPdf = true)))
-        assertTrue("the fixture has items with PDFs", nonEmpty.isNotEmpty())
+        assertTrue("the fixture has items with PDFs", nonEmpty.size > 0)
     }
 
     @Test

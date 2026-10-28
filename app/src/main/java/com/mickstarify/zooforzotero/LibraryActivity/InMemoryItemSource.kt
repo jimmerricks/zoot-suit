@@ -14,7 +14,7 @@ class InMemoryItemSource(
     private val searchFields: () -> Set<LibrarySearch.Field>,
 ) : LibraryItemSource {
 
-    override fun query(query: LibraryQuery): List<Item> {
+    override fun query(query: LibraryQuery): LibraryRows {
         val lib = library()
         val items = when (val place = query.place) {
             LibraryPlace.Library -> lib.getDisplayableItems()
@@ -30,7 +30,7 @@ class InMemoryItemSource(
                 }
         }
         val shown = if (query.place.isNarrowed) narrow(lib, items, query) else items
-        return LibrarySort.sorted(shown, query.sort, query.ascending)
+        return LoadedRows(LibrarySort.sorted(shown, query.sort, query.ascending))
     }
 
     override fun tagCounts(): List<Pair<String, Int>> =

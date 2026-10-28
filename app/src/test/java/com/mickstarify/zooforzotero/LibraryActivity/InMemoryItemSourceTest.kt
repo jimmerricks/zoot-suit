@@ -63,7 +63,7 @@ class InMemoryItemSourceTest {
     private var device = DeviceState()
     private val source = InMemoryItemSource({ library }, { device }, { LibrarySearch.Field.entries.toSet() })
 
-    private fun keys(query: LibraryQuery) = source.query(query).map { it.itemKey }
+    private fun keys(query: LibraryQuery) = source.query(query).keys
 
     @Test
     fun `the library lists top-level items sorted by title`() {
@@ -131,7 +131,7 @@ class InMemoryItemSourceTest {
         val dated = InMemoryItemSource({ FakeLibrary(listOf(new, old)) }, { DeviceState() }, { emptySet() })
         assertEquals(
             listOf("OLD", "NEW"),
-            dated.query(LibraryQuery(LibraryPlace.Library, sort = SortMethod.DATE)).map { it.itemKey }
+            dated.query(LibraryQuery(LibraryPlace.Library, sort = SortMethod.DATE)).keys
         )
     }
 
@@ -140,6 +140,6 @@ class InMemoryItemSourceTest {
         val b = item("KEY2", "Same")
         val a = item("KEY1", "Same")
         val tied = InMemoryItemSource({ FakeLibrary(listOf(b, a)) }, { DeviceState() }, { emptySet() })
-        assertEquals(listOf("KEY1", "KEY2"), tied.query(LibraryQuery(LibraryPlace.Library)).map { it.itemKey })
+        assertEquals(listOf("KEY1", "KEY2"), tied.query(LibraryQuery(LibraryPlace.Library)).keys)
     }
 }
