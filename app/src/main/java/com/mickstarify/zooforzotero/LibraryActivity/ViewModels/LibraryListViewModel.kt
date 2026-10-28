@@ -5,18 +5,16 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.mickstarify.zooforzotero.LibraryActivity.EmptyListMessage
-import com.mickstarify.zooforzotero.LibraryActivity.ListEntry
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 /** Attachment keys whose file is on this device, and those of them with edits to sync. */
 data class AttachmentStates(val onDevice: Set<String>, val edited: Set<String>)
 
 class LibraryListViewModel : ViewModel() {
-    private val items = MutableLiveData<List<ListEntry>>()
+    private val items = MutableLiveData<List<Item>>()
 
-    fun getItems(): LiveData<List<ListEntry>> = items
-    fun setItems(items: List<ListEntry>) {
+    fun getItems(): LiveData<List<Item>> = items
+    fun setItems(items: List<Item>) {
         Log.d("zotero", "Setting items ${items.size}")
         this.items.value = items
     }
@@ -46,12 +44,6 @@ class LibraryListViewModel : ViewModel() {
     fun getOnAttachmentClicked(): LiveData<Item> = attachmentClicked
     fun onAttachmentClicked(attachment: Item) {
         this.attachmentClicked.value = attachment
-    }
-
-    private val collectionClicked = MutableLiveData<Collection>()
-    fun getOnCollectionClicked(): LiveData<Collection> = collectionClicked
-    fun onCollectionClicked(collection: Collection) {
-        this.collectionClicked.value = collection
     }
 
     private val isShowingLoadingAnimation = MutableLiveData<Boolean>(false)

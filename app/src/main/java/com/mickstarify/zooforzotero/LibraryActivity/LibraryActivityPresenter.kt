@@ -374,9 +374,8 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
      */
     private fun showList(place: LibraryPlace) {
         model.listItems(place) { items ->
-            val entries = items.map { ListEntry(it) }
-            model.isDisplayingItems = entries.isNotEmpty()
-            libraryListViewModel.setItems(entries)
+            model.isDisplayingItems = items.isNotEmpty()
+            libraryListViewModel.setItems(items)
             showFilterSummary()
         }
     }
@@ -518,9 +517,6 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         }
         observe(libraryListViewModel.getOnAttachmentClicked()) {
             this.openAttachment(it)
-        }
-        observe(libraryListViewModel.getOnCollectionClicked()) {
-            this.setCollection(it.key)
         }
         observe(libraryListViewModel.getOnLibraryRefreshRequested()) {
             this.requestLibraryRefresh()

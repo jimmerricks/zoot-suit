@@ -21,7 +21,6 @@ import androidx.core.view.updatePadding
 import com.mickstarify.zooforzotero.LibraryActivity.LibraryActivity
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.R
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.adapters.LibraryListInteractionListener
 import com.mickstarify.zooforzotero.adapters.LibraryListRecyclerViewAdapter
@@ -99,10 +98,6 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
 
     override fun onItemOpen(item: Item) {
         viewModel.onItemClicked(item)
-    }
-
-    override fun onCollectionOpen(collection: Collection) {
-        viewModel.onCollectionClicked(collection)
     }
 
     override fun onItemAttachmentOpen(item: Item) {

@@ -21,7 +21,6 @@ interface Contract {
 
         //        fun hideLoadingAnimation()
         fun setTitle(title: String)
-        fun populateEntries(entries: List<ListEntry>)
         fun showItemDialog()
         fun updateAttachmentDownloadProgress(progress: Int, total: Int)
         fun hideAttachmentDownloadProgress()
