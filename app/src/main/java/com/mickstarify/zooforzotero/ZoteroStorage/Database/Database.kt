@@ -28,7 +28,7 @@ import javax.inject.Singleton
         AttachmentBase::class,
         PendingItemEdit::class
     ),
-    version = 9,
+    version = 10,
     exportSchema = true
 )
 abstract class ZoteroRoomDatabase : RoomDatabase() {
@@ -55,7 +55,8 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         .addMigrations(MIGRATION_5_6)
         .addMigrations(MIGRATION_6_7)
         .addMigrations(MIGRATION_7_8)
-        .addMigrations(MIGRATION_8_9).build()
+        .addMigrations(MIGRATION_8_9)
+        .addMigrations(MIGRATION_9_10).build()
 
     /** md5 of the file this device last downloaded/uploaded for the attachment, or null. */
     fun getAttachmentBase(itemKey: String, group: Int): String? =
@@ -179,7 +180,12 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
     ): Completable {
         Log.d("zotero", "writeItem() - writing item ${itemPOJO.ItemKey} for groupID=$groupID")
         val itemInfo =
-            ItemInfo(itemPOJO.ItemKey, groupID, itemPOJO.version, Boolean.fromInt(itemPOJO.deleted))
+            ItemInfo(
+                itemPOJO.ItemKey, groupID, itemPOJO.version, Boolean.fromInt(itemPOJO.deleted),
+                parent = itemPOJO.data["parentItem"]?.ifEmpty { null },
+                itemType = itemPOJO.data["itemType"]?.ifEmpty { null },
+                contentType = itemPOJO.data["contentType"]?.ifEmpty { null },
+            )
         var itemDatas = LinkedList<ItemData>()
         var itemCreators = LinkedList<Creator>()
         // blank fields aren't stored (see MIGRATION_7_8); a missing field reads as blank

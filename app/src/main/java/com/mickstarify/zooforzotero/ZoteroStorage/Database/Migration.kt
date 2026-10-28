@@ -109,3 +109,23 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
         )
     }
 }
+
+/**
+ * Copies each item's parentItem, itemType and contentType into ItemInfo (new columns), and
+ * indexes the parent: the list then finds children, attachments and PDFs with ItemInfo
+ * alone instead of loading every item.
+ */
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE `ItemInfo` ADD COLUMN `parent` TEXT")
+        database.execSQL("ALTER TABLE `ItemInfo` ADD COLUMN `itemType` TEXT")
+        database.execSQL("ALTER TABLE `ItemInfo` ADD COLUMN `contentType` TEXT")
+        for ((column, field) in listOf("parent" to "parentItem", "itemType" to "itemType", "contentType" to "contentType")) {
+            database.execSQL(
+                "UPDATE `ItemInfo` SET `$column` = (SELECT `value` FROM `ItemData` " +
+                        "WHERE `ItemData`.`parent` = `ItemInfo`.`itemKey` AND `ItemData`.`name` = '$field')"
+            )
+        }
+        database.execSQL("CREATE INDEX IF NOT EXISTS `index_ItemInfo_parent` ON `ItemInfo` (`parent`)")
+    }
+}

@@ -202,9 +202,13 @@ dependencies {
     androidTestImplementation 'org.mockito:mockito-android:5.18.0'
     androidTestImplementation 'androidx.test:runner:1.7.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
+    androidTestImplementation 'androidx.room:room-testing:2.7.2'
 
 }
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas".toString())
 }
+
+// the exported schemas, for MigrationTestHelper in instrumented tests
+android.sourceSets.androidTest.assets.srcDirs += files("$projectDir/schemas")

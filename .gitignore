@@ -29,7 +29,6 @@ build/
 .gradle
 artifacts.zip
 logs.txt
-app/schemas/
 
 local.properties
 

@@ -16,14 +16,20 @@ import java.util.LinkedList
 
 @Entity(
     tableName = "ItemInfo", primaryKeys = ["itemKey", "group"],
-    indices = arrayOf(Index(value = ["itemKey"], unique = true))
+    indices = arrayOf(Index(value = ["itemKey"], unique = true), Index(value = ["parent"]))
 )
 @Parcelize
 class ItemInfo(
     @ColumnInfo(name = "itemKey") val itemKey: String,
     @ColumnInfo(name = "group") val groupParent: Int = Collection.NO_GROUP_ID,
     @ColumnInfo(name = "version") val version: Int,
-    @ColumnInfo(name = "deleted") val deleted: Boolean
+    @ColumnInfo(name = "deleted") val deleted: Boolean,
+    // Copies of the item's parentItem, itemType and contentType fields (ItemData), so that
+    // the list's queries find children, attachments and PDFs through ItemInfo alone. Set
+    // where items are written (ZoteroDatabase.writeItem); MIGRATION_9_10 filled them in.
+    @ColumnInfo(name = "parent") val parent: String? = null,
+    @ColumnInfo(name = "itemType") val itemType: String? = null,
+    @ColumnInfo(name = "contentType") val contentType: String? = null,
 ) : Parcelable {
 
     //@Relation(entity = ItemData::class, parentColumn = "itemKey", entityColumn = "parent")
