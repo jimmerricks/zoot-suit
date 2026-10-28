@@ -31,7 +31,7 @@ class RoomItemSource(
         }
         // in SQL by the stored sort keys; items from before they existed are sorted here
         // until the library's are filled in (ZoteroDatabase.fillMissingSortKeys)
-        val ordered = !database.lacksSortKeys(group)
+        val ordered = hasSortKeys(group)
         val (sql, args) = LibrarySql.keys(query, group, collectionKeys, ordered)
         var keys = database.queryKeys(sql, args)
         if (place.isNarrowed) keys = narrow(group, keys, query)
@@ -43,6 +43,16 @@ class RoomItemSource(
         }
         // whole rows load a page at a time
         return DatabaseRows(database, keys)
+    }
+
+    // libraries whose items all have SortKeys; writeItem stores them with every item, so
+    // one stays complete, but it's checked again after invalidate() all the same
+    private val sortKeysComplete = java.util.concurrent.ConcurrentHashMap.newKeySet<Int>()
+
+    /** Whether all of library [group]'s items have SortKeys: a scan of ItemInfo, so it's remembered once true. */
+    private fun hasSortKeys(group: Int): Boolean {
+        if (group in sortKeysComplete) return true
+        return (!database.lacksSortKeys(group)).also { if (it) sortKeysComplete += group }
     }
 
     private class DatabaseRows(private val database: ZoteroDatabase, override val keys: List<String>) : LibraryRows {
@@ -119,5 +129,6 @@ class RoomItemSource(
 
     override fun invalidate() {
         generation.incrementAndGet()
+        sortKeysComplete.clear()
     }
 }
