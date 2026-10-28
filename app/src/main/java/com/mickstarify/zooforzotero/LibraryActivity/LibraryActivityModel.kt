@@ -144,7 +144,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun isLoaded(): Boolean {
-        return zoteroDB.isPopulated()
+        return zoteroDB.isOpen()
     }
 
     /**
@@ -348,7 +348,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     fun getGroups(): List<GroupInfo> = groups ?: emptyList()
 
     override fun downloadLibrary(doRefresh: Boolean, useSmallLoadingAnimation: Boolean) {
-        if (!doRefresh && zoteroDB.isPopulated()) {
+        if (!doRefresh && zoteroDB.isOpen()) {
             Log.d("zotero", "not resyncing library, already have a copy.")
             return
         }
@@ -818,7 +818,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         zoteroAPI.deleteItem(note.key, note.version, object : DeleteItemListener {
             override fun success() {
                 presenter.makeToastAlert("Note deleted.")
-                zoteroDB.deleteItem(note.key)
                 // the list reads the database; the next sync would remove it there too
                 zoteroDatabase.deleteItem(note.key)
                     .subscribeOn(Schedulers.io())
@@ -1330,7 +1329,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     override fun startGroupSync(group: GroupInfo, refresh: Boolean) {
         val db = zoteroGroupDB.getGroup(group.id)
         if (!refresh) openingGroup = group
-        if (!refresh && (db.isPopulated() || db.getLastSyncedTimestamp() != 0L)) {
+        if (!refresh && (db.isOpen() || db.getLastSyncedTimestamp() != 0L)) {
             finishLibrarySync(db) {
                 if (shouldIUpdateLibrary(db) && !syncManager.isSyncing()) {
                     syncManager.startCompleteSync(db, true)
@@ -1425,7 +1424,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     fun loadLibraryLocally(onFinish: () -> Unit = {}) {
-        if (!zoteroDB.isPopulated())
+        if (!zoteroDB.isOpen())
             finishLibrarySync(zoteroDB) {
                 onFinish()
             }
@@ -1435,88 +1434,56 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return zoteroDB.getLastSyncedTimestamp() == 0L
     }
 
+    /**
+     * Opens library [db] after a sync, at startup or when a group is opened: loads its
+     * collections and attachment records and shows it. Its items stay in the database;
+     * the list reads what it shows from there (RoomItemSource). Then the upkeep that
+     * needs no screen: copies downloaded before AttachmentBase existed get a base, a sync
+     * that left the library empty is redone in full next time, and the attachment states
+     * are refreshed. [onFinish] runs after all of it. Called by the SyncManager too.
+     */
     override fun finishLibrarySync(db: ZoteroDB, onFinish: () -> Unit) {
-        /* This method is the endpoint for zotero api syncs,
-        The role of this function is to load the library into memory and then
-        trigger a UI update.
-        * This will be called from the SyncManager. */
-        Log.d(TAG, "finishLibrarySync() called - starting final stage (loading from database)")
-
+        Log.d(TAG, "finishLibrarySync() called - opening library ${db.groupID}")
+        val start = System.nanoTime()
 
         val loadCollections = db.loadCollectionsFromDatabase().doOnError { e ->
             Log.e(TAG, "loading collections from db got error $e")
             db.collections = LinkedList()
-        }.doOnComplete {
-            Log.d(TAG, "loadCollectionsFromDatabase completed - loaded ${db.collections?.size ?: 0} collections")
-        }
-
-        // a search in fields that load after startup is redone once they have
-        db.onAllFieldsLoaded = {
-            Handler(Looper.getMainLooper()).post {
-                if (db === zoteroDB && librarySearch.isNotEmpty() &&
-                    preferences.getSearchFields().any { it.needsAllFields }
-                ) presenter.redisplayItems()
-            }
-        }
-        val loadItems = db.loadItemsFromDatabase().doOnError { e ->
-            Log.e(TAG, "loading Items from db got error $e")
-            db.items = LinkedList()
-        }.doOnComplete {
-            Log.d(TAG, "loadItemsFromDatabase completed - loaded ${db.items?.size ?: 0} items")
-        }
+        }.onErrorComplete()
 
         // a sync wrote Zotero's copies of edited items; edits not uploaded yet go back on
         val reapplyEdits = Completable.fromAction {
             if (db.groupID == GroupInfo.NO_GROUP_ID) itemEdits.reapply(db.groupID)
         }.doOnError { Log.e(TAG, "reapplying item edits failed: $it") }.onErrorComplete()
 
+        // before any sync can change Zotero's md5s (startup opens the library first)
+        val upkeep = Completable.fromAction {
+            try {
+                adoptAttachmentBases(db)
+            } catch (e: Exception) {
+                Log.e(TAG, "adopting attachment bases failed: $e")
+            }
+            if (zoteroDatabase.countItems(db.groupID) == 0) {
+                // in case a sync failed partway, don't leave the library empty: the next one starts over
+                db.setItemsVersion(0)
+            }
+        }.subscribeOn(Schedulers.io())
+
         reapplyEdits.andThen(loadCollections)
+            .andThen(db.loadAttachmentInfoFromDatabase())
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .andThen(loadItems)
-            .andThen(db.loadTrashItemsFromDB())
-            // before any sync can change Zotero's md5s (startup loads locally first)
-            .andThen(Completable.fromAction { adoptAttachmentBases(db) }
-                .subscribeOn(Schedulers.io())
-                .doOnError { Log.e(TAG, "adopting attachment bases failed: $it") }
-                .onErrorComplete())
-            .observeOn(AndroidSchedulers.mainThread())
             .doOnComplete {
+                Log.d(TAG, "opened library ${db.groupID} in ${(System.nanoTime() - start) / 1_000_000} ms")
                 itemSource.invalidate() // the sync may have changed anything
                 presenter.hideBasicSyncAnimation()
-                if (db.groupID == GroupInfo.NO_GROUP_ID) {
-                    presenter.receiveCollections(getCollections())
-                    if (state.currentCollection == "unset") {
-                        val place = preferences.getLibraryPlace() // before "all" overwrites it
-                        presenter.setCollection("all")
-                        place?.let { restorePlace(it) }
-                    } else {
-                        presenter.redisplayItems()
-                    }
-                } else if (openingGroup?.id == db.groupID || state.currentGroup.id == db.groupID) {
-                    zoteroDBPicker.groupId = db.groupID
-                    // opening the group; a refresh of the open group keeps its place
-                    val opening = openingGroup
-                    if (opening != null && state.currentGroup.id != db.groupID) {
-                        navigator.openLibrary(opening)
-                    }
-                    openingGroup = null
-                    presenter.receiveCollections(getCollections())
-                    val restore = openingGroupCollection
-                    openingGroupCollection = null
-                    if (restore != null && isPlaceInOpenLibrary(restore)) {
-                        presenter.setCollection(restore)
-                    } else {
-                        presenter.redisplayItems()
-                    }
-                }
-                // else: a background refresh of a group the user has since left: loaded, not shown
-                if (db.items?.size == 0) {
-                    // incase there was an error, i don't want users to be stuck with an empty library.
-                    db.setItemsVersion(0)
-                }
-                this.refreshPendingEdits()
-            }.onErrorComplete {
+                showOpenedLibrary(db)
+            }
+            .andThen(upkeep)
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnComplete { refreshPendingEdits() }
+            .onErrorComplete {
+                Log.e(TAG, "opening library ${db.groupID} failed: $it")
                 presenter.createErrorAlert("Couldn't load the library", "Details: ${it.message ?: it}", {})
                 presenter.hideBasicSyncAnimation()
                 true
@@ -1524,6 +1491,37 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .doAfterTerminate {
                 onFinish()
             }.subscribe()
+    }
+
+    /** Shows library [db], just opened: My Library, the group being opened, or a refresh of the open one. */
+    private fun showOpenedLibrary(db: ZoteroDB) {
+        if (db.groupID == GroupInfo.NO_GROUP_ID) {
+            presenter.receiveCollections(getCollections())
+            if (state.currentCollection == "unset") {
+                val place = preferences.getLibraryPlace() // before "all" overwrites it
+                presenter.setCollection("all")
+                place?.let { restorePlace(it) }
+            } else {
+                presenter.redisplayItems()
+            }
+        } else if (openingGroup?.id == db.groupID || state.currentGroup.id == db.groupID) {
+            zoteroDBPicker.groupId = db.groupID
+            // opening the group; a refresh of the open group keeps its place
+            val opening = openingGroup
+            if (opening != null && state.currentGroup.id != db.groupID) {
+                navigator.openLibrary(opening)
+            }
+            openingGroup = null
+            presenter.receiveCollections(getCollections())
+            val restore = openingGroupCollection
+            openingGroupCollection = null
+            if (restore != null && isPlaceInOpenLibrary(restore)) {
+                presenter.setCollection(restore)
+            } else {
+                presenter.redisplayItems()
+            }
+        }
+        // else: a background refresh of a group the user has since left: loaded, not shown
     }
 
     /**

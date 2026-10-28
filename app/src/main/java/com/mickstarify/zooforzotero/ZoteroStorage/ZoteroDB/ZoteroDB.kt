@@ -68,6 +68,7 @@ class ZoteroDB(
     // This is used to store metadata related to items that don't go in the item database class
     // such a design was picked to seperate the data that is from the zotero api official server and
     // the metadata i store customly.
+    @Volatile
     var attachmentInfo: MutableMap<String, AttachmentInfo>? = null
     private var notes: MutableMap<String, MutableList<Note>>? = null
     private var itemsFromCollections: HashMap<String, MutableList<Item>>? = null
@@ -144,19 +145,25 @@ class ZoteroDB(
                 // off the subscriber's thread, which can be the main one (finishLibrarySync);
                 // Room's Maybe ran on its own executor
                 .subscribeOn(Schedulers.io())
-                .andThen(
-                Completable.fromMaybe(
-                    zoteroDatabase.getAttachmentsForGroup(groupID).doOnSuccess(Consumer {
-                        Log.d("zotero", "Loading attachmentInfo from Database")
-                        attachmentInfo = HashMap<String, AttachmentInfo>()
-                        for (attachment in it) {
-                            attachmentInfo!![attachment.itemKey] = attachment
-                        }
-                    })
-                )
-            )
+                .andThen(loadAttachmentInfoFromDatabase())
         return completable
     }
+
+    /** Loads [attachmentInfo] (what this device recorded about downloaded files). */
+    fun loadAttachmentInfoFromDatabase(): Completable = Completable.fromAction {
+        val info = HashMap<String, AttachmentInfo>()
+        for (attachment in zoteroDatabase.getAttachmentsForGroup(groupID).blockingGet() ?: emptyList()) {
+            info[attachment.itemKey] = attachment
+        }
+        attachmentInfo = info
+    }.subscribeOn(Schedulers.io())
+
+    /**
+     * Whether the library is open for the library screen: its collections and the
+     * attachment records are loaded. Its items stay in the database (RoomItemSource);
+     * [isPopulated] says whether they are in memory too (the Attachment Manager loads them).
+     */
+    fun isOpen(): Boolean = collections != null && attachmentInfo != null
 
 
     fun loadTrashItemsFromDB(): Completable{

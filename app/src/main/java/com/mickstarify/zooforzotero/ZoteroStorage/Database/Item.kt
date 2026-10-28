@@ -419,6 +419,9 @@ interface ItemDao {
     @Query("SELECT itemKey, parent FROM ItemInfo WHERE itemKey IN (:keys) AND deleted = 0")
     fun getParents(keys: List<String>): List<KeyAndParent>
 
+    @Query("SELECT COUNT(*) FROM ItemInfo WHERE `group` = :groupID AND deleted = 0")
+    fun countItems(groupID: Int): Int
+
     @Query("SELECT itemKey FROM ItemInfo WHERE `group` = :groupID AND deleted = 0 AND parent IS NULL")
     fun getTopLevelKeys(groupID: Int): List<String>
 

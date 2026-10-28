@@ -169,6 +169,9 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
             ArrayList<String>(c.count).apply { while (c.moveToNext()) add(c.getString(0)) }
         }
 
+    /** How many items (not trashed) library [groupID] has. Blocking. */
+    fun countItems(groupID: Int): Int = db.itemDao().countItems(groupID)
+
     /** Keys of a library's top-level items (not trashed). Blocking. */
     fun topLevelKeys(groupID: Int): List<String> = db.itemDao().getTopLevelKeys(groupID)
 
