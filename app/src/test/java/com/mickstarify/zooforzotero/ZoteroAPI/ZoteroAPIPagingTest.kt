@@ -2,6 +2,7 @@ package com.mickstarify.zooforzotero.ZoteroAPI
 
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ItemsDownloadProgress
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -180,6 +181,19 @@ class ZoteroAPIPagingTest {
         val url = server.takeRequest().requestUrl!!
         assertEquals("attachment || note", url.queryParameter("itemType"))
         assertEquals("2", url.queryParameter("start"))
+    }
+
+    @Test
+    fun anItemsChildrenInOneRequest() {
+        page(items("CHLD0001", "CHLD0002"), total = 2, version = 10)
+
+        val children = api.getChildItems("PRNT0001", GroupInfo.NO_GROUP_ID)
+            .test().awaitDone(5, TimeUnit.SECONDS).values().single()
+
+        assertEquals(listOf("CHLD0001", "CHLD0002"), children.map { it.ItemKey })
+        val url = server.takeRequest().requestUrl!!
+        assertEquals("/users/1/items/PRNT0001/children", url.encodedPath)
+        assertEquals("100", url.queryParameter("limit"))
     }
 
     @Test

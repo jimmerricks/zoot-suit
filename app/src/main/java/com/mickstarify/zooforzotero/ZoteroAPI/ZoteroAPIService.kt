@@ -7,6 +7,7 @@ import com.mickstarify.zooforzotero.ZoteroAPI.Model.DeletedEntriesPojo
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.GroupPojo
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.KeyInfo
 import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Call
@@ -70,6 +71,21 @@ interface ZoteroAPIService {
         @Query("start") index: Int,
         @Query("limit") limit: Int
     ): Observable<Response<ResponseBody>>
+
+    /* An item's attachments and notes. */
+    @GET("users/{user}/items/{itemKey}/children")
+    fun getChildItems(
+        @Path("user") user: String,
+        @Path("itemKey") itemKey: String,
+        @Query("limit") limit: Int
+    ): Single<Response<ResponseBody>>
+
+    @GET("groups/{groupID}/items/{itemKey}/children")
+    fun getChildItemsForGroup(
+        @Path("groupID") groupID: Int,
+        @Path("itemKey") itemKey: String,
+        @Query("limit") limit: Int
+    ): Single<Response<ResponseBody>>
 
     @GET("users/{user}/groups")
     fun getGroupInfo(

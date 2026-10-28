@@ -43,6 +43,12 @@ class SyncManager (
         return (loadingItems || loadingCollections || loadingTrash || finishing)
     }
 
+    // the library whose children a first sync is fetching, while loadingItems
+    private var childrenGroup: Int? = null
+
+    /** Whether a first sync of library [groupID] is still fetching its attachments and notes. */
+    fun isLoadingChildren(groupID: Int): Boolean = loadingItems && childrenGroup == groupID
+
     /** Offline makes every request of a sync fail; say so once, as a toast. */
     private var reportedOffline = false
 
@@ -232,6 +238,7 @@ class SyncManager (
         startVersion: Int,
         useSmallLoadingAnimation: Boolean
     ) {
+        childrenGroup = if (scope == ItemScope.CHILDREN) db.groupID else null
         if (scope == ItemScope.CHILDREN) openBeforeChildren(db)
         val itemsObservable =
             zoteroAPI.getItems(

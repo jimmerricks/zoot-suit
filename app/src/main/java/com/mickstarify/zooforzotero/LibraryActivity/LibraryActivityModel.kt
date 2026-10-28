@@ -49,6 +49,7 @@ import com.mickstarify.zooforzotero.di.SingletonComponentsEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.CompletableObserver
+import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.core.MaybeObserver
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Observer
@@ -1536,6 +1537,30 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .doAfterTerminate {
                 onFinish()
             }.subscribe()
+    }
+
+    /**
+     * While a first sync is still fetching the open library's attachments and notes, gets
+     * [item]'s own in one request and, if any are new, shows them in its row and in the
+     * dialog just opened for it. Failing (offline), the sync brings them later.
+     */
+    fun fetchChildrenWhileSyncing(item: Item) {
+        val db = zoteroDB
+        if (!syncManager.isLoadingChildren(db.groupID)) return
+        fun childKeys(i: Item) = i.attachments.map { it.itemKey }.toSet() + i.notes.map { it.key }.toSet()
+        val before = childKeys(item)
+        zoteroAPI.getChildItems(item.itemKey, db.groupID)
+            .flatMapCompletable { zoteroDatabase.writeItemPOJOs(db.groupID, it) }
+            .andThen(Maybe.fromCallable { zoteroDatabase.loadItemsByKeys(listOf(item.itemKey)).firstOrNull() })
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ fresh ->
+                if (childKeys(fresh) == before) return@subscribe
+                item.attachments = fresh.attachments
+                item.notes = fresh.notes
+                presenter.showEditedItem(item)
+                if (selectedItem === item) presenter.refreshItemView()
+            }, { Log.d(TAG, "fetching the children of ${item.itemKey} failed: $it") })
     }
 
     override fun showNewItems(db: ZoteroDB) {

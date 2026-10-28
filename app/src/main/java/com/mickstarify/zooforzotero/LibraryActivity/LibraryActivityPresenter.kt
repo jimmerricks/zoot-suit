@@ -321,6 +321,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             model.completeItem(item)
             model.selectedItem = item
             view.showItemDialog()
+            model.fetchChildrenWhileSyncing(item)
         }
     }
 

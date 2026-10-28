@@ -10,6 +10,7 @@ import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.CollectionPOJO
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.DeletedEntriesPojo
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemJSONConverter
+import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemPOJO
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.KeyInfo
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ZoteroUploadAuthorizationPojo
@@ -521,6 +522,19 @@ class ZoteroAPI(
             } else {
                 throw Exception("Server gave back ${response.code()} message: ${response.body()}")
             }
+        }
+    }
+
+    /** [itemKey]'s attachments and notes (the first [ITEMS_PAGE_SIZE]), in one request. */
+    fun getChildItems(itemKey: String, groupID: Int): Single<List<ItemPOJO>> {
+        val request = if (groupID != GroupInfo.NO_GROUP_ID) {
+            shortTimeoutService.getChildItemsForGroup(groupID, itemKey, ITEMS_PAGE_SIZE)
+        } else {
+            shortTimeoutService.getChildItems(userID, itemKey, ITEMS_PAGE_SIZE)
+        }
+        return request.map { response ->
+            if (response.code() != 200) throw Exception("Server gave back ${response.code()} for the children of $itemKey")
+            ItemJSONConverter().deserialize(response.body()?.string() ?: "[]")
         }
     }
 

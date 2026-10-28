@@ -9,8 +9,9 @@ Faster on large libraries:
   requests and continues one at a time.
 - A first sync opens the library once its top-level items are in, then downloads
   attachment details and notes in the background (files still download when opened).
-  Until that ends, "Has PDF", "Has notes" and searching notes miss what hasn't arrived
-  yet. An interrupted sync continues where it stopped, in either part.
+  The list fills in as they arrive, and an item opened meanwhile gets its own at once.
+  Until the sync ends, "Has PDF", "Has notes" and searching notes miss what hasn't
+  arrived yet. An interrupted sync continues where it stopped, in either part.
 
 ## 0.2.0
 

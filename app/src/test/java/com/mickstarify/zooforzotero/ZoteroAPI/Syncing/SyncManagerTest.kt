@@ -159,4 +159,21 @@ class SyncManagerTest {
         // at 12 s and 24 s
         assertEquals(listOf("open", "show", "show", "version 100", "open"), events)
     }
+
+    @Test
+    fun theChildrenPassIsKnownWhileItRuns() {
+        val seen = mutableListOf<Boolean>()
+        whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.TOP))) doReturn
+                Observable.just(page(100, 0)).doOnNext { seen += sync.isLoadingChildren(GroupInfo.NO_GROUP_ID) }
+        whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.CHILDREN))) doReturn
+                Observable.just(page(100, 0)).doOnNext {
+                    seen += sync.isLoadingChildren(GroupInfo.NO_GROUP_ID)
+                    seen += sync.isLoadingChildren(1234) // another library
+                }
+
+        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+
+        assertEquals(listOf(false, true, false), seen)
+        assertFalse(sync.isLoadingChildren(GroupInfo.NO_GROUP_ID))
+    }
 }
