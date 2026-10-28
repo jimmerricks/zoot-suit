@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+Faster on large libraries:
+- The first sync downloads up to four pages of items at once, Zotero's documented
+  limit: about a quarter of the time it took before (18,300 items in ~2 min instead of
+  ~8 on the emulator). If Zotero answers "too many requests", the app pauses all its
+  requests and continues one at a time.
+
 ## 0.2.0
 
 **New app id: `se.jmwhite.zootsuit`.** 0.1.0 was `nu.n4.zootsuit`. Android treats

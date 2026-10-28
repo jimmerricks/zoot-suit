@@ -10,7 +10,10 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.thread
 
 class ZoteroRateLimitTest {
 
@@ -99,5 +102,51 @@ class ZoteroRateLimitTest {
         clock += 4_000
         interceptor.intercept(FakeChain(mutableListOf(200 to emptyMap())))
         assertEquals(listOf(6_000L), slept)
+    }
+
+    @Test
+    fun `a Retry-After seen by one request also delays the others`() {
+        var clock = 1_000L
+        val slept = mutableListOf<Long>()
+        val interceptor = ZoteroRateLimitInterceptor(sleep = { slept.add(it) }, now = { clock })
+        interceptor.intercept(FakeChain(mutableListOf(429 to mapOf("Retry-After" to "5"), 200 to emptyMap())))
+        assertEquals(listOf(5_000L), slept)
+        clock += 1_000
+        interceptor.intercept(FakeChain(mutableListOf(200 to emptyMap())))
+        assertEquals(listOf(5_000L, 4_000L), slept)
+    }
+
+    /** A chain whose request stays open until [release], counting how many are open at once. */
+    private class OpenChain(
+        val open: AtomicInteger, val maxOpen: AtomicInteger, val release: CountDownLatch
+    ) : Interceptor.Chain by FakeChain(mutableListOf()) {
+        override fun proceed(request: Request): Response {
+            maxOpen.accumulateAndGet(open.incrementAndGet(), ::maxOf)
+            try {
+                release.await(100, TimeUnit.MILLISECONDS)
+            } finally {
+                open.decrementAndGet()
+            }
+            return Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
+                .code(200).message("x").body("".toResponseBody()).build()
+        }
+    }
+
+    private fun maxOpenWhenSixRunAtOnce(interceptor: ZoteroRateLimitInterceptor): Int {
+        val open = AtomicInteger()
+        val maxOpen = AtomicInteger()
+        val release = CountDownLatch(1) // never counted down: each request holds 100 ms
+        (1..6).map { thread { interceptor.intercept(OpenChain(open, maxOpen, release)) } }
+            .forEach { it.join(5_000) }
+        return maxOpen.get()
+    }
+
+    @Test
+    fun `at most 4 requests at once, and one at a time after a 429`() {
+        val interceptor = ZoteroRateLimitInterceptor(sleep = {}, now = { 0L })
+        assertEquals(4, maxOpenWhenSixRunAtOnce(interceptor))
+
+        interceptor.intercept(FakeChain(mutableListOf(429 to emptyMap(), 200 to emptyMap())))
+        assertEquals(1, maxOpenWhenSixRunAtOnce(interceptor))
     }
 }
