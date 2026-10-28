@@ -30,6 +30,12 @@ class ItemInfo(
     @ColumnInfo(name = "parent") val parent: String? = null,
     @ColumnInfo(name = "itemType") val itemType: String? = null,
     @ColumnInfo(name = "contentType") val contentType: String? = null,
+    // The item's SortKeys, so that a list is ordered in SQL; null until computed (written
+    // with the item, refreshed by an edit, filled in for items from before MIGRATION_10_11).
+    @ColumnInfo(name = "sortTitle") val sortTitle: String? = null,
+    @ColumnInfo(name = "sortAuthor") val sortAuthor: String? = null,
+    @ColumnInfo(name = "sortDate") val sortDate: String? = null,
+    @ColumnInfo(name = "sortDateAdded") val sortDateAdded: String? = null,
 ) : Parcelable {
 
     //@Relation(entity = ItemData::class, parentColumn = "itemKey", entityColumn = "parent")
@@ -425,6 +431,15 @@ interface ItemDao {
 
     @Query("SELECT itemKey, parent FROM ItemInfo WHERE itemKey IN (:keys) AND deleted = 0")
     fun getParents(keys: List<String>): List<KeyAndParent>
+
+    @Query("UPDATE ItemInfo SET sortTitle = :title, sortAuthor = :author, sortDate = :date, sortDateAdded = :dateAdded WHERE itemKey = :itemKey")
+    fun setSortKeys(itemKey: String, title: String, author: String, date: String, dateAdded: String)
+
+    @Query("SELECT itemKey FROM ItemInfo WHERE `group` = :groupID AND sortTitle IS NULL")
+    fun getKeysWithoutSortKeys(groupID: Int): List<String>
+
+    @Query("SELECT EXISTS (SELECT 1 FROM ItemInfo WHERE `group` = :groupID AND sortTitle IS NULL)")
+    fun lacksSortKeys(groupID: Int): Boolean
 
     @Query("SELECT COUNT(*) FROM ItemInfo WHERE `group` = :groupID AND deleted = 0")
     fun countItems(groupID: Int): Int

@@ -129,3 +129,17 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
         database.execSQL("CREATE INDEX IF NOT EXISTS `index_ItemInfo_parent` ON `ItemInfo` (`parent`)")
     }
 }
+
+/**
+ * Adds ItemInfo's sort keys (SortKeys), so that lists are ordered in SQL. They are
+ * computed in Kotlin (a note's title is its text without markup), so they start empty;
+ * ZoteroDatabase.fillMissingSortKeys fills them in when a library opens, and until then
+ * the list sorts as before.
+ */
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        for (column in listOf("sortTitle", "sortAuthor", "sortDate", "sortDateAdded")) {
+            database.execSQL("ALTER TABLE `ItemInfo` ADD COLUMN `$column` TEXT")
+        }
+    }
+}

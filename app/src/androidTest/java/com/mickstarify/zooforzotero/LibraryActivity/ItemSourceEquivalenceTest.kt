@@ -88,7 +88,7 @@ class ItemSourceEquivalenceTest {
             if (random.nextInt(8) == 0) data["abstractNote"] = "abstract about ${words[random.nextInt(words.size)]}"
             val creators = (0 until random.nextInt(4)).map {
                 CreatorPOJO("author", "First$it", words[random.nextInt(words.size)])
-            }
+            }.let { if (random.nextInt(25) == 0 && it.isNotEmpty()) it + it.first() else it } // a creator twice
             val tags = tagPool.filter { random.nextInt(4) == 0 }
             val inCollections = cols.filter { random.nextInt(12) == 0 }.map { it.key }
             val trashed = random.nextInt(20) == 0
@@ -211,6 +211,17 @@ class ItemSourceEquivalenceTest {
                 assertSame(LibraryQuery(place, search = search, filter = LibraryFilter(hasPdf = search == "19")))
             }
         }
+    }
+
+    @Test
+    fun withoutStoredSortKeysAndAfterFillingThemIn() {
+        val sql = database.db.openHelper.writableDatabase
+        sql.execSQL("UPDATE ItemInfo SET sortTitle = NULL, sortAuthor = NULL, sortDate = NULL, sortDateAdded = NULL WHERE `group` = $group")
+        assertTrue(database.lacksSortKeys(group))
+        for (place in places) for (sort in SortMethod.entries) assertSame(LibraryQuery(place, sort = sort, ascending = sort != SortMethod.DATE))
+        database.fillMissingSortKeys(group)
+        assertTrue(!database.lacksSortKeys(group))
+        for (place in places) for (sort in SortMethod.entries) assertSame(LibraryQuery(place, sort = sort, ascending = sort != SortMethod.DATE))
     }
 
     @Test

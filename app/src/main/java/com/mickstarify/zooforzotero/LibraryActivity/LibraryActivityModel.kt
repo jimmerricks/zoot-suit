@@ -1480,6 +1480,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             } catch (e: Exception) {
                 Log.e(TAG, "adopting attachment bases failed: $e")
             }
+            try {
+                // once, after the upgrade that added them; lists sort in SQL from then on
+                zoteroDatabase.fillMissingSortKeys(db.groupID)
+            } catch (e: Exception) {
+                Log.e(TAG, "filling in sort keys failed: $e")
+            }
             if (zoteroDatabase.countItems(db.groupID) == 0) {
                 // in case a sync failed partway, don't leave the library empty: the next one starts over
                 db.setItemsVersion(0)

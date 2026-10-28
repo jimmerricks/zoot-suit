@@ -29,7 +29,7 @@ import javax.inject.Singleton
         AttachmentBase::class,
         PendingItemEdit::class
     ),
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 abstract class ZoteroRoomDatabase : RoomDatabase() {
@@ -57,7 +57,8 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         .addMigrations(MIGRATION_6_7)
         .addMigrations(MIGRATION_7_8)
         .addMigrations(MIGRATION_8_9)
-        .addMigrations(MIGRATION_9_10).build()
+        .addMigrations(MIGRATION_9_10)
+        .addMigrations(MIGRATION_10_11).build()
 
     /** md5 of the file this device last downloaded/uploaded for the attachment, or null. */
     fun getAttachmentBase(itemKey: String, group: Int): String? =
@@ -190,6 +191,32 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
             ArrayList<String>(c.count).apply { while (c.moveToNext()) add(c.getString(0)) }
         }
 
+    /** Whether some of library [groupID]'s items have no SortKeys yet (see fillMissingSortKeys). Blocking. */
+    fun lacksSortKeys(groupID: Int): Boolean = db.itemDao().lacksSortKeys(groupID)
+
+    /** Computes and stores the SortKeys of the items with [keys] from their stored fields. Blocking. */
+    fun fillSortKeys(keys: List<String>) {
+        val names = listOf("itemType", "title", "caseName", "nameOfAct", "date", "dateAdded")
+        for (chunk in keys.chunked(500)) {
+            val items = loadSortItems(chunk, names, withCreators = true)
+            db.runInTransaction {
+                for (item in items) {
+                    val k = SortKeys.of(item)
+                    db.itemDao().setSortKeys(item.itemKey, k.title, k.author, k.date, k.dateAdded)
+                }
+            }
+        }
+    }
+
+    /** Gives library [groupID]'s items from before MIGRATION_10_11 their SortKeys. Blocking. */
+    fun fillMissingSortKeys(groupID: Int) {
+        val keys = db.itemDao().getKeysWithoutSortKeys(groupID)
+        if (keys.isEmpty()) return
+        val start = System.nanoTime()
+        fillSortKeys(keys)
+        Log.d("zotero", "sort keys for ${keys.size} items of $groupID in ${(System.nanoTime() - start) / 1_000_000} ms")
+    }
+
     /** How many items (not trashed) library [groupID] has. Blocking. */
     fun countItems(groupID: Int): Int = db.itemDao().countItems(groupID)
 
@@ -272,13 +299,6 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         itemPOJO: ItemPOJO
     ): Completable {
         Log.d("zotero", "writeItem() - writing item ${itemPOJO.ItemKey} for groupID=$groupID")
-        val itemInfo =
-            ItemInfo(
-                itemPOJO.ItemKey, groupID, itemPOJO.version, Boolean.fromInt(itemPOJO.deleted),
-                parent = itemPOJO.data["parentItem"]?.ifEmpty { null },
-                itemType = itemPOJO.data["itemType"]?.ifEmpty { null },
-                contentType = itemPOJO.data["contentType"]?.ifEmpty { null },
-            )
         var itemDatas = LinkedList<ItemData>()
         var itemCreators = LinkedList<Creator>()
         // blank fields aren't stored (see MIGRATION_7_8); a missing field reads as blank
@@ -296,6 +316,25 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
                 )
             )
         }
+        val sortKeys = SortKeys.of(Item().apply {
+            itemInfo = ItemInfo(itemPOJO.ItemKey, groupID, itemPOJO.version, false)
+            itemData = itemDatas
+            // as stored: a creator listed twice is one row (the primary key), the later one
+            creators = itemCreators.associateBy { Triple(it.firstName, it.lastName, it.creatorType) }.values.toList()
+            tags = emptyList()
+            collections = emptyList()
+        })
+        val itemInfo =
+            ItemInfo(
+                itemPOJO.ItemKey, groupID, itemPOJO.version, Boolean.fromInt(itemPOJO.deleted),
+                parent = itemPOJO.data["parentItem"]?.ifEmpty { null },
+                itemType = itemPOJO.data["itemType"]?.ifEmpty { null },
+                contentType = itemPOJO.data["contentType"]?.ifEmpty { null },
+                sortTitle = sortKeys.title,
+                sortAuthor = sortKeys.author,
+                sortDate = sortKeys.date,
+                sortDateAdded = sortKeys.dateAdded,
+            )
         val itemTags = itemPOJO.tags.map { ItemTag(itemPOJO.ItemKey, it) }
         val collections = itemPOJO.collections.map { ItemCollection(it, itemPOJO.ItemKey) }
 

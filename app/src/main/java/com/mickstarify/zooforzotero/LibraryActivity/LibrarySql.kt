@@ -14,8 +14,13 @@ object LibrarySql {
     /**
      * @param collectionKeys for a collection place: the collection and, if asked, its
      *   subcollections (an item in several counts once)
+     * @param ordered in the query's sort order, from the stored SortKeys (all of the
+     *   library's items must have them), as LibrarySort.sorted orders: the method's key,
+     *   then the title's, then the item key, all reversed for descending. SQLite compares
+     *   text by code point, Kotlin by UTF-16 unit; they differ only between a character
+     *   beyond U+FFFF (emoji) and one from U+E000-U+FFFF.
      */
-    fun keys(query: LibraryQuery, groupId: Int, collectionKeys: List<String>): Pair<String, List<Any>> {
+    fun keys(query: LibraryQuery, groupId: Int, collectionKeys: List<String>, ordered: Boolean = false): Pair<String, List<Any>> {
         val where = mutableListOf("i.`group` = ?")
         val args = mutableListOf<Any>(groupId)
         when (query.place) {
@@ -48,6 +53,10 @@ object LibrarySql {
                     "AND EXISTS (SELECT 1 FROM ItemData nd WHERE nd.parent = n.itemKey AND nd.name = 'note') " +
                     "AND EXISTS (SELECT 1 FROM ItemData nk WHERE nk.parent = n.itemKey AND nk.name = 'key'))"
         }
-        return "SELECT i.itemKey FROM ItemInfo i WHERE " + where.joinToString(" AND ") to args
+        val order = if (!ordered) "" else {
+            val direction = if (query.ascending) "" else " DESC"
+            " ORDER BY i.${LibrarySort.column(query.sort)}$direction, i.sortTitle$direction, i.itemKey$direction"
+        }
+        return "SELECT i.itemKey FROM ItemInfo i WHERE " + where.joinToString(" AND ") + order to args
     }
 }

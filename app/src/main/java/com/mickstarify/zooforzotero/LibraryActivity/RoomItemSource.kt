@@ -29,14 +29,20 @@ class RoomItemSource(
             query.includeSubcollections -> CollectionTree(collections()).withDescendants(place.key)
             else -> listOf(place.key)
         }
-        val (sql, args) = LibrarySql.keys(query, group, collectionKeys)
+        // in SQL by the stored sort keys; items from before they existed are sorted here
+        // until the library's are filled in (ZoteroDatabase.fillMissingSortKeys)
+        val ordered = !database.lacksSortKeys(group)
+        val (sql, args) = LibrarySql.keys(query, group, collectionKeys, ordered)
         var keys = database.queryKeys(sql, args)
         if (place.isNarrowed) keys = narrow(group, keys, query)
-        // ordered on the few fields the sort reads; whole rows load a page at a time
-        val sortItems = database.loadSortItems(
-            keys, LibrarySort.fieldsRead(query.sort), LibrarySort.readsCreators(query.sort)
-        )
-        return DatabaseRows(database, LibrarySort.sorted(sortItems, query.sort, query.ascending).map { it.itemKey })
+        if (!ordered) {
+            val sortItems = database.loadSortItems(
+                keys, LibrarySort.fieldsRead(query.sort), LibrarySort.readsCreators(query.sort)
+            )
+            keys = LibrarySort.sorted(sortItems, query.sort, query.ascending).map { it.itemKey }
+        }
+        // whole rows load a page at a time
+        return DatabaseRows(database, keys)
     }
 
     private class DatabaseRows(private val database: ZoteroDatabase, override val keys: List<String>) : LibraryRows {

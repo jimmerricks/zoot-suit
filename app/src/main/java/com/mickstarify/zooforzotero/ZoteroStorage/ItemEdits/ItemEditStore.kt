@@ -104,5 +104,6 @@ class ItemEditStore(private val database: ZoteroDatabase) {
     private fun writeField(itemKey: String, name: String, value: String) {
         if (value.isEmpty()) dao.deleteField(itemKey, name)
         else dao.putField(ItemData(itemKey, name, value, "String"))
+        database.fillSortKeys(listOf(itemKey)) // a title or date may have changed
     }
 }
