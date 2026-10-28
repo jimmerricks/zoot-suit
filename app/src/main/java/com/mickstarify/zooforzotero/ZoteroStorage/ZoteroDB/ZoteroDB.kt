@@ -183,23 +183,8 @@ class ZoteroDB(
     private fun associateItemsWithAttachments() {
         val withPdf = HashSet<String>()
         for (item in items!!) {
-            if (item.isDownloadable()) {
-                val parentKey = item.data["parentItem"]
-                if (parentKey != null) {
-                    itemsByKey[parentKey]?.attachments?.add(item)
-                }
-                item.pdfOwnerKey()?.let { withPdf.add(it) }
-            }
-            if (item.itemType == "note") {
-                try {
-                    val note = Note(item)
-                    if (itemsByKey.containsKey(note.parent) == true) {
-                        itemsByKey[note.parent]?.notes?.add(note)
-                    }
-                } catch (e: ExceptionInInitializerError) {
-                    Log.e("zotero", "error loading note ${item.itemKey} error:${e.message}")
-                }
-            }
+            item.data["parentItem"]?.let { itemsByKey[it]?.adoptChild(item) }
+            item.pdfOwnerKey()?.let { withPdf.add(it) }
         }
         keysWithPdf = withPdf
     }

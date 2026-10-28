@@ -240,6 +240,21 @@ class Item : Parcelable {
         return data["parentItem"] ?: itemKey
     }
 
+    /**
+     * Takes [child] (an item whose parentItem is this one) into [attachments] if it is a
+     * file that can be opened, or into [notes] if it is a note.
+     */
+    fun adoptChild(child: Item) {
+        if (child.isDownloadable()) attachments.add(child)
+        if (child.itemType == "note") {
+            try {
+                notes.add(Note(child))
+            } catch (e: ExceptionInInitializerError) {
+                Log.e("zotero", "error loading note ${child.itemKey} error:${e.message}")
+            }
+        }
+    }
+
     fun getPdfAttachment(): Item? {
         /*
         * If the item has a PDF attachment, this will return it.
