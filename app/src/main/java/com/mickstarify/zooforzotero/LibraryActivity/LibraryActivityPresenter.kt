@@ -76,7 +76,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         if (model.isLoaded() && !model.isSyncing() && !model.resumeInterruptedSync() &&
             view.getCurrentScreen() == AvailableScreens.LIBRARY_LOADING_SCREEN
         ) {
-            view.navController.navigate(R.id.libraryListFragment)
+            view.showScreen(R.id.libraryListFragment)
         }
     }
 
@@ -157,7 +157,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         Log.d("zotero", "Updating library loading progress.")
 
         if (total > 25 && view.getCurrentScreen() != AvailableScreens.LIBRARY_LOADING_SCREEN) {
-            view.navController.navigate(R.id.libraryLoadingScreen)
+            view.showScreen(R.id.libraryLoadingScreen)
         }
 
         // total before progress: each observer rewrites the "Downloading X of Y" label,
@@ -272,7 +272,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     override fun hideBasicSyncAnimation() {
         libraryListViewModel.setIsShowingLoadingAnimation(false)
         // we are finished loading and should hide the loading screen.
-        view.navController.navigate(R.id.libraryListFragment)
+        view.showScreen(R.id.libraryListFragment)
     }
 
     override fun openAttachment(item: Item) {
@@ -291,7 +291,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         title.value = "Loading"
 
         if (view.getCurrentScreen() != AvailableScreens.LIBRARY_LOADING_SCREEN) {
-            (view as LibraryActivity).navController.navigate(R.id.libraryLoadingScreen)
+            view.showScreen(R.id.libraryLoadingScreen)
         }
     }
 
@@ -299,7 +299,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 //        view.hideLoadingAnimation()
 //        view.hideLibraryContentDisplay()
         Log.d("zotero", "loading library list fragment")
-        (view as LibraryActivity).navController.navigate(R.id.libraryListFragment)
+        view.showScreen(R.id.libraryListFragment)
     }
 
     override fun requestLibraryRefresh() {
@@ -478,14 +478,14 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             // only the badges' snapshot is refreshed (files may have changed meanwhile)
             model.refreshPendingEdits()
         } else {
-            view.navController.navigate(R.id.libraryLoadingScreen)
+            view.showScreen(R.id.libraryLoadingScreen)
         }
     }
 
     private fun start() {
         groupLibrariesShown = model.preferences.isGroupLibrarySyncEnabled()
         title.value = "Loading"
-        view.navController.navigate(R.id.libraryLoadingScreen)
+        view.showScreen(R.id.libraryLoadingScreen)
         libraryLoadingViewModel.setLoadingMessage("Loading your library")
 
         Log.d(

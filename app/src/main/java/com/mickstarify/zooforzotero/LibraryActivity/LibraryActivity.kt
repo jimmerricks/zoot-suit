@@ -33,6 +33,7 @@ import androidx.core.view.updatePadding
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -161,7 +162,19 @@ class LibraryActivity : AppCompatActivity(),
             sidebar.updatePadding(top = bars.top + padding, bottom = bars.bottom + padding)
             insets
         }
-        navController.navigate(R.id.libraryListFragment)
+    }
+
+    /**
+     * Shows [destination], the list or the loading screen, as the only screen: navigating
+     * pushed a new fragment each time (list, loading, list again at every start, more at
+     * every sync) on a back stack nothing pops; Back is ours (handleOnBackPressed).
+     */
+    fun showScreen(destination: Int) {
+        if (navController.currentDestination?.id == destination) return
+        navController.navigate(
+            destination, null,
+            NavOptions.Builder().setPopUpTo(navController.graph.id, true).build()
+        )
     }
 
     private var sidebarSelection: String? = null
