@@ -6,7 +6,7 @@ by Michael Johnston, forked at v4.0.0 (commit `0261040`) in October 2026.
 
 - **Licence:** GPLv3, see [LICENSE](LICENSE). Upstream ships no licence file; its
   author states GPLv3 in its terms of use.
-- **App id:** `nu.n4.zootsuit`. It installs beside Zoo for Zotero, not over it.
+- **App id:** `se.jmwhite.zootsuit`. It installs beside Zoo for Zotero, not over it.
 - **Not affiliated with the Zotero project.**
 - [Privacy policy](https://jimmerricks.github.io/zoot-suit/privacy-policy.html) ·
   [Terms of use](https://jimmerricks.github.io/zoot-suit/terms-of-use.html)
@@ -72,7 +72,7 @@ See [docs/differences-from-zoo.md](docs/differences-from-zoo.md).
 1. Copy `apikeys.properties.example` to `apikeys.properties` and add a Zotero OAuth
    key and secret from [zotero.org/oauth/apps](https://www.zotero.org/oauth/apps).
    Without them, sign-in works with an API key only.
-2. `./gradlew assembleDebug` builds `nu.n4.zootsuit.debug`, which installs beside the
+2. `./gradlew assembleDebug` builds `se.jmwhite.zootsuit.debug`, which installs beside the
    release app.
 3. `./gradlew assembleRelease` signs with the keystore named in `keystore.properties`
    (or in the file `$KEYSTORE_PROPERTIES` points to): keys `storeFile`,

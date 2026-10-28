@@ -4,9 +4,9 @@ How Zoot Suit is identified, signed and released, and why.
 
 ## App id and versions
 
-- Release builds: `nu.n4.zootsuit`, "Zoot Suit". It installs beside Zoo for Zotero,
+- Release builds: `se.jmwhite.zootsuit`, "Zoot Suit". It installs beside Zoo for Zotero,
   not over it.
-- Debug builds: `nu.n4.zootsuit.debug`, "Zoot Suit (debug)", so a debug and a release
+- Debug builds: `se.jmwhite.zootsuit.debug`, "Zoot Suit (debug)", so a debug and a release
   build can share a device.
 - Each release bumps `versionCode` and `versionName` in `app/build.gradle`.
 - The Kotlin packages and namespace keep upstream's names (`com.mickstarify.zooforzotero`);

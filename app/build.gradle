@@ -49,8 +49,8 @@ android {
     }
     defaultConfig {
         // our own id (namespace and Kotlin packages keep upstream's): installs beside
-        // Zoo for Zotero rather than over it. Versioning restarts with the new id.
-        applicationId "nu.n4.zootsuit"
+        // Zoo for Zotero rather than over it. se.jmwhite since 0.2.0 (0.1.0 was nu.n4).
+        applicationId "se.jmwhite.zootsuit"
         minSdkVersion 24
         targetSdkVersion 36
         versionCode 1
