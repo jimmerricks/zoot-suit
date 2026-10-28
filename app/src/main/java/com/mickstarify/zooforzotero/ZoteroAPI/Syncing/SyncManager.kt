@@ -27,6 +27,7 @@ class SyncManager (
     private val preferenceManager: PreferenceManager,
     private val zoteroDatabase: ZoteroDatabase,
     val syncChangeListener: OnSyncChangeListener,
+    private val now: () -> Long = { System.currentTimeMillis() },
 ){
 
     // these three variables keep track of our download progress and are used to make sure
@@ -250,6 +251,7 @@ class SyncManager (
             .subscribe(object : Observer<ZoteroAPIItemsResponse> {
                 var libraryVersion = startVersion // -1: replaced in onNext()
                 var downloaded = progress?.nDownloaded ?: 0
+                var shownAt = now()
                 override fun onComplete() {
                     Log.d("zotero", "load Items ($scope) oncomplete")
                     if (scope == ItemScope.TOP) {
@@ -298,6 +300,11 @@ class SyncManager (
                             response.totalResults)
                     }
                     Log.d("zotero", "got ${this.downloaded} of ${response.totalResults} items ($scope)")
+                    if (scope == ItemScope.CHILDREN && now() - shownAt >= SHOW_CHILDREN_EVERY_MS) {
+                        // the open library's PDF icons, filters and note search fill in as they come
+                        shownAt = now()
+                        syncChangeListener.showNewItems(db)
+                    }
                 }
 
                 override fun onError(e: Throwable) {
@@ -430,5 +437,11 @@ class SyncManager (
         })
 
         return completable
+    }
+
+    companion object {
+        // how often the list is redrawn while a first sync's children arrive: each redraw
+        // re-reads the rows on screen, and a filtered list grows under the reader
+        const val SHOW_CHILDREN_EVERY_MS = 10_000L
     }
 }

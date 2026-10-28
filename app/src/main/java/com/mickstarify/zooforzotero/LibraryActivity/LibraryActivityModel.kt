@@ -1538,6 +1538,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             }.subscribe()
     }
 
+    override fun showNewItems(db: ZoteroDB) {
+        if (db.groupID != zoteroDB.groupID || !isLoaded()) return
+        itemSource.invalidate()
+        presenter.redisplayItems()
+    }
+
     /** Shows library [db], just opened: My Library, the group being opened, or a refresh of the open one. */
     private fun showOpenedLibrary(db: ZoteroDB) {
         if (db.groupID == GroupInfo.NO_GROUP_ID) {

@@ -58,7 +58,9 @@ class SyncManagerTest {
             events += "open"
             it.getArgument<() -> Unit>(1)()
         }
+        on { showNewItems(any()) } doAnswer { events += "show"; Unit }
     }
+    private var clock = 0L
     private lateinit var sync: SyncManager
 
     @Before
@@ -66,7 +68,7 @@ class SyncManagerTest {
         RxAndroidPlugins.setInitMainThreadSchedulerHandler { Schedulers.trampoline() }
         RxAndroidPlugins.setMainThreadSchedulerHandler { Schedulers.trampoline() }
         RxJavaPlugins.setIoSchedulerHandler { Schedulers.trampoline() }
-        sync = SyncManager(api, mock<PreferenceManager>(), database, listener)
+        sync = SyncManager(api, mock<PreferenceManager>(), database, listener, now = { clock })
     }
 
     @After
@@ -111,7 +113,7 @@ class SyncManagerTest {
 
         events.clear()
         serve(ItemScope.CHILDREN, page(100, 0))
-        sync = SyncManager(api, mock<PreferenceManager>(), database, listener) // the app restarted
+        sync = SyncManager(api, mock<PreferenceManager>(), database, listener, now = { clock }) // the app restarted
         sync.startCompleteSync(db, useSmallLoadingAnimation = false)
         assertEquals(listOf("open", "fetch CHILDREN", "version 100", "open"), events)
     }
@@ -142,5 +144,19 @@ class SyncManagerTest {
         sync.startCompleteSync(db, useSmallLoadingAnimation = true)
 
         assertEquals(listOf("fetch ALL", "version 510", "open"), events)
+    }
+
+    @Test
+    fun theListIsRedrawnEveryTenSecondsWhileChildrenArrive() {
+        progress = ItemsDownloadProgress(100, 0, 0, ItemScope.CHILDREN)
+        // a page every 6 s
+        whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.CHILDREN))) doReturn
+                Observable.fromArray(page(100, 400), page(100, 400), page(100, 400), page(100, 400))
+                    .doOnNext { clock += 6_000 }
+
+        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+
+        // at 12 s and 24 s
+        assertEquals(listOf("open", "show", "show", "version 100", "open"), events)
     }
 }
