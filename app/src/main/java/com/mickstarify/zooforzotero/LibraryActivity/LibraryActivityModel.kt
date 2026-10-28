@@ -71,9 +71,15 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     var selectedItem: Item? = null
     var isDisplayingItems = false
 
-    private lateinit var zoteroAPI: ZoteroAPI
+    // Built on first use, or in the background once the library is open (finishLibrarySync):
+    // OkHttp, Retrofit and Gson take a while to load, and a start without a sync needs none
+    // of them before the list is up.
+    private val zoteroAPI: ZoteroAPI by lazy {
+        val auth = AuthenticationStorageImpl(context)
+        ZoteroAPI(auth.getUserKey(), auth.getUserID(), auth.getUsername(), attachmentStorageManager, preferences)
+    }
 
-    private var syncManager: SyncManager
+    private val syncManager: SyncManager by lazy { SyncManager(zoteroAPI, preferences, zoteroDatabase, this) }
 
     val zoteroDatabase: ZoteroDatabase
     val attachmentStorageManager: AttachmentStorageManager
@@ -1485,6 +1491,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
         // before any sync can change Zotero's md5s (startup opens the library first)
         val upkeep = Completable.fromAction {
+            runCatching { zoteroAPI } // built here rather than on the main thread; see its declaration
             try {
                 adoptAttachmentBases(db)
             } catch (e: Exception) {
@@ -1670,15 +1677,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         val auth = AuthenticationStorageImpl(context)
         // the initial (root) library state is seeded by LibraryNavigator's init.
 
-        if (auth.hasCredentials()) {
-            zoteroAPI = ZoteroAPI(
-                auth.getUserKey(),
-                auth.getUserID(),
-                auth.getUsername(),
-                attachmentStorageManager,
-                preferences
-            )
-        } else {
+        if (!auth.hasCredentials()) {
             presenter.createErrorAlert(
                 "Sign in again",
                 "The stored Zotero login is no longer valid."
@@ -1687,7 +1686,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             zoteroDB.clearItemsVersion()
         }
 
-        syncManager = SyncManager(zoteroAPI, preferences, zoteroDatabase, this)
         checkAttachmentStorageAccess()
     }
 
