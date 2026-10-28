@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
+import android.os.Looper
 import android.os.PersistableBundle
 import android.util.Log
 import android.view.Menu
@@ -153,6 +154,17 @@ class LibraryActivity : AppCompatActivity(),
         sidebar = findViewById(R.id.sidebar)
         sidebar.layoutManager = LinearLayoutManager(this)
         sidebar.adapter = sidebarAdapter
+        // A closed drawer is still laid out, rows and all, in the first frame, which then
+        // waits for them. The rows are made once the main thread is idle after it, or when
+        // the drawer starts to open, whichever comes first.
+        sidebar.visibility = View.GONE
+        val showSidebarRows = { sidebar.visibility = View.VISIBLE }
+        Looper.myQueue().addIdleHandler { showSidebarRows(); false }
+        findViewById<DrawerLayout>(R.id.drawerlayout_library).addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+            override fun onDrawerStateChanged(newState: Int) {
+                if (newState != DrawerLayout.STATE_IDLE) showSidebarRows()
+            }
+        })
         val statusBarStrip = findViewById<View>(R.id.sidebar_status_bar)
         val padding = sidebar.paddingTop
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.sidebar_container)) { _, insets ->
