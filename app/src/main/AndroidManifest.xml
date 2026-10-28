@@ -59,6 +59,7 @@
             android:theme="@style/Theme.ZooForZotero.NoActionBar" />
         <activity
             android:name=".MainActivity"
+            android:theme="@android:style/Theme.NoDisplay"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -1,20 +1,20 @@
 package com.mickstarify.zooforzotero
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import com.mickstarify.zooforzotero.LibraryActivity.LibraryActivity
 import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
 import com.mickstarify.zooforzotero.SyncSetup.SyncSetupActivity
-import dagger.hilt.android.AndroidEntryPoint
 
-@AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+/**
+ * The launcher's entry: opens the library, or sign-in without a stored login. It shows
+ * nothing itself (Theme.NoDisplay, no layout), so a launch doesn't inflate and draw a
+ * window that is gone at once; a plain Activity, as AppCompat needs a window.
+ */
+class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        setContentView(R.layout.activity_main)
-
         val auth = AuthenticationStorageImpl(this)
         val intent = if (auth.hasCredentials()) {
             Intent(this, LibraryActivity::class.java)
