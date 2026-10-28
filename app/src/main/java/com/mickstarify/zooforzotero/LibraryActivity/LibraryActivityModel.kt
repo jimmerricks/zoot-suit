@@ -146,34 +146,32 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         return zoteroDB.isPopulated()
     }
 
-    private fun filterItems(items: List<Item>): List<Item> {
-        val shown = LibraryItemFilter.applyDisplayFilters(
-            items,
-            onlyNotes = libraryFilter.hasNotes,
-            onlyPdfs = libraryFilter.hasPdf,
-            keysWithPdf = zoteroDB.keysWithPdf
-        )
-        return applyLibraryFilter(shown)
-    }
+    /** Answers the list's queries; reads the open library at each one. */
+    private val itemSource = InMemoryItemSource(
+        library = { zoteroDB },
+        deviceState = { DeviceState(onDeviceKeys, editedKeys, itemEditKeys) },
+        searchFields = { preferences.getSearchFields() },
+    )
 
     /**
-     * Applies [librarySearch] and [libraryFilter]; every list view goes through here
-     * (collections, unfiled items), Trash and My Publications excepted.
+     * The list for [place] in the open library, after [librarySearch] and [libraryFilter]
+     * (Trash and My Publications are shown whole), in the library's sort order. Sets
+     * [lastFilteredItems].
      */
-    private fun applyLibraryFilter(items: List<Item>): List<Item> {
-        val search = librarySearch
-        val searched = if (search.isEmpty()) items else {
-            val matches = searchIndex()?.search(search)?.mapTo(HashSet()) { it.itemKey } ?: emptySet()
-            items.filter { it.itemKey in matches }
-        }
-        val filter = libraryFilter
-        val filtered = if (!filter.isActive) searched else {
-            val onDeviceItems = if (filter.onDevice) owningItems(onDeviceKeys) else emptySet()
-            val editedItems = if (filter.editedHere) owningItems(editedKeys) + itemEditKeys else emptySet()
-            searched.filter { filter.matches(it, onDeviceItems, editedItems) }
-        }
-        lastFilteredItems = filtered
-        return filtered
+    fun listItems(place: LibraryPlace): List<Item> {
+        val groupId = state.currentGroup.id
+        val query = LibraryQuery(
+            place = place,
+            search = librarySearch,
+            filter = libraryFilter,
+            sort = preferences.getSortMethod(groupId),
+            ascending = preferences.isSortedAscendingly(groupId),
+            includeSubcollections = preferences.showSubcollectionItems(),
+        )
+        val items = itemSource.query(query)
+        Log.d(TAG, "listItems($place) - ${items.size} items")
+        lastFilteredItems = if (place.isNarrowed) items else null
+        return items
     }
 
     /**
@@ -245,11 +243,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     var lastFilteredItems: List<Item>? = null
         private set
 
-    /** Called before the presenter builds a list; see [lastFilteredItems]. */
-    fun startListUpdate() {
-        lastFilteredItems = null
-    }
-
     /** Attachment keys whose file is on this device / has edits to sync; see refreshPendingEdits. */
     @Volatile private var onDeviceKeys: Set<String> = emptySet()
     @Volatile private var editedKeys: Set<String> = emptySet()
@@ -276,7 +269,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ changed ->
                 if (!changed) return@subscribe
-                searchIndex = null // it holds the item's tags
+                itemSource.invalidateSearch() // it holds the item's tags
                 // after the count, so the dialog says whether edits are waiting
                 refreshPendingEdits { presenter.showEditedItem(item) }
             }, { e ->
@@ -339,39 +332,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         syncManager.startCompleteSync(zoteroDB, useSmallLoadingAnimation)
     }
 
-    override fun getLibraryItems(): List<Item> {
-        val items = zoteroDB.getDisplayableItems()
-        Log.d(TAG, "getLibraryItems() - got ${items.size} items from zoteroDB.getDisplayableItems()")
-        val filteredItems = filterItems(items)
-        Log.d(TAG, "getLibraryItems() - after filtering: ${filteredItems.size} items")
-        return filteredItems
-    }
-
-    /** A collection's items; with the setting on, also its subcollections' (each item once). */
-    override fun getItemsFromCollection(collectionKey: String): List<Item> {
-        val items = if (preferences.showSubcollectionItems()) {
-            CollectionTree(getCollections())
-                .itemsIncludingSubcollections(collectionKey, zoteroDB::getItemsFromCollection)
-        } else {
-            zoteroDB.getItemsFromCollection(collectionKey)
-        }
-        Log.d(TAG, "getItemsFromCollection($collectionKey) - got ${items.size} items from zoteroDB")
-        val filteredItems = filterItems(items)
-        Log.d(TAG, "getItemsFromCollection($collectionKey) - after filtering: ${filteredItems.size} items")
-        return filteredItems
-    }
-
-
     override fun getCollections(): List<ZoteroCollection> {
         return zoteroDB.collections ?: LinkedList()
-    }
-
-    override fun getAttachments(itemKey: String): List<Item> {
-        return zoteroDB.getAttachments(itemKey)
-    }
-
-    override fun getMyPublications(): List<Item> {
-        return zoteroDB.myPublications ?: LinkedList()
     }
 
     override fun openPDF(attachment: Item) {
@@ -562,27 +524,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         openPDF(item)
     }
 
-    @Volatile
-    private var searchIndex: LibrarySearch.Index? = null
-
-    /**
-     * The open library's search index for the chosen fields, built on first use after a
-     * load, a sync or a change of fields (it keys on the item list's identity). Null
-     * before the library loads.
-     */
-    private fun searchIndex(): LibrarySearch.Index? {
-        val items = zoteroDB.items ?: return null
-        val fields = preferences.getSearchFields()
-        // fields beyond title, creators and year arrive after startup; rebuilt when they have
-        val allFields = zoteroDB.allFieldsLoaded || fields.none { it.needsAllFields }
-        searchIndex?.takeIf { it.isFor(items, fields, allFields) }?.let { return it }
-        return LibrarySearch.Index(items, fields, allFields).also { searchIndex = it }
-    }
-
     /** Builds the search index in the background while the search dialog is open. */
     fun warmSearchIndex() {
-        if (!isLoaded()) return
-        Thread { searchIndex() }.start()
+        if (isLoaded()) itemSource.warmSearch()
     }
 
     var downloadDisposable: Disposable? = null
@@ -752,14 +696,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     var isDownloading: Boolean = false
-
-    override fun getUnfiledItems(): List<Item> {
-        if (!zoteroDB.isPopulated()) {
-            Log.e("zotero", "error zoteroDB not populated!")
-            return LinkedList()
-        }
-        return filterItems(zoteroDB.getItemsWithoutCollection())
-    }
 
     override fun createNote(note: Note) {
         if (state.isUsingGroup()) {
@@ -1017,12 +953,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 onDone()
             })
     }
-
-    /** For attachment keys: their parent items' keys, plus their own (standalone attachments). */
-    private fun owningItems(attachmentKeys: Set<String>): Set<String> =
-        attachmentKeys.flatMap { key ->
-            listOfNotNull(key, zoteroDB.getItemWithKey(key)?.data?.get("parentItem"))
-        }.toSet()
 
     /** Keys of attachments whose file is on this device (non-empty). */
     private fun findOnDeviceAttachmentKeys(): Set<String> {
@@ -1417,10 +1347,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         }
     }
 
-    fun getTrashedItems(): List<Item> {
-        return zoteroDB.getTrashItems()
-    }
-
     fun getCollectionFromKey(collectionKey: String): ZoteroCollection? {
         return zoteroDB.getCollectionById(collectionKey)
     }
@@ -1605,7 +1531,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     override fun getAllTags(): List<Pair<String, Int>> {
-        return LibraryItemFilter.tagCounts(zoteroDB.getDisplayableItems())
+        return itemSource.tagCounts()
     }
 
     override fun deleteLocalAttachment(attachment: Item) {

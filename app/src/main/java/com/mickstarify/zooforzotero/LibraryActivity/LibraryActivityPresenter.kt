@@ -10,13 +10,11 @@ import androidx.lifecycle.ViewModelProvider
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryLoadingScreenViewModel
 import com.mickstarify.zooforzotero.R
-import com.mickstarify.zooforzotero.SortMethod
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
-import java.util.Locale
 
 /**
  * The library screen's logic. It lives in [LibraryViewModel], so it outlives the
@@ -34,18 +32,6 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     override lateinit var libraryListViewModel: LibraryListViewModel
     override lateinit var libraryLoadingViewModel: LibraryLoadingScreenViewModel
-
-    /** The key an item sorts by under [method]; ties are broken by title. */
-    private fun sortKey(item: Item, method: SortMethod): String = when (method) {
-        SortMethod.TITLE -> item.getTitle().lowercase(Locale.ROOT)
-        SortMethod.DATE -> item.getSortableDateString()
-        SortMethod.DATE_ADDED -> item.getSortableDateAddedString()
-        SortMethod.AUTHOR -> {
-            val authorText = item.getAuthor().lowercase(Locale.ROOT)
-            // force empty authors to the bottom. Just like the zotero desktop client.
-            if (authorText == "") "zzz" else authorText
-        }
-    }
 
     /** Opens My Library ([GroupInfo.NO_GROUP_ID]) or a group at its top, from the sidebar. */
     override fun openLibrary(groupId: Int) {
@@ -361,30 +347,28 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun openMyPublications() {
-        model.startListUpdate()
         if (!model.isLoaded()) {
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
         }
         title.value = "My Publications"
-        val entries = model.getMyPublications().sort().map{ListEntry(it)}
-        model.isDisplayingItems = entries.isNotEmpty()
         model.setCurrentCollection("zooforzotero_my_publications")
+        val entries = model.listItems(LibraryPlace.MyPublications).map { ListEntry(it) }
+        model.isDisplayingItems = entries.isNotEmpty()
         libraryListViewModel.setItems(entries)
         showFilterSummary()
         refreshSidebar()
     }
 
     override fun openTrash() {
-        model.startListUpdate()
         if (!model.isLoaded()) {
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
         }
         title.value = "Trash"
-        val entries = model.getTrashedItems().sort().map{ListEntry(it)}
-        model.isDisplayingItems = entries.isNotEmpty()
         model.setCurrentCollection("zooforzotero_Trash")
+        val entries = model.listItems(LibraryPlace.Trash).map { ListEntry(it) }
+        model.isDisplayingItems = entries.isNotEmpty()
         libraryListViewModel.setItems(entries)
         showFilterSummary()
         refreshSidebar()
@@ -418,16 +402,15 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         }
         Log.d("zotero", "Got request to change collection to ${collectionKey}")
         subcollectionItemsShown = model.preferences.showSubcollectionItems()
-        model.startListUpdate()
         model.setCurrentCollection(collectionKey)
         if (collectionKey == "all" && !model.isUsingGroups()) {
             title.value = "My Library"
-            val entries = model.getLibraryItems().sort().map { ListEntry(it) }
+            val entries = model.listItems(LibraryPlace.Library).map { ListEntry(it) }
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
         } else if (collectionKey == "unfiled_items") {
             title.value = "Unfiled Items"
-            val entries = model.getUnfiledItems().sort().map { ListEntry(it) }
+            val entries = model.listItems(LibraryPlace.Unfiled).map { ListEntry(it) }
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
         } else if (collectionKey == "zooforzotero_Trash"){
@@ -436,7 +419,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             this.openMyPublications()
         }else if (collectionKey == "group_all" && model.isUsingGroups()) {
             title.value = model.getCurrentGroup()?.name ?: "ERROR"
-            val entries = model.getLibraryItems().sort().map { ListEntry(it) }
+            val entries = model.listItems(LibraryPlace.Library).map { ListEntry(it) }
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
         }
@@ -446,7 +429,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
             title.value = collection?.name ?: "Unknown Collection"
             // subcollections are reached through the sidebar's tree, not as rows here
-            val entries = model.getItemsFromCollection(collectionKey).sort().map { ListEntry(it) }
+            val entries = model.listItems(LibraryPlace.Collection(collectionKey)).map { ListEntry(it) }
             model.isDisplayingItems = entries.size > 0
             libraryListViewModel.setItems(entries)
         }
@@ -565,18 +548,6 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     override fun startActivity(intent: Intent) {
         view.startActivity(intent)
-    }
-
-    // extension function to sort lists of items
-    // Keys are computed once per item, not per comparison: a note's title parses its HTML.
-    private fun List<Item>.sort(): List<Item> {
-        val groupId = model.state.currentGroup.id
-        val method = model.preferences.getSortMethod(groupId)
-        val sorted = this
-            .map { Triple(sortKey(it, method), it.getTitle().lowercase(Locale.ROOT), it) }
-            .sortedWith(compareBy<Triple<String, String, Item>>({ it.first }, { it.second }))
-            .map { it.third }
-        return if (model.preferences.isSortedAscendingly(groupId)) sorted else sorted.reversed()
     }
 
     fun describeAttachment(attachment: Item, onState: (AttachmentLocalState) -> Unit) {

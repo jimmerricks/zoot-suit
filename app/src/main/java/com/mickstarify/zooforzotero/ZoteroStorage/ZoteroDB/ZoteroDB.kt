@@ -27,7 +27,7 @@ import java.util.LinkedList
 class ZoteroDB(
     val context: Context,
     val groupID: Int
-) {
+) : LoadedLibrary {
     private val zoteroDatabase: ZoteroDatabase
     init {
         val hiltEntryPoint = EntryPointAccessors.fromApplication(context, SingletonComponentsEntryPoint::class.java)
@@ -43,14 +43,14 @@ class ZoteroDB(
     // replaced whole (never mutated) by loads on the io scheduler and read from the main
     // thread and from background checks; @Volatile so a reader sees the new list
     @Volatile
-    var collections: List<Collection>? = null
+    override var collections: List<Collection>? = null
         set(value) {
             field = value
             this.populateCollectionChildren()
             this.createCollectionItemMap()
         }
     @Volatile
-    var items: List<Item>? = null
+    override var items: List<Item>? = null
         set(value) {
             field = value
             itemsByKey = value?.associateBy { it.itemKey } ?: emptyMap()
@@ -60,7 +60,7 @@ class ZoteroDB(
         }
 
     // list of items that are in the "my publications"
-    var myPublications: MutableList<Item>? = null
+    private var publications: MutableList<Item>? = null
 
     // map that stores attachmentItem classes by ItemKey
 //    var attachments: MutableMap<String, MutableList<Item>>? = null
@@ -85,7 +85,7 @@ class ZoteroDB(
      * a walk through each item's attachments and their fields on every redraw.
      */
     @Volatile
-    var keysWithPdf: Set<String> = emptySet()
+    override var keysWithPdf: Set<String> = emptySet()
         private set
 
     val namespace: String = if (prefix == "") {
@@ -211,10 +211,10 @@ class ZoteroDB(
         }
 
         this.notes = ArrayMap()
-        this.myPublications = LinkedList()
+        this.publications = LinkedList()
         items?.forEach { item: Item ->
             if (item.data.containsKey("inPublications") && item.data["inPublications"] == "true"){
-                this.myPublications!!.add(item)
+                this.publications!!.add(item)
             }
         }
     }
@@ -235,7 +235,7 @@ class ZoteroDB(
         }
     }
 
-    fun getItemsWithoutCollection(): List<Item> {
+    override fun getItemsWithoutCollection(): List<Item> {
         if (this.items == null) {
             Log.e("zotero", "Error, items not loaded yet.")
             return LinkedList()
@@ -258,7 +258,7 @@ class ZoteroDB(
         }
     }
 
-    fun getDisplayableItems(): List<Item> {
+    override fun getDisplayableItems(): List<Item> {
         if (items != null) {
             return items!!.filter { !it.hasParent() }
         } else {
@@ -267,7 +267,7 @@ class ZoteroDB(
         }
     }
 
-    fun getItemsFromCollection(collection: String): List<Item> {
+    override fun getItemsFromCollection(collection: String): List<Item> {
         if (this.itemsFromCollections == null) {
             this.createCollectionItemMap()
         }
@@ -395,7 +395,7 @@ class ZoteroDB(
 
     /** Whether every item has all its fields: false from a load until [loadRestOfFields] is done. */
     @Volatile
-    var allFieldsLoaded = true
+    override var allFieldsLoaded = true
         private set
 
     /** Called (on a background thread) when [allFieldsLoaded] turns true. */
@@ -428,7 +428,7 @@ class ZoteroDB(
         if (!item.hasAllFields) item.complete(zoteroDatabase.loadRestOfFields(item.itemKey))
     }
 
-    fun getItemWithKey(itemKey: String): Item? {
+    override fun getItemWithKey(itemKey: String): Item? {
         return itemsByKey[itemKey]
     }
 
@@ -477,7 +477,9 @@ class ZoteroDB(
 
 
 
-    fun getTrashItems(): List<Item> {
+    override fun getMyPublications(): List<Item> = publications ?: emptyList()
+
+    override fun getTrashItems(): List<Item> {
         if (this.trashItems == null){
             Log.e("zotero", "error trash not initialized")
             return LinkedList()

@@ -107,12 +107,8 @@ interface Contract {
 
     interface Model {
         fun downloadLibrary(doRefresh: Boolean = false, useSmallLoadingAnimation: Boolean = false)
-        fun getLibraryItems(): List<Item>
-        fun getItemsFromCollection(collectionName: String): List<Item>
         fun refreshLibrary(useSmallLoadingAnimation: Boolean = false)
         fun getCollections(): List<Collection>
-        fun getAttachments(itemKey: String): List<Item>
-        fun getMyPublications(): List<Item>
         fun downloadAttachment(item: Item)
         fun cancelAttachmentDownload()
         fun isLoaded(): Boolean
@@ -122,7 +118,6 @@ interface Contract {
         fun openPDF(attachment: Item)
         fun openAttachment(item: Item)
         fun uploadAttachment(attachment: Item)
-        fun getUnfiledItems(): List<Item>
         fun startGroupSync(group: GroupInfo, refresh: Boolean = false)
         fun usePersonalLibrary()
         fun getGroupById(groupId: Int): GroupInfo?
