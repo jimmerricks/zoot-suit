@@ -5,7 +5,11 @@ How Zoot Suit is identified, signed and released, and why.
 ## App id and versions
 
 - Release builds: `se.jmwhite.zootsuit`, "Zoot Suit". It installs beside Zoo for Zotero,
-  not over it.
+  not over it. The id is based on a domain the developer owns (jmwhite.se).
+- 0.1.0 was released as `nu.n4.zootsuit`. That id was replaced in 0.2.0 because it
+  rests on a domain the developer doesn't own (an id segment can't start with a digit,
+  so 4n.nu wasn't possible). 0.2.0 therefore installs beside 0.1.0 instead of updating
+  it.
 - Debug builds: `se.jmwhite.zootsuit.debug`, "Zoot Suit (debug)", so a debug and a release
   build can share a device.
 - Each release bumps `versionCode` and `versionName` in `app/build.gradle`.
@@ -29,11 +33,11 @@ are git-ignored.
 
 ## Making a release
 
-1. Bump `versionCode` and `versionName`.
+1. Bump `versionCode` and `versionName`; add the release to `docs/changelog.md`.
 2. `./gradlew assembleRelease`.
 3. Check the signature (`apksigner verify --print-certs`) against the certificate above.
 4. Create a GitHub release with the tag `vX.Y.Z`, the APK named `zoot-suit-X.Y.Z.apk`
-   and a `SHA256SUMS` file.
+   and a `SHA256SUMS` file; the release notes are that version's changelog entry.
 
 ## Zotero sign-in (OAuth)
 
