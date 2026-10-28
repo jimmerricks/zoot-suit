@@ -175,7 +175,7 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
 /**
  * Drops the folded copies of abstracts that the search can fold in SQL instead (see
  * SearchText): those that SQLite's lower() of the stored abstract reproduces, and those
- * of items without one.
+ * of items without one. ZoteroDatabase.reclaimSpace gives their space back.
  */
 val MIGRATION_13_14 = object : Migration(13, 14) {
     override fun migrate(database: SupportSQLiteDatabase) {

@@ -5,7 +5,9 @@ import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemPOJO
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Maybe
@@ -44,8 +46,13 @@ abstract class ZoteroRoomDatabase : RoomDatabase() {
     abstract fun fileHashDao(): FileHashDao
 }
 
+private const val VACUUM_DUE = "vacuumDue"
+
 @Singleton
 class ZoteroDatabase @Inject constructor(val context: Context) {
+    // whether a migration left space inside the file's pages for reclaimSpace to give back
+    private val maintenance = context.getSharedPreferences("zotero-database", Context.MODE_PRIVATE)
+
     val db = Room.databaseBuilder(
         context.applicationContext,
         ZoteroRoomDatabase::class.java, "zotero"
@@ -64,7 +71,12 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         .addMigrations(MIGRATION_10_11)
         .addMigrations(MIGRATION_11_12)
         .addMigrations(MIGRATION_12_13)
-        .addMigrations(MIGRATION_13_14).build()
+        .addMigrations(object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                MIGRATION_13_14.migrate(db)
+                maintenance.edit().putBoolean(VACUUM_DUE, true).apply()
+            }
+        }).build()
 
     /** md5 of the file this device last downloaded/uploaded for the attachment, or null. */
     fun getAttachmentBase(itemKey: String, group: Int): String? =
@@ -239,6 +251,26 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
 
     /** Whether some of library [groupID]'s items have no SearchText yet (see fillMissingKeys). Blocking. */
     fun lacksSearchText(groupID: Int): Boolean = db.itemDao().lacksSearchText(groupID)
+
+    /**
+     * Shrinks the file after a migration that emptied much of its rows (MIGRATION_13_14),
+     * or when at least [minFree] bytes of it are unused pages: SQLite reuses free space but
+     * never gives it back by itself, and space freed inside pages isn't even counted.
+     * Rewrites the whole database: writes wait meanwhile, reads go on. Blocking.
+     */
+    fun reclaimSpace(minFree: Long = 4L shl 20) {
+        val sql = db.openHelper.writableDatabase
+        fun pragma(name: String) = sql.query("PRAGMA $name").use { it.moveToFirst(); it.getLong(0) }
+        val free = pragma("freelist_count") * pragma("page_size")
+        if (!maintenance.getBoolean(VACUUM_DUE, false) && free < minFree) return
+        val before = pragma("page_count")
+        val start = System.nanoTime()
+        sql.execSQL("VACUUM")
+        // the rewritten pages are in the write-ahead log, as large as the file, until it's emptied
+        sql.query("PRAGMA wal_checkpoint(TRUNCATE)").use { it.moveToFirst() }
+        maintenance.edit().putBoolean(VACUUM_DUE, false).apply()
+        Log.d("zotero", "vacuumed ${before - pragma("page_count")} of $before pages in ${(System.nanoTime() - start) / 1_000_000} ms")
+    }
 
     /** How many items (not trashed) library [groupID] has. Blocking. */
     fun countItems(groupID: Int): Int = db.itemDao().countItems(groupID)
