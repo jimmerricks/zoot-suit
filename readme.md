@@ -6,7 +6,8 @@ by Michael Johnston, forked at v4.0.0 (commit `0261040`) in October 2026.
 
 - **Licence:** GPLv3, see [LICENSE](LICENSE). Upstream ships no licence file; its
   author states GPLv3 in its terms of use.
-- **App id:** `se.jmwhite.zootsuit`. It installs beside Zoo for Zotero, not over it.
+- **App id:** `se.jmwhite.zootsuit` (0.1.0 was `nu.n4.zootsuit`, see the
+  [changelog](docs/changelog.md)). It installs beside Zoo for Zotero, not over it.
 - **Not affiliated with the Zotero project.**
 - [Privacy policy](https://jimmerricks.github.io/zoot-suit/privacy-policy.html) ·
   [Terms of use](https://jimmerricks.github.io/zoot-suit/terms-of-use.html)
@@ -33,6 +34,9 @@ account (OAuth) has not been tested to the end yet.
 4. Sign in with your Zotero account or an API key, then set up WebDAV in Settings if
    you use it.
 
+Coming from 0.1.0: 0.2.0 has a new app id and installs as a separate app. Sync your
+edits in 0.1.0 first, then uninstall it once 0.2.0 is set up.
+
 To edit PDFs you need a PDF app that saves changes back to the file it opened.
 
 ## What it does
@@ -51,8 +55,11 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
   so a newer version is not overwritten.
 - Long-press an attachment to open it, download it, upload your changes or delete the
   local copy.
-- Create, edit and delete notes.
+- Create, edit and delete notes. Add and remove tags, offline too; the next sync
+  uploads them without losing tags added elsewhere (My Library only).
 - Works on Android 7 with Let's Encrypt servers (the root certificate is bundled).
+- Made for large libraries (tested with 18,000 items): the list, sorting and search
+  read from the database page by page instead of holding the library in memory.
 - A first sync of a large library keeps the display on while it downloads, and picks up
   where it stopped if the device slept anyway.
 
@@ -61,6 +68,7 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
 - Edits to attachments in group libraries are not uploaded.
 - No adding items: use Zotero itself. The upstream ISBN scanner and share target
   are removed.
+- Of an item's metadata, only tags can be edited.
 - No tablet-specific layouts yet.
 
 ## Differences from Zoo for Zotero
@@ -79,7 +87,8 @@ See [docs/differences-from-zoo.md](docs/differences-from-zoo.md).
    `storePassword`, `keyAlias`, `keyPassword`. Without it the APK is unsigned.
 
 Requires JDK 17 or newer. Planned work is in [docs/roadmap.md](docs/roadmap.md);
-signing and releases in [docs/releases.md](docs/releases.md).
+signing and releases in [docs/releases.md](docs/releases.md); changes per release in
+[docs/changelog.md](docs/changelog.md).
 
 ## Reporting problems
 
