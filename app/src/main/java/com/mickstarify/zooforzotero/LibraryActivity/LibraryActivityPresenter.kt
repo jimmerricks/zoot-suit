@@ -353,10 +353,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         }
         title.value = "My Publications"
         model.setCurrentCollection("zooforzotero_my_publications")
-        val entries = model.listItems(LibraryPlace.MyPublications).map { ListEntry(it) }
-        model.isDisplayingItems = entries.isNotEmpty()
-        libraryListViewModel.setItems(entries)
-        showFilterSummary()
+        showList(LibraryPlace.MyPublications)
         refreshSidebar()
     }
 
@@ -367,11 +364,21 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         }
         title.value = "Trash"
         model.setCurrentCollection("zooforzotero_Trash")
-        val entries = model.listItems(LibraryPlace.Trash).map { ListEntry(it) }
-        model.isDisplayingItems = entries.isNotEmpty()
-        libraryListViewModel.setItems(entries)
-        showFilterSummary()
+        showList(LibraryPlace.Trash)
         refreshSidebar()
+    }
+
+    /**
+     * Builds the list for [place] off the main thread and shows it with its subtitle. A
+     * list asked for meanwhile replaces this one (see LibraryActivityModel.listItems).
+     */
+    private fun showList(place: LibraryPlace) {
+        model.listItems(place) { items ->
+            val entries = items.map { ListEntry(it) }
+            model.isDisplayingItems = entries.isNotEmpty()
+            libraryListViewModel.setItems(entries)
+            showFilterSummary()
+        }
     }
 
     override fun uploadAttachment(item: Item) {
@@ -403,37 +410,30 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         Log.d("zotero", "Got request to change collection to ${collectionKey}")
         subcollectionItemsShown = model.preferences.showSubcollectionItems()
         model.setCurrentCollection(collectionKey)
-        if (collectionKey == "all" && !model.isUsingGroups()) {
+        if (collectionKey == "zooforzotero_Trash") {
+            openTrash()
+            return
+        }
+        if (collectionKey == "zooforzotero_my_publications") {
+            openMyPublications()
+            return
+        }
+        val place = if (collectionKey == "all" && !model.isUsingGroups()) {
             title.value = "My Library"
-            val entries = model.listItems(LibraryPlace.Library).map { ListEntry(it) }
-            model.isDisplayingItems = entries.size > 0
-            libraryListViewModel.setItems(entries)
+            LibraryPlace.Library
         } else if (collectionKey == "unfiled_items") {
             title.value = "Unfiled Items"
-            val entries = model.listItems(LibraryPlace.Unfiled).map { ListEntry(it) }
-            model.isDisplayingItems = entries.size > 0
-            libraryListViewModel.setItems(entries)
-        } else if (collectionKey == "zooforzotero_Trash"){
-            this.openTrash()
-        } else if (collectionKey == "zooforzotero_my_publications"){
-            this.openMyPublications()
-        }else if (collectionKey == "group_all" && model.isUsingGroups()) {
+            LibraryPlace.Unfiled
+        } else if (collectionKey == "group_all" && model.isUsingGroups()) {
             title.value = model.getCurrentGroup()?.name ?: "ERROR"
-            val entries = model.listItems(LibraryPlace.Library).map { ListEntry(it) }
-            model.isDisplayingItems = entries.size > 0
-            libraryListViewModel.setItems(entries)
-        }
-        // a collection, in My Library or the open group
-        else {
-            val collection = model.getCollectionFromKey(collectionKey)
-
-            title.value = collection?.name ?: "Unknown Collection"
+            LibraryPlace.Library
+        } else {
+            // a collection, in My Library or the open group;
             // subcollections are reached through the sidebar's tree, not as rows here
-            val entries = model.listItems(LibraryPlace.Collection(collectionKey)).map { ListEntry(it) }
-            model.isDisplayingItems = entries.size > 0
-            libraryListViewModel.setItems(entries)
+            title.value = model.getCollectionFromKey(collectionKey)?.name ?: "Unknown Collection"
+            LibraryPlace.Collection(collectionKey)
         }
-        showFilterSummary()
+        showList(place)
         refreshSidebar()
     }
 

@@ -57,6 +57,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import java.io.FileNotFoundException
 import java.util.LinkedList
 import java.util.Optional
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection as ZoteroCollection
 
@@ -153,12 +154,19 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         searchFields = { preferences.getSearchFields() },
     )
 
+    // one thread: lists are built in the order asked for, never two at once
+    private val listScheduler = Schedulers.from(Executors.newSingleThreadExecutor())
+
+    // the latest list asked for; an older one that finishes later is dropped
+    private var listGeneration = 0
+
     /**
-     * The list for [place] in the open library, after [librarySearch] and [libraryFilter]
-     * (Trash and My Publications are shown whole), in the library's sort order. Sets
-     * [lastFilteredItems].
+     * Builds the list for [place] in the open library, after [librarySearch] and
+     * [libraryFilter] (Trash and My Publications are shown whole), in the library's sort
+     * order, off the main thread; then sets [lastFilteredItems] and calls [onResult] on
+     * the main thread, unless another list was asked for meanwhile. Call on the main thread.
      */
-    fun listItems(place: LibraryPlace): List<Item> {
+    fun listItems(place: LibraryPlace, onResult: (List<Item>) -> Unit) {
         val groupId = state.currentGroup.id
         val query = LibraryQuery(
             place = place,
@@ -168,10 +176,21 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             ascending = preferences.isSortedAscendingly(groupId),
             includeSubcollections = preferences.showSubcollectionItems(),
         )
-        val items = itemSource.query(query)
-        Log.d(TAG, "listItems($place) - ${items.size} items")
-        lastFilteredItems = if (place.isNarrowed) items else null
-        return items
+        val generation = ++listGeneration
+        Single.fromCallable { itemSource.query(query) }
+            .subscribeOn(listScheduler)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ items ->
+                Log.d(TAG, "listItems($place) - ${items.size} items")
+                if (generation != listGeneration) return@subscribe
+                lastFilteredItems = if (place.isNarrowed) items else null
+                onResult(items)
+            }, { e ->
+                Log.e(TAG, "building the list for $place failed: $e")
+                if (generation == listGeneration) {
+                    presenter.createErrorAlert("Couldn't show the list", "Details: ${e.message ?: e}") {}
+                }
+            })
     }
 
     /**
