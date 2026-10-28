@@ -34,6 +34,7 @@ import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentOpenCheck
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachmentFinder
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.AttachmentInfo
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.FileHash
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdit
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind
@@ -1239,6 +1240,15 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             attachmentStorageManager.calculateMd5(
                 attachmentItem(key) ?: throw FileNotFoundException(key)
             )
+        },
+        store = object : EditedAttachmentFinder.Store {
+            override fun get(itemKey: String) = zoteroDatabase.getFileHash(itemKey)
+                ?.let { EditedAttachmentFinder.Cached(it.size, it.mtime, it.md5) }
+
+            override fun put(itemKey: String, cached: EditedAttachmentFinder.Cached) =
+                zoteroDatabase.putFileHash(FileHash(itemKey, cached.size, cached.mtime, cached.md5))
+
+            override fun remove(itemKey: String) = zoteroDatabase.deleteFileHash(itemKey)
         }
     )
 

@@ -27,9 +27,10 @@ import javax.inject.Singleton
         ItemCollection::class,
         AttachmentInfo::class,
         AttachmentBase::class,
-        PendingItemEdit::class
+        PendingItemEdit::class,
+        FileHash::class
     ),
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 abstract class ZoteroRoomDatabase : RoomDatabase() {
@@ -40,6 +41,7 @@ abstract class ZoteroRoomDatabase : RoomDatabase() {
     abstract fun AttachmentInfoDao(): AttachmentInfoDao
     abstract fun attachmentBaseDao(): AttachmentBaseDao
     abstract fun pendingItemEditDao(): PendingItemEditDao
+    abstract fun fileHashDao(): FileHashDao
 }
 
 @Singleton
@@ -58,7 +60,8 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         .addMigrations(MIGRATION_7_8)
         .addMigrations(MIGRATION_8_9)
         .addMigrations(MIGRATION_9_10)
-        .addMigrations(MIGRATION_10_11).build()
+        .addMigrations(MIGRATION_10_11)
+        .addMigrations(MIGRATION_11_12).build()
 
     /** md5 of the file this device last downloaded/uploaded for the attachment, or null. */
     fun getAttachmentBase(itemKey: String, group: Int): String? =
@@ -72,6 +75,13 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
 
     fun attachmentKeysWithBase(group: Int): Set<String> =
         db.attachmentBaseDao().keysWithBase(group).toSet()
+
+    /** The last md5 hashed for attachment [itemKey]'s file, with its size and mtime then (FileHash). */
+    fun getFileHash(itemKey: String): FileHash? = db.fileHashDao().get(itemKey)
+
+    fun putFileHash(hash: FileHash) = db.fileHashDao().put(hash)
+
+    fun deleteFileHash(itemKey: String) = db.fileHashDao().delete(itemKey)
 
     fun addGroup(group: GroupInfo): Completable {
         return db.groupInfoDao().insertGroupInfos(group)

@@ -143,3 +143,16 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
         }
     }
 }
+
+/**
+ * Adds FileHash: the md5s EditedAttachmentFinder computed, so that each start no longer
+ * hashes every downloaded attachment again.
+ */
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "CREATE TABLE IF NOT EXISTS `FileHash` (`itemKey` TEXT NOT NULL, `size` INTEGER NOT NULL, " +
+                    "`mtime` INTEGER NOT NULL, `md5` TEXT NOT NULL, PRIMARY KEY(`itemKey`))"
+        )
+    }
+}
