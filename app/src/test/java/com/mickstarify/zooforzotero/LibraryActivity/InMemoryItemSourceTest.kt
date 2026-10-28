@@ -134,4 +134,12 @@ class InMemoryItemSourceTest {
             dated.query(LibraryQuery(LibraryPlace.Library, sort = SortMethod.DATE)).map { it.itemKey }
         )
     }
+
+    @Test
+    fun `equal titles are ordered by key, whatever order they came in`() {
+        val b = item("KEY2", "Same")
+        val a = item("KEY1", "Same")
+        val tied = InMemoryItemSource({ FakeLibrary(listOf(b, a)) }, { DeviceState() }, { emptySet() })
+        assertEquals(listOf("KEY1", "KEY2"), tied.query(LibraryQuery(LibraryPlace.Library)).map { it.itemKey })
+    }
 }

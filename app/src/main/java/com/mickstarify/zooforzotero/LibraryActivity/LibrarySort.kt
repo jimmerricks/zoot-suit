@@ -7,7 +7,7 @@ import java.util.Locale
 /** The list's order. Pure, so it can be tested without a database. */
 object LibrarySort {
 
-    /** The key an item sorts by under [method]; ties are broken by title. */
+    /** The key an item sorts by under [method]; ties are broken by title, then by item key. */
     fun sortKey(item: Item, method: SortMethod): String = when (method) {
         SortMethod.TITLE -> item.getTitle().lowercase(Locale.ROOT)
         SortMethod.DATE -> item.getSortableDateString()
@@ -23,7 +23,8 @@ object LibrarySort {
     fun sorted(items: List<Item>, method: SortMethod, ascending: Boolean): List<Item> {
         val sorted = items
             .map { Triple(sortKey(it, method), it.getTitle().lowercase(Locale.ROOT), it) }
-            .sortedWith(compareBy<Triple<String, String, Item>>({ it.first }, { it.second }))
+            // the key last, so that the order doesn't depend on the order items came in
+            .sortedWith(compareBy<Triple<String, String, Item>>({ it.first }, { it.second }, { it.third.itemKey }))
             .map { it.third }
         return if (ascending) sorted else sorted.reversed()
     }
