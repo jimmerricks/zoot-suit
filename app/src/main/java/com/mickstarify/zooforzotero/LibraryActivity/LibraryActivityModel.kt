@@ -288,7 +288,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ changed ->
                 if (!changed) return@subscribe
-                itemSource.invalidateSearch() // it holds the item's tags
+                itemSource.invalidate() // its search holds the item's tags
                 // after the count, so the dialog says whether edits are waiting
                 refreshPendingEdits { presenter.showEditedItem(item) }
             }, { e ->
@@ -543,9 +543,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         openPDF(item)
     }
 
-    /** Builds the search index in the background while the search dialog is open. */
+    /** Prepares the search in the background (on the list's thread) while the search dialog is open. */
     fun warmSearchIndex() {
-        if (isLoaded()) itemSource.warmSearch()
+        if (!isLoaded()) return
+        Completable.fromAction { itemSource.warmSearch() }
+            .subscribeOn(listScheduler)
+            .subscribe({}, { e -> Log.e(TAG, "preparing the search failed: $e") })
     }
 
     var downloadDisposable: Disposable? = null

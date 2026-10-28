@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemPOJO
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Maybe
@@ -107,17 +108,82 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         for (c in dao.getCreatorsForGroup(groupID)) creators.getOrPut(c.parent) { ArrayList(2) }.add(c)
         for (t in dao.getTagsForGroup(groupID)) tags.getOrPut(t.parent) { ArrayList(2) }.add(t)
         for (c in dao.getItemCollectionsForGroup(groupID)) collections.getOrPut(c.itemKey) { ArrayList(1) }.add(c.collectionKey)
-        return infos.map { info ->
-            Item().apply {
-                itemInfo = info
-                itemData = data[info.itemKey] ?: emptyList()
-                this.creators = creators[info.itemKey] ?: emptyList()
-                this.tags = tags[info.itemKey] ?: emptyList()
-                this.collections = collections[info.itemKey] ?: emptyList()
-                if (listFieldsOnly && itemType != "note") hasAllFields = false
+        return infos.map { info -> assemble(info, data, creators, tags, collections, listFieldsOnly) }
+    }
+
+    private fun assemble(
+        info: ItemInfo,
+        data: Map<String, List<ItemData>>,
+        creators: Map<String, List<Creator>>,
+        tags: Map<String, List<ItemTag>>,
+        collections: Map<String, List<String>>,
+        listFieldsOnly: Boolean,
+    ) = Item().apply {
+        itemInfo = info
+        itemData = data[info.itemKey] ?: emptyList()
+        this.creators = creators[info.itemKey] ?: emptyList()
+        this.tags = tags[info.itemKey] ?: emptyList()
+        this.collections = collections[info.itemKey] ?: emptyList()
+        if (listFieldsOnly && itemType != "note") hasAllFields = false
+    }
+
+    /**
+     * The items with [keys], in that order (keys not found are left out), loaded as
+     * [loadItems] does; with [withChildren], each also gets its attachments and notes
+     * (Item.adoptChild), as a whole-library load gives them. Blocking.
+     */
+    fun loadItemsByKeys(keys: List<String>, listFieldsOnly: Boolean = true, withChildren: Boolean = true): List<Item> {
+        val items = loadByKeys(keys, listFieldsOnly)
+        if (withChildren && items.isNotEmpty()) {
+            val byKey = items.associateBy { it.itemKey }
+            val childKeys = keys.chunked(KEY_CHUNK).flatMap { db.itemDao().getChildKeys(it) }
+            for (child in loadByKeys(childKeys, listFieldsOnly)) {
+                child.data["parentItem"]?.let { byKey[it]?.adoptChild(child) }
             }
         }
+        return items
     }
+
+    private fun loadByKeys(keys: List<String>, listFieldsOnly: Boolean): List<Item> {
+        if (keys.isEmpty()) return emptyList()
+        val dao = db.itemDao()
+        val infos = HashMap<String, ItemInfo>(keys.size * 2)
+        val data = HashMap<String, MutableList<ItemData>>(keys.size * 2)
+        val creators = HashMap<String, MutableList<Creator>>(keys.size * 2)
+        val tags = HashMap<String, MutableList<ItemTag>>()
+        val collections = HashMap<String, MutableList<String>>()
+        for (chunk in keys.chunked(KEY_CHUNK)) {
+            for (i in dao.getItemInfos(chunk)) infos[i.itemKey] = i
+            val rows = if (listFieldsOnly) dao.getListItemData(chunk, LIST_FIELDS) else dao.getItemData(chunk)
+            for (d in rows) data.getOrPut(d.parent) { ArrayList(8) }.add(d)
+            for (c in dao.getCreators(chunk)) creators.getOrPut(c.parent) { ArrayList(2) }.add(c)
+            for (t in dao.getTags(chunk)) tags.getOrPut(t.parent) { ArrayList(2) }.add(t)
+            for (c in dao.getItemCollections(chunk)) collections.getOrPut(c.itemKey) { ArrayList(1) }.add(c.collectionKey)
+        }
+        return keys.mapNotNull { key -> infos[key]?.let { assemble(it, data, creators, tags, collections, listFieldsOnly) } }
+    }
+
+    /** Runs a query whose first column is an item key; for the list's generated SQL. Blocking. */
+    fun queryKeys(sql: String, args: List<Any>): List<String> =
+        db.query(SimpleSQLiteQuery(sql, args.toTypedArray())).use { c ->
+            ArrayList<String>(c.count).apply { while (c.moveToNext()) add(c.getString(0)) }
+        }
+
+    /** Keys of a library's top-level items (not trashed). Blocking. */
+    fun topLevelKeys(groupID: Int): List<String> = db.itemDao().getTopLevelKeys(groupID)
+
+    /** For item keys (not trashed): their parent's key, or null for a top-level item. Blocking. */
+    fun parentsOf(keys: Iterable<String>): Map<String, String?> =
+        keys.toList().chunked(KEY_CHUNK).flatMap { db.itemDao().getParents(it) }
+            .associate { it.itemKey to it.parent }
+
+    /**
+     * Every tag on a library's top-level items with the number of items carrying it, by
+     * name ignoring case (then exactly). Blocking.
+     */
+    fun tagCounts(groupID: Int): List<Pair<String, Int>> =
+        db.itemDao().getTagCounts(groupID).map { it.tag to it.count }
+            .sortedWith(compareBy<Pair<String, Int>, String>(String.CASE_INSENSITIVE_ORDER) { it.first }.thenBy { it.first })
 
     /** The fields [loadItems] left out with listFieldsOnly, by item key. Blocking. */
     fun loadRestOfFields(groupID: Int): Map<String, List<ItemData>> =
@@ -128,6 +194,9 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         db.itemDao().getRestOfItemData(itemKey, LIST_FIELDS)
 
     companion object {
+        /** Keys per IN (...) list: SQLite allows 999 parameters, and some queries add a few. */
+        const val KEY_CHUNK = 900
+
         /**
          * The fields a regular item loads at startup: what lists, sorting, the filter and
          * the default search (title, creators, year) read. Abstracts, publication details,

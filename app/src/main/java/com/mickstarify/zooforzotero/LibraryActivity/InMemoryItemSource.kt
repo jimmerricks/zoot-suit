@@ -79,13 +79,12 @@ class InMemoryItemSource(
         return LibrarySearch.Index(items, fields, allFields).also { searchIndex = it }
     }
 
-    /** Builds the search index in the background, ahead of a search. */
-    fun warmSearch() {
-        Thread { searchIndex(library()) }.start()
+    override fun warmSearch() {
+        searchIndex(library())
     }
 
-    /** Items changed in place (a tag edit): the index holds their old text. */
-    fun invalidateSearch() {
+    // items change in place (a tag edit): the index holds their old text
+    override fun invalidate() {
         searchIndex = null
     }
 }

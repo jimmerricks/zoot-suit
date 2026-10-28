@@ -33,7 +33,7 @@ object LibraryItemFilter {
 
     /**
      * Every tag in [items] with the number of items carrying it, sorted by name
-     * case-insensitively. An item tagged twice with the same tag counts once.
+     * case-insensitively (then exactly, so that "Method" and "method" keep one order). An item tagged twice with the same tag counts once.
      */
     fun tagCounts(items: List<Item>?): List<Pair<String, Int>> {
         if (items == null) return emptyList()
@@ -43,6 +43,7 @@ object LibraryItemFilter {
                 counts[tag] = (counts[tag] ?: 0) + 1
             }
         }
-        return counts.toList().sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.first })
+        return counts.toList()
+            .sortedWith(compareBy<Pair<String, Int>, String>(String.CASE_INSENSITIVE_ORDER) { it.first }.thenBy { it.first })
     }
 }

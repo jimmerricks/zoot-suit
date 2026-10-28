@@ -46,4 +46,10 @@ interface LibraryItemSource {
 
     /** Every tag on the library's top-level items, with the number of items carrying it; by name. */
     fun tagCounts(): List<Pair<String, Int>>
+
+    /** Prepares what a search needs, ahead of one. */
+    fun warmSearch()
+
+    /** The library changed (a sync, an edit on this device): forget what was derived from it. */
+    fun invalidate()
 }

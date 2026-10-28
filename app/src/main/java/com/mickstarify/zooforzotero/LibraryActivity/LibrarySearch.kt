@@ -134,4 +134,25 @@ object LibrarySearch {
             return result
         }
     }
+
+    /**
+     * The searchable text of items, by key, without the items: what a list read from the
+     * database a query at a time keeps between searches (RoomItemSource).
+     */
+    class TextIndex(items: List<Item>, fields: Set<Field>) {
+        private val keys = Array(items.size) { items[it].itemKey }
+        private val texts = Array(items.size) { searchText(items[it], fields) }
+
+        /** Keys of the items containing every term of [query]. No terms, no results. */
+        fun search(query: String): Set<String> {
+            val terms = terms(query)
+            if (terms.isEmpty()) return emptySet()
+            val result = HashSet<String>()
+            for (i in texts.indices) {
+                val text = texts[i]
+                if (terms.all { text.contains(it) }) result.add(keys[i])
+            }
+            return result
+        }
+    }
 }

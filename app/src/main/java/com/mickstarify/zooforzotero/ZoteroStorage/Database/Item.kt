@@ -324,6 +324,10 @@ data class ItemTag(
     @ColumnInfo(name = "tag") val tag: String
 ) : Parcelable
 
+data class KeyAndParent(val itemKey: String, val parent: String?)
+
+data class TagCount(val tag: String, val count: Int)
+
 @Dao
 interface ItemDao {
     @Transaction
@@ -383,6 +387,48 @@ interface ItemDao {
 
     @Query("SELECT c.* FROM ItemCollection c JOIN ItemInfo i ON c.itemKey = i.itemKey WHERE i.`group`=:groupID AND i.`deleted`=0")
     fun getItemCollectionsForGroup(groupID: Int): List<ItemCollection>
+
+    // Items by key, for the list (RoomItemSource). Callers pass at most
+    // ZoteroDatabase.KEY_CHUNK keys: SQLite takes 999 parameters at most.
+    @Query("SELECT * FROM ItemInfo WHERE itemKey IN (:keys)")
+    fun getItemInfos(keys: List<String>): List<ItemInfo>
+
+    // the fields getListItemDataForGroup reads, for [keys]
+    @Query(
+        "SELECT d.* FROM ItemData d JOIN ItemInfo i ON d.parent = i.itemKey WHERE d.parent IN (:keys) " +
+            "AND (d.name IN (:names) OR i.itemType = 'note' OR (i.itemType = 'attachment' AND d.name <> 'note'))"
+    )
+    fun getListItemData(keys: List<String>, names: List<String>): List<ItemData>
+
+    @Query("SELECT * FROM ItemData WHERE parent IN (:keys)")
+    fun getItemData(keys: List<String>): List<ItemData>
+
+    @Query("SELECT * FROM ItemCreator WHERE parent IN (:keys)")
+    fun getCreators(keys: List<String>): List<Creator>
+
+    @Query("SELECT * FROM ItemTags WHERE parent IN (:keys)")
+    fun getTags(keys: List<String>): List<ItemTag>
+
+    @Query("SELECT * FROM ItemCollection WHERE itemKey IN (:keys)")
+    fun getItemCollections(keys: List<String>): List<ItemCollection>
+
+    // in table order, the order a whole-library load finds them in
+    @Query("SELECT itemKey FROM ItemInfo WHERE parent IN (:keys) AND deleted = 0 ORDER BY rowid")
+    fun getChildKeys(keys: List<String>): List<String>
+
+    @Query("SELECT itemKey, parent FROM ItemInfo WHERE itemKey IN (:keys) AND deleted = 0")
+    fun getParents(keys: List<String>): List<KeyAndParent>
+
+    @Query("SELECT itemKey FROM ItemInfo WHERE `group` = :groupID AND deleted = 0 AND parent IS NULL")
+    fun getTopLevelKeys(groupID: Int): List<String>
+
+    // each tag on a library's top-level items, with the number of items carrying it
+    @Query(
+        "SELECT t.tag AS tag, COUNT(DISTINCT t.parent) AS count FROM ItemTags t " +
+            "JOIN ItemInfo i ON i.itemKey = t.parent " +
+            "WHERE i.`group` = :groupID AND i.deleted = 0 AND i.parent IS NULL GROUP BY t.tag"
+    )
+    fun getTagCounts(groupID: Int): List<TagCount>
 
     @Query("SELECT parent from ItemTags where `tag`=:tag")
     fun getItemKeysWithTag(tag: String): Maybe<List<String>>
