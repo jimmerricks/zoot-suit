@@ -1,0 +1,146 @@
+package com.mickstarify.zooforzotero.ZoteroAPI.Syncing
+
+import com.mickstarify.zooforzotero.PreferenceManager
+import com.mickstarify.zooforzotero.ZoteroAPI.ItemScope
+import com.mickstarify.zooforzotero.ZoteroAPI.LibraryVersionMisMatchException
+import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
+import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPIItemsResponse
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
+import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ItemsDownloadProgress
+import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ZoteroDB
+import io.reactivex.rxjava3.android.plugins.RxAndroidPlugins
+import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.plugins.RxJavaPlugins
+import io.reactivex.rxjava3.schedulers.Schedulers
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Before
+import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
+
+/** The order of a sync's item passes, and what each leaves stored. */
+class SyncManagerTest {
+    // what ZoteroDB keeps in its preferences
+    private var itemsVersion = -1
+    private var progress: ItemsDownloadProgress? = null
+    private val events = mutableListOf<String>()
+
+    private val db = mock<ZoteroDB> {
+        on { groupID } doReturn GroupInfo.NO_GROUP_ID
+        on { getLibraryVersion() } doAnswer { itemsVersion }
+        on { setItemsVersion(any()) } doAnswer { itemsVersion = it.getArgument(0); events += "version $itemsVersion"; Unit }
+        on { getDownloadProgress() } doAnswer { progress }
+        on { setDownloadProgress(any()) } doAnswer { progress = it.getArgument(0); Unit }
+        on { destroyDownloadProgress() } doAnswer { progress = null; Unit }
+        on { getLastDeletedItemsCheckVersion() } doAnswer { itemsVersion }
+    }
+    private val database = mock<ZoteroDatabase> {
+        on { writeItemPOJOs(any(), any()) } doReturn Completable.complete()
+    }
+    private val api = mock<ZoteroAPI> {
+        // not started yet when the synchronous items pass ends the sync (the last "open");
+        // finishing at once, each would end it again
+        on { getCollections(any(), any()) } doReturn Observable.never()
+        on { getTrashedItems(any(), any()) } doReturn Observable.never()
+    }
+    private val listener = mock<OnSyncChangeListener> {
+        on { finishLibrarySync(any(), any()) } doAnswer {
+            events += "open"
+            it.getArgument<() -> Unit>(1)()
+        }
+    }
+    private lateinit var sync: SyncManager
+
+    @Before
+    fun setUp() {
+        RxAndroidPlugins.setInitMainThreadSchedulerHandler { Schedulers.trampoline() }
+        RxAndroidPlugins.setMainThreadSchedulerHandler { Schedulers.trampoline() }
+        RxJavaPlugins.setIoSchedulerHandler { Schedulers.trampoline() }
+        sync = SyncManager(api, mock<PreferenceManager>(), database, listener)
+    }
+
+    @After
+    fun tearDown() {
+        RxAndroidPlugins.reset()
+        RxJavaPlugins.reset()
+    }
+
+    private fun page(version: Int, total: Int) = ZoteroAPIItemsResponse(emptyList(), version, total)
+
+    private fun serve(scope: ItemScope, vararg pages: ZoteroAPIItemsResponse) {
+        whenever(api.getItems(any(), any(), anyOrNull(), eq(scope))) doAnswer {
+            events += "fetch $scope"
+            Observable.fromArray(*pages)
+        }
+    }
+
+    @Test
+    fun firstSyncOpensTheLibraryBetweenTopLevelItemsAndChildren() {
+        serve(ItemScope.TOP, page(100, 0))
+        serve(ItemScope.CHILDREN, page(101, 0)) // changed meanwhile
+
+        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+
+        // the library opens before the children come, and again once all is in
+        assertEquals(listOf("fetch TOP", "open", "fetch CHILDREN", "version 100", "open"), events)
+        assertEquals(100, itemsVersion) // the first pass's: the next sync fetches what changed since
+        assertNull(progress)
+        assertFalse(sync.loadingItems)
+    }
+
+    @Test
+    fun aSyncCutOffAfterTheTopLevelPassResumesWithTheChildren() {
+        serve(ItemScope.TOP, page(100, 0))
+        whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.CHILDREN))) doReturn
+                Observable.error(java.io.IOException("offline"))
+
+        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+
+        assertEquals(-1, itemsVersion) // not set: a later sync mustn't skip the children
+        assertEquals(ItemsDownloadProgress(100, 0, 0, ItemScope.CHILDREN), progress)
+
+        events.clear()
+        serve(ItemScope.CHILDREN, page(100, 0))
+        sync = SyncManager(api, mock<PreferenceManager>(), database, listener) // the app restarted
+        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+        assertEquals(listOf("open", "fetch CHILDREN", "version 100", "open"), events)
+    }
+
+    @Test
+    fun aChangedLibraryRestartsOnlyTheChildren() {
+        progress = ItemsDownloadProgress(100, 300, 900, ItemScope.CHILDREN)
+        var calls = 0
+        whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.CHILDREN))) doAnswer {
+            events += "fetch CHILDREN from ${it.getArgument<ItemsDownloadProgress?>(2)?.nDownloaded ?: 0}"
+            if (calls++ == 0) Observable.error(LibraryVersionMisMatchException("x"))
+            else Observable.just(page(105, 0))
+        }
+
+        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+
+        assertEquals(
+            listOf("open", "fetch CHILDREN from 300", "open", "fetch CHILDREN from 0", "version 100", "open"),
+            events
+        )
+    }
+
+    @Test
+    fun laterSyncsFetchEverythingChangedInOnePass() {
+        itemsVersion = 500
+        serve(ItemScope.ALL, page(510, 0))
+
+        sync.startCompleteSync(db, useSmallLoadingAnimation = true)
+
+        assertEquals(listOf("fetch ALL", "version 510", "open"), events)
+    }
+}

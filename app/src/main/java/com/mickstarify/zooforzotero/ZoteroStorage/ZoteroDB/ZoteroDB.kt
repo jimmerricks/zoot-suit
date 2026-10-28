@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.util.ArrayMap
 import android.util.Log
-import com.mickstarify.zooforzotero.ZoteroAPI.SYNC_ITEM_TYPE_FILTER
+import com.mickstarify.zooforzotero.ZoteroAPI.ItemScope
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemPOJO
@@ -297,7 +297,7 @@ class ZoteroDB(
         editor.putInt("downloadedAmount", progress.nDownloaded)
         editor.putInt("total", progress.total)
         editor.putInt("downloadVersion", progress.libraryVersion)
-        editor.putString("downloadFilter", SYNC_ITEM_TYPE_FILTER)
+        editor.putString("downloadFilter", progress.scope.stored)
         editor.apply()
     }
 
@@ -313,23 +313,22 @@ class ZoteroDB(
 
     fun getDownloadProgress(): ItemsDownloadProgress? {
         val sharedPreferences = context.getSharedPreferences(namespace, MODE_PRIVATE)
-        val nDownload = sharedPreferences.getInt("downloadedAmount", 0)
-        if (nDownload == 0) {
-            return null
-        }
-
-        val total = sharedPreferences.getInt("total", 0)
-        val downloadVersion = sharedPreferences.getInt("downloadVersion", 0)
-        if (nDownload == 0 || total == nDownload) {
-            // completed job. there is no download progress.
-            return null
-        }
-        if (sharedPreferences.getString("downloadFilter", "") != SYNC_ITEM_TYPE_FILTER) {
+        if (!sharedPreferences.contains("downloadVersion")) return null
+        val scope = ItemScope.fromStored(sharedPreferences.getString("downloadFilter", ""))
+        if (scope == null) {
             // started under a different item filter; its offset doesn't apply. Start over.
             Log.d("zotero", "discarding download progress made under a different item filter")
             return null
         }
-        return ItemsDownloadProgress(downloadVersion, nDownload, total)
+        val nDownload = sharedPreferences.getInt("downloadedAmount", 0)
+        val total = sharedPreferences.getInt("total", 0)
+        val downloadVersion = sharedPreferences.getInt("downloadVersion", 0)
+        // a first sync between its passes has fetched none of the children yet
+        if (scope != ItemScope.CHILDREN && (nDownload == 0 || total == nDownload)) {
+            // completed job. there is no download progress.
+            return null
+        }
+        return ItemsDownloadProgress(downloadVersion, nDownload, total, scope)
     }
 
     fun getLastDeletedItemsCheckVersion(): Int {

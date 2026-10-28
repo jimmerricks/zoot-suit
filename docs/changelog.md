@@ -7,6 +7,10 @@ Faster on large libraries:
   limit: about a quarter of the time it took before (18,300 items in ~2 min instead of
   ~8 on the emulator). If Zotero answers "too many requests", the app pauses all its
   requests and continues one at a time.
+- A first sync opens the library once its top-level items are in, then downloads
+  attachment details and notes in the background (files still download when opened).
+  Until that ends, "Has PDF", "Has notes" and searching notes miss what hasn't arrived
+  yet. An interrupted sync continues where it stopped, in either part.
 
 ## 0.2.0
 

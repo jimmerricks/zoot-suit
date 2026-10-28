@@ -3,6 +3,7 @@ package com.mickstarify.zooforzotero.ZoteroAPI.Syncing
 import android.util.Log
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.ZoteroAPI.APIKeyRevokedException
+import com.mickstarify.zooforzotero.ZoteroAPI.ItemScope
 import com.mickstarify.zooforzotero.ZoteroAPI.LibraryVersionMisMatchException
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPICollectionsResponse
 import com.mickstarify.zooforzotero.ZoteroAPI.NetworkErrors
@@ -205,12 +206,38 @@ class SyncManager (
     ) {
         loadingItems = true
         val progress = db.getDownloadProgress()
+        when {
+            progress?.scope == ItemScope.CHILDREN ->
+                downloadItems(db, ItemScope.CHILDREN, progress, progress.libraryVersion, true)
+            progress != null -> downloadItems(db, progress.scope, progress, -1, useSmallLoadingAnimation)
+            // a first sync, or one starting over: top-level items first (see ItemScope)
+            db.getLibraryVersion() <= 0 -> downloadItems(db, ItemScope.TOP, null, -1, useSmallLoadingAnimation)
+            else -> downloadItems(db, ItemScope.ALL, null, -1, useSmallLoadingAnimation)
+        }
+    }
 
+    /**
+     * Downloads the items in [scope], continuing [progress] if a download of them stopped
+     * partway. [startVersion] is the library version a first sync began at once its
+     * top-level pass fixed it, else -1: the first page's. A first sync's [ItemScope.TOP]
+     * pass is followed by its [ItemScope.CHILDREN] pass, with the library open meanwhile;
+     * only the end of that sets the items version, so a sync cut off in between never
+     * leaves later syncs skipping the children.
+     */
+    private fun downloadItems(
+        db: ZoteroDB,
+        scope: ItemScope,
+        progress: ItemsDownloadProgress?,
+        startVersion: Int,
+        useSmallLoadingAnimation: Boolean
+    ) {
+        if (scope == ItemScope.CHILDREN) openBeforeChildren(db)
         val itemsObservable =
             zoteroAPI.getItems(
                 db.getLibraryVersion(),
                 db.groupID,
-                downloadProgress = progress
+                downloadProgress = progress,
+                scope = scope
             )
         itemsObservable.map { response ->
             Log.d("zotero", "About to write ${response.items.size} items to DB for groupID=${db.groupID}")
@@ -221,11 +248,18 @@ class SyncManager (
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : Observer<ZoteroAPIItemsResponse> {
-                var libraryVersion = -1 //dummy value, will be replaced in onNext()
+                var libraryVersion = startVersion // -1: replaced in onNext()
                 var downloaded = progress?.nDownloaded ?: 0
                 override fun onComplete() {
-                    Log.d("zotero", "load Items oncomplete")
-                    if (db.getLibraryVersion() > -1) {
+                    Log.d("zotero", "load Items ($scope) oncomplete")
+                    if (scope == ItemScope.TOP) {
+                        // stored before the library opens, so a sync cut off now resumes here
+                        db.setDownloadProgress(ItemsDownloadProgress(libraryVersion, 0, 0, ItemScope.CHILDREN))
+                        syncChangeListener.makeToastAlert("Library ready. Attachment details and notes are still downloading.")
+                        downloadItems(db, ItemScope.CHILDREN, null, libraryVersion, true)
+                        return
+                    }
+                    if (scope == ItemScope.ALL && db.getLibraryVersion() > -1) {
                         if (downloaded == 0) {
                             syncChangeListener.makeToastAlert("Already up to date.")
                         } else {
@@ -254,7 +288,8 @@ class SyncManager (
                             ItemsDownloadProgress(
                                 this.libraryVersion,
                                 this.downloaded,
-                                response.totalResults
+                                response.totalResults,
+                                scope
                             )
                         )
                     if (!useSmallLoadingAnimation) {
@@ -262,7 +297,7 @@ class SyncManager (
                             downloaded,
                             response.totalResults)
                     }
-                    Log.d("zotero", "got ${this.downloaded} of ${response.totalResults} items")
+                    Log.d("zotero", "got ${this.downloaded} of ${response.totalResults} items ($scope)")
                 }
 
                 override fun onError(e: Throwable) {
@@ -270,6 +305,14 @@ class SyncManager (
                         Log.d("zotero", "our items are already up to date.")
                         syncChangeListener.makeToastAlert("Already up to date.")
                         db.updateDatabaseLastSyncedTimestamp()
+                    } else if (e is LibraryVersionMisMatchException && scope == ItemScope.CHILDREN) {
+                        // the top-level items stay; the children again from the start. The
+                        // first pass's version is still the one stored at the end, so the
+                        // next sync fetches whatever changed meanwhile.
+                        Log.d("zotero", "library changed during the children pass, restarting it")
+                        db.setDownloadProgress(ItemsDownloadProgress(libraryVersion, 0, 0, ItemScope.CHILDREN))
+                        downloadItems(db, ItemScope.CHILDREN, null, libraryVersion, true)
+                        return
                     } else if (e is LibraryVersionMisMatchException) {
                         // we need to redownload items but without the progress.
                         Log.d("zotero", "mismatched, reloading items.")
@@ -285,6 +328,14 @@ class SyncManager (
                     finishGetItems(db)
                 }
             })
+    }
+
+    /** Shows the library while its attachment records and notes download, under the small animation. */
+    private fun openBeforeChildren(db: ZoteroDB) {
+        syncChangeListener.finishLibrarySync(db) {
+            // opening hides the animation; the download may have ended meanwhile
+            if (loadingItems) syncChangeListener.startSyncAnimation(true)
+        }
     }
 
     private fun finishGetCollections(db: ZoteroDB) {

@@ -72,6 +72,24 @@ private const val ITEMS_PARALLEL_REQUESTS = ZoteroRateLimitPolicy.MAX_CONCURRENT
 // an offset into a differently filtered listing is meaningless.
 const val SYNC_ITEM_TYPE_FILTER = "-annotation"
 
+/**
+ * Which items a download asks for. A first sync fetches [TOP] and then [CHILDREN], so the
+ * library can be used once its top-level items are in (about a quarter of a library with
+ * many attachments and notes); later syncs fetch [ALL] that changed. [stored] goes with
+ * resumable download progress; [ALL]'s is what versions before the split stored.
+ */
+enum class ItemScope(val stored: String, val itemType: String?) {
+    ALL(SYNC_ITEM_TYPE_FILTER, SYNC_ITEM_TYPE_FILTER),
+    TOP("top", null),
+    // Zotero's search syntax: either type. Top-level (standalone) attachments and notes
+    // come again here; writing them twice is harmless.
+    CHILDREN("attachment || note", "attachment || note");
+
+    companion object {
+        fun fromStored(stored: String?): ItemScope? = entries.firstOrNull { it.stored == stored }
+    }
+}
+
 class ZoteroAPI(
     val API_KEY: String,
     val userID: String,
@@ -447,10 +465,19 @@ class ZoteroAPI(
     private fun getItemsFromIndex(
         modificationSinceVersion: Int,
         index: Int,
-        groupID: Int
+        groupID: Int,
+        scope: ItemScope
     ): Observable<ZoteroAPIItemsResponse> {
+        val itemType = scope.itemType
 
-        val observable = if (modificationSinceVersion > -1) {
+        val observable = if (itemType == null) {
+            val since = maxOf(modificationSinceVersion, 0)
+            if (groupID != GroupInfo.NO_GROUP_ID) {
+                shortTimeoutService.getTopItemsForGroup(since, groupID, since, index, ITEMS_PAGE_SIZE)
+            } else {
+                shortTimeoutService.getTopItems(since, userID, since, index, ITEMS_PAGE_SIZE)
+            }
+        } else if (modificationSinceVersion > -1) {
             if (groupID != GroupInfo.NO_GROUP_ID) {
                 shortTimeoutService.getItemsForGroupSince(
                     modificationSinceVersion,
@@ -458,7 +485,7 @@ class ZoteroAPI(
                     modificationSinceVersion,
                     index,
                     ITEMS_PAGE_SIZE,
-                    SYNC_ITEM_TYPE_FILTER
+                    itemType
                 )
             } else {
                 shortTimeoutService.getItemsSince(
@@ -467,14 +494,14 @@ class ZoteroAPI(
                     modificationSinceVersion,
                     index,
                     ITEMS_PAGE_SIZE,
-                    SYNC_ITEM_TYPE_FILTER
+                    itemType
                 )
             }
         } else {
             if (groupID != GroupInfo.NO_GROUP_ID) {
-                shortTimeoutService.getItemsForGroup(0, groupID, index, ITEMS_PAGE_SIZE, SYNC_ITEM_TYPE_FILTER)
+                shortTimeoutService.getItemsForGroup(0, groupID, index, ITEMS_PAGE_SIZE, itemType)
             } else {
-                shortTimeoutService.getItems(0, userID, index, ITEMS_PAGE_SIZE, SYNC_ITEM_TYPE_FILTER)
+                shortTimeoutService.getItems(0, userID, index, ITEMS_PAGE_SIZE, itemType)
             }
 
         }
@@ -500,11 +527,12 @@ class ZoteroAPI(
     fun getItems(
         libraryVersion: Int = -1,
         groupID: Int = GroupInfo.NO_GROUP_ID,
-        downloadProgress: ItemsDownloadProgress? = null
+        downloadProgress: ItemsDownloadProgress? = null,
+        scope: ItemScope = downloadProgress?.scope ?: ItemScope.ALL
     ): Observable<ZoteroAPIItemsResponse> = Observable.defer {
         val fromIndex = downloadProgress?.nDownloaded ?: 0
         Log.d("zotero", "getItemsFromIndex($libraryVersion, $fromIndex, $groupID)")
-        val response = getItemsFromIndex(libraryVersion, fromIndex, groupID).blockingFirst()
+        val response = getItemsFromIndex(libraryVersion, fromIndex, groupID, scope).blockingFirst()
         Log.d("zotero", "got response $response")
 
         if (downloadProgress != null && response.LastModifiedVersion != downloadProgress.libraryVersion) {
@@ -524,7 +552,7 @@ class ZoteroAPI(
         else (fromIndex + step until response.totalResults step step).toList()
         val rest = Observable.fromIterable(offsets)
             .concatMapEager({ index ->
-                getItemsFromIndex(libraryVersion, index, groupID).subscribeOn(Schedulers.io())
+                getItemsFromIndex(libraryVersion, index, groupID, scope).subscribeOn(Schedulers.io())
             }, ITEMS_PARALLEL_REQUESTS, 1)
             .map { res ->
                 // fewer items than Total-Results promised: a library that changed meanwhile

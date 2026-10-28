@@ -52,6 +52,25 @@ interface ZoteroAPIService {
     ): Observable<Response<ResponseBody>>
 
 
+    /* Top-level items only: no child attachments or notes (nor their annotations). */
+    @GET("users/{user}/items/top")
+    fun getTopItems(
+        @Header("If-Modified-Since-Version") ifModifiedSinceVersion: Int,
+        @Path("user") user: String,
+        @Query("since") modificationSinceVersion: Int,
+        @Query("start") index: Int,
+        @Query("limit") limit: Int
+    ): Observable<Response<ResponseBody>>
+
+    @GET("groups/{groupID}/items/top")
+    fun getTopItemsForGroup(
+        @Header("If-Modified-Since-Version") ifModifiedSinceVersion: Int,
+        @Path("groupID") groupID: Int,
+        @Query("since") modificationSinceVersion: Int,
+        @Query("start") index: Int,
+        @Query("limit") limit: Int
+    ): Observable<Response<ResponseBody>>
+
     @GET("users/{user}/groups")
     fun getGroupInfo(
         @Path("user") userID: String,

@@ -155,6 +155,34 @@ class ZoteroAPIPagingTest {
     }
 
     @Test
+    fun topLevelAndChildPassesAskForTheirOwnListings() {
+        page(items("AAAA0001"), total = 1, version = 10)
+        page(items("AAAA0002"), total = 1, version = 10)
+
+        api.getItems(scope = ItemScope.TOP).test().awaitDone(5, TimeUnit.SECONDS).assertComplete()
+        api.getItems(scope = ItemScope.CHILDREN).test().awaitDone(5, TimeUnit.SECONDS).assertComplete()
+
+        val top = server.takeRequest().requestUrl!!
+        assertEquals("/users/1/items/top", top.encodedPath)
+        assertEquals(null, top.queryParameter("itemType"))
+        val children = server.takeRequest().requestUrl!!
+        assertEquals("/users/1/items", children.encodedPath)
+        assertEquals("attachment || note", children.queryParameter("itemType"))
+    }
+
+    @Test
+    fun resumedProgressKeepsItsListing() {
+        page(items("AAAA0003"), total = 3, version = 10)
+
+        api.getItems(downloadProgress = ItemsDownloadProgress(10, 2, 3, ItemScope.CHILDREN))
+            .test().awaitDone(5, TimeUnit.SECONDS).assertComplete()
+
+        val url = server.takeRequest().requestUrl!!
+        assertEquals("attachment || note", url.queryParameter("itemType"))
+        assertEquals("2", url.queryParameter("start"))
+    }
+
+    @Test
     fun collectionsStopAtAnEmptyPage() {
         page(collections("CCCC0001"), total = 2, version = 7)
         page(collections(), total = 1, version = 7)
