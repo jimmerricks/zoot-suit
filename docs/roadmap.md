@@ -45,7 +45,7 @@ The app is a hybrid of upstream's code and newer layers:
 
 Planned, one small, behaviour-preserving step at a time, each checked on a device:
 
-1. **Break up `LibraryActivityModel`.** It is a ~1,100-line class behind the library
+1. **Break up `LibraryActivityModel`.** It is a ~1,700-line class behind the library
    screen. Done so far: Back-stack navigation (`LibraryNavigator`), list filtering
    (`LibraryItemFilter`) and a `LibraryViewModel` that keeps the library across
    rotation. Next: attachment download/upload, then sync staging, then folding the
@@ -73,5 +73,6 @@ For the library screen's search, filter and sort:
 - A "whole library" option in search (it currently narrows the list on screen).
 - Back clearing an active search first.
 
-Startup on large libraries: paging the field query so each result fits one cursor
-window, or a snapshot of the in-memory library read at startup.
+Large libraries: the list, sort and search already run in the database (0.2.0). Left:
+the edit check at each start still looks at every downloaded file once (about 1 ms
+each), and R8 minification would make the APK smaller.
