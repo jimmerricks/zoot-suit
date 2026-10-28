@@ -38,6 +38,7 @@ class ItemInfo(
     @ColumnInfo(name = "sortDateAdded") val sortDateAdded: String? = null,
     // The item's SearchText, so that a search runs in SQL; null until computed, like the
     // sort keys (items from before MIGRATION_12_13 are filled in when the library opens).
+    // searchAbstract is also null when the abstract needs no folded copy (SearchText).
     @ColumnInfo(name = "searchTitle") val searchTitle: String? = null,
     @ColumnInfo(name = "searchCreators") val searchCreators: String? = null,
     @ColumnInfo(name = "searchYear") val searchYear: String? = null,
@@ -450,7 +451,7 @@ interface ItemDao {
     fun setKeys(
         itemKey: String, title: String, author: String, date: String, dateAdded: String,
         searchTitle: String, searchCreators: String, searchYear: String, searchPublication: String,
-        searchAbstract: String, searchTags: String, searchOther: String,
+        searchAbstract: String?, searchTags: String, searchOther: String,
     )
 
     @Query("SELECT itemKey FROM ItemInfo WHERE `group` = :groupID AND (sortTitle IS NULL OR searchTitle IS NULL)")

@@ -22,7 +22,8 @@ object LibrarySql {
     /**
      * LibrarySearch.TextIndex in SQL: a top-level item (the index holds no others) whose
      * text for [fields] contains every term; no terms, no items. A term is looked for in
-     * each field's column (SearchText) and, for NOTES, in the text of each child note.
+     * each field's column (SearchText), in an abstract that has no folded copy there, and,
+     * for NOTES, in the text of each child note.
      */
     private fun search(query: String, fields: Set<LibrarySearch.Field>, where: MutableList<String>, args: MutableList<Any>) {
         val terms = LibrarySearch.terms(query)
@@ -34,8 +35,17 @@ object LibrarySql {
         val columns = SearchText.STORED.filter { it in fields }.map { SearchText.column(it) }
         val notes = LibrarySearch.Field.NOTES in fields
         for (term in terms) {
-            val anyField = columns.map { "instr(i.$it, ?) > 0" }.toMutableList()
-            repeat(columns.size) { args.add(term) }
+            val anyField = mutableListOf<String>()
+            for (column in columns) {
+                anyField += "instr(i.$column, ?) > 0"
+                args.add(term)
+            }
+            if (LibrarySearch.Field.ABSTRACT in fields) {
+                // no folded copy stored: SQLite's lower() of the abstract is its folded text
+                anyField += "(i.searchAbstract IS NULL AND EXISTS (SELECT 1 FROM ItemData d WHERE d.parent = i.itemKey " +
+                        "AND d.name = 'abstractNote' AND instr(lower(d.value), ?) > 0))"
+                args.add(term)
+            }
             if (notes) {
                 anyField += "EXISTS (SELECT 1 FROM ItemInfo n WHERE n.parent = i.itemKey AND $NOTE " +
                         "AND instr(n.searchTitle, ?) > 0)"

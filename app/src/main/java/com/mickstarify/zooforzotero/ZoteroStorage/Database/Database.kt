@@ -30,7 +30,7 @@ import javax.inject.Singleton
         PendingItemEdit::class,
         FileHash::class
     ),
-    version = 13,
+    version = 14,
     exportSchema = true
 )
 abstract class ZoteroRoomDatabase : RoomDatabase() {
@@ -63,7 +63,8 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         .addMigrations(MIGRATION_9_10)
         .addMigrations(MIGRATION_10_11)
         .addMigrations(MIGRATION_11_12)
-        .addMigrations(MIGRATION_12_13).build()
+        .addMigrations(MIGRATION_12_13)
+        .addMigrations(MIGRATION_13_14).build()
 
     /** md5 of the file this device last downloaded/uploaded for the attachment, or null. */
     fun getAttachmentBase(itemKey: String, group: Int): String? =

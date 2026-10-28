@@ -171,3 +171,18 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
         }
     }
 }
+
+/**
+ * Drops the folded copies of abstracts that the search can fold in SQL instead (see
+ * SearchText): those that SQLite's lower() of the stored abstract reproduces, and those
+ * of items without one.
+ */
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "UPDATE `ItemInfo` SET `searchAbstract` = NULL WHERE `searchAbstract` = '' OR `searchAbstract` = " +
+                    "lower((SELECT `value` FROM `ItemData` WHERE `ItemData`.`parent` = `ItemInfo`.`itemKey` " +
+                    "AND `ItemData`.`name` = 'abstractNote')) || char(1)"
+        )
+    }
+}

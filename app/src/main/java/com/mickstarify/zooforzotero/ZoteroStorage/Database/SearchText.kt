@@ -9,13 +9,17 @@ import com.mickstarify.zooforzotero.LibraryActivity.LibrarySearch.Field
  * the field's values ends with a separator, so a term found in an item's text for several
  * fields is found in the text of one of them: searching the columns is searching their
  * concatenation. Notes are searched through each child note's own [title] (its text).
+ *
+ * [abstract] is null when SQLite's lower() of the abstract as stored (ItemData) is already
+ * its folded text, which is most of them: abstracts are long, and a copy of each would
+ * double their space. The search then folds the stored abstract in SQL (LibrarySql).
  */
 data class SearchText(
     val title: String,
     val creators: String,
     val year: String,
     val publication: String,
-    val abstract: String,
+    val abstract: String?,
     val tags: String,
     val other: String,
 ) {
@@ -40,8 +44,21 @@ data class SearchText(
             fun text(field: Field) = LibrarySearch.searchText(item, setOf(field))
             return SearchText(
                 text(Field.TITLE), text(Field.CREATORS), text(Field.YEAR), text(Field.PUBLICATION),
-                text(Field.ABSTRACT), text(Field.TAGS), text(Field.OTHER),
+                text(Field.ABSTRACT).takeUnless { lowerFolds(item.data["abstractNote"]) },
+                text(Field.TAGS), text(Field.OTHER),
             )
+        }
+
+        /**
+         * Whether SQLite's lower() turns [text] into its folded form (no text counts), with or
+         * without ICU: lower() changes A-Z, and with ICU other letters too, so a text that
+         * has no letters beyond ASCII and that folding changes only in A-Z qualifies.
+         */
+        fun lowerFolds(text: String?): Boolean {
+            if (text.isNullOrEmpty()) return true
+            if (text.codePoints().anyMatch { it >= 128 && Character.isLetter(it) }) return false
+            val asciiLower = buildString(text.length) { for (c in text) append(if (c in 'A'..'Z') c + 32 else c) }
+            return LibrarySearch.fold(text) == asciiLower
         }
     }
 }

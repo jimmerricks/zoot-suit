@@ -25,7 +25,7 @@ import kotlin.random.Random
  * whole library in memory (InMemoryItemSource over ZoteroDB) shows, for every kind of
  * query. A generated library with the awkward cases (children of several kinds, trashed
  * items and children, standalone attachments, blank notes, tags differing only in case,
- * nested collections, accents) is written to the app's database under a group id of its
+ * nested collections, accents, abstracts with and without a folded copy) is written to the app's database under a group id of its
  * own, loaded both ways, and asked the same questions.
  */
 class ItemSourceEquivalenceTest {
@@ -44,6 +44,13 @@ class ItemSourceEquivalenceTest {
 
     private val words = listOf("governance", "platform", "labour", "Sörlin", "archive", "power", "memory", "Method")
     private val tagPool = listOf("to-read", "method", "Method", "archive", "théorie", "x")
+
+    // abstracts SQL folds with lower() and abstracts that need a folded copy (SearchText)
+    private val abstracts = listOf<(String) -> String>(
+        { "abstract about $it" }, { "Abstract About ${it.uppercase()}" }, { "ÉTAT and $it" },
+        { "théorie du $it" }, { "Øresund — “$it”" }, { "Straße of $it" }, { "東京 $it" }, { "naïve $it" },
+        { "≠ $it" }, { "" },
+    )
 
     @Before
     fun setUp() {
@@ -88,7 +95,7 @@ class ItemSourceEquivalenceTest {
             }
             if (random.nextInt(3) == 0) data["date"] = (1950 + random.nextInt(70)).toString()
             if (random.nextInt(15) == 0) data["inPublications"] = "true"
-            if (random.nextInt(8) == 0) data["abstractNote"] = "abstract about ${words[random.nextInt(words.size)]}"
+            if (random.nextInt(8) == 0) data["abstractNote"] = abstracts[i % abstracts.size](words[random.nextInt(words.size)])
             val creators = (0 until random.nextInt(4)).map {
                 CreatorPOJO("author", "First$it", words[random.nextInt(words.size)])
             }.let { if (random.nextInt(25) == 0 && it.isNotEmpty()) it + it.first() else it } // a creator twice
@@ -208,6 +215,7 @@ class ItemSourceEquivalenceTest {
     private val searches = listOf(
         "governance", "sorlin", "SÖRLIN", "\"power memory\"", "19", "note", "about", "théorie", "méthod", "zzz",
         "first1", "to-read", "eq0001", "<p>", "  ", "\"\"", "governance archive",
+        "état", "etat", "abstract about", "øresund", "oresund", "straße", "東京", "naive", "“", "—", "=", "≠",
     )
 
     // every field alone, the default set and all of them
