@@ -14,7 +14,6 @@ import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import android.app.AlertDialog
 import androidx.fragment.app.DialogFragment
@@ -70,30 +69,6 @@ class ItemViewFragment : DialogFragment(),
     }
 
 
-    private fun showCreateNoteDialog() {
-        EditNoteDialog()
-            .show(context, "", object :
-                onEditNoteChangeListener {
-                override fun onCancel() {
-                }
-
-                override fun onSubmit(noteText: String) {
-                    Log.d("zotero", "got note $noteText")
-                    val item = libraryViewModel.getOnItemClicked().value
-                    if (item == null) {
-                        Toast.makeText(
-                            requireContext(),
-                            "Note not saved: the item was closed. Open it and try again.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return
-                    }
-                    val note = Note(noteText, item.itemKey)
-                    listener?.onNoteCreate(note)
-                }
-            })
-    }
-
     override fun onStart() {
         super.onStart()
         // a long abstract would widen the dialog to the screen's edges; keep it as wide as
@@ -123,9 +98,6 @@ class ItemViewFragment : DialogFragment(),
             dismiss()
         }
 
-        requireView().findViewById<Button>(R.id.button_item_add_note).setOnClickListener {
-            showCreateNoteDialog()
-        }
         requireView().findViewById<Button>(R.id.button_item_close).setOnClickListener {
             dismiss()
         }
@@ -309,7 +281,6 @@ class ItemViewFragment : DialogFragment(),
      */
     interface OnItemFragmentInteractionListener {
         fun onListFragmentInteraction(item: Item?)
-        fun onNoteCreate(note: Note)
         fun onNoteEdit(note: Note)
         fun onNoteDelete(note: Note)
         fun onTagAdd(item: Item, tag: String)

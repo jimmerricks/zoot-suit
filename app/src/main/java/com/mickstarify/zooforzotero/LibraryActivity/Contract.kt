@@ -66,7 +66,6 @@ interface Contract {
         fun isShowingContent(): Boolean
         fun cancelAttachmentDownload()
         fun redisplayItems()
-        fun createNote(note: Note)
         fun modifyNote(note: Note)
         fun deleteNote(note: Note)
         fun refreshItemView()
@@ -112,7 +111,6 @@ interface Contract {
         fun downloadAttachment(item: Item)
         fun cancelAttachmentDownload()
         fun isLoaded(): Boolean
-        fun createNote(note: Note)
         fun modifyNote(note: Note)
         fun deleteNote(note: Note)
         fun openPDF(attachment: Item)

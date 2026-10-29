@@ -190,12 +190,6 @@ interface ZoteroAPIService {
         @Body json: JsonArray
     ): Call<ResponseBody>
 
-    @POST("users/{user}/items")
-    fun uploadNote(
-        @Path("user") user: String,
-        @Body json: JsonArray
-    ): Observable<Response<ResponseBody>>
-
     @GET("users/{user}/items/{itemKey}")
     fun getItem(
         @Path("user") user: String,

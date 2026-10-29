@@ -123,12 +123,6 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         model.modifyNote(note)
     }
 
-    override fun createNote(note: Note) {
-        if (note.note.trim() != "") {
-            model.createNote(note)
-        }
-    }
-
     override fun deleteNote(note: Note) {
         model.deleteNote(note)
     }

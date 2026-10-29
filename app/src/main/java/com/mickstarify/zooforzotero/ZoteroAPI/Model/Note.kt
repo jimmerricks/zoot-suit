@@ -2,7 +2,6 @@ package com.mickstarify.zooforzotero.ZoteroAPI.Model
 
 import android.os.Parcel
 import android.os.Parcelable
-import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import java.util.LinkedList
@@ -38,13 +37,6 @@ class Note() : Parcelable {
         tags = item.getTagList()
     }
 
-    constructor(note: String, parent: String) : this() {
-        this.parent = parent
-        this.note = note
-        this.version = -1
-        this.tags = LinkedList()
-    }
-
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(parent)
         parcel.writeString(key)
@@ -58,35 +50,6 @@ class Note() : Parcelable {
         noteObject.addProperty("note", note)
         return noteObject
     }
-
-    fun asJsonObject(): JsonObject {
-
-        val noteObject = JsonObject()
-
-        noteObject.addProperty("itemType", "note")
-        noteObject.addProperty("note", note)
-        noteObject.addProperty("parentItem", parent)
-        noteObject.add("tags", JsonArray())
-        noteObject.add("collections", JsonArray())
-        noteObject.add("relations", JsonArray())
-
-        return noteObject
-    }
-
-    fun asJsonArray(): JsonArray {
-        val jsonArray = JsonArray()
-        jsonArray.add(asJsonObject())
-        return jsonArray
-    }
-
-//        """[{
-//        "itemType": "note",
-//        "note": "$note",
-//        "parentItem": "$parent",
-//        "tags": [],
-//        "collections": [],
-//        "relations": {}
-//        }]
 
     override fun describeContents(): Int {
         return 0

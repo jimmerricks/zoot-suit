@@ -581,10 +581,6 @@ class LibraryActivity : AppCompatActivity(),
         Log.d("zotero", "onResume called.")
     }
 
-    override fun onNoteCreate(note: Note) {
-        presenter.createNote(note)
-    }
-
     override fun onNoteEdit(note: Note) {
         presenter.modifyNote(note)
     }

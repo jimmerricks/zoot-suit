@@ -751,37 +751,6 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     var isDownloading: Boolean = false
 
-    override fun createNote(note: Note) {
-        if (state.isUsingGroup()) {
-            presenter.makeToastAlert("Notes can be added only in My Library, not in groups.")
-            return
-        }
-        zoteroAPI.uploadNote(note)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(object : CompletableObserver {
-                override fun onComplete() {
-                    presenter.hideBasicSyncAnimation()
-                    syncManager.startItemsSync(db = zoteroDB)
-                    presenter.makeToastAlert("Note added.")
-                }
-
-                override fun onSubscribe(d: Disposable) {
-                    presenter.showBasicSyncAnimation()
-                }
-
-                override fun onError(e: Throwable) {
-                    presenter.hideBasicSyncAnimation()
-                    presenter.createErrorAlert(
-                        "Couldn't add the note",
-                        "Check your connection and try again.\n\nDetails: ${e.message ?: e}"
-                    ) {}
-                }
-            })
-
-
-    }
-
     override fun modifyNote(note: Note) {
         if (state.isUsingGroup()) {
             presenter.makeToastAlert("Notes can be edited only in My Library, not in groups.")
