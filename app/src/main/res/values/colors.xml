@@ -2,6 +2,12 @@
 <resources>
     <color name="colorPrimary">#3F3577</color>
     <color name="colorPrimaryDark">#2B2350</color>
+    <!-- the theme's colorPrimary and colorAccent (dialog buttons and section headers,
+         checkboxes, switches, settings categories): the brand purple on light surfaces,
+         a light tint of it in dark mode (values-night), where the brand purple is
+         unreadable. Toolbars keep the brand purple in both. -->
+    <color name="themePrimary">#3F3577</color>
+    <color name="themeOnPrimary">#FFFFFF</color>
     <!-- the sidebar's selected row: colorPrimary at 12% -->
     <color name="sidebarSelected">#1F3F3577</color>
     <!-- badges on the library list's PDF icon -->

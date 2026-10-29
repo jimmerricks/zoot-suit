@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the light purple of the Compose screens' dark scheme (ZoteroPrimaryDark) -->
+    <color name="themePrimary">#C9BFFF</color>
+    <color name="themeOnPrimary">#2B2350</color>
+</resources>
