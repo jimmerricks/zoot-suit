@@ -41,15 +41,18 @@ The app is a hybrid of upstream's code and newer layers:
 | Database | Room 2.7 |
 | Tests | JUnit 5 (with JUnit 4 via Vintage), Turbine, mockito-kotlin |
 
+The library screen used to run on a ~1,800-line `LibraryActivityModel` behind an MVP
+presenter. That class is gone: `LibraryViewModel` holds the screen's state and
+logic and outlives the activity, and `LibraryComponents` wires the parts that do the
+work, each on its own: `OpenLibrary` (which library is open, the Back stack),
+`LibraryLists`, `LibrarySync`, `LibraryAttachments` (with `AttachmentUploader` and
+`EditedAttachments`), `LibraryItemEdits`, `LibraryDeviceState` and `LibraryGroups`.
+
 Planned, one small, behaviour-preserving step at a time, each checked on a device:
 
-1. **Break up `LibraryActivityModel`.** It is a ~1,700-line class behind the library
-   screen. Done so far: Back-stack navigation (`LibraryNavigator`), list filtering
-   (`LibraryItemFilter`) and a `LibraryViewModel` that keeps the library across
-   rotation. Next: attachment download/upload, then sync staging, then folding the
-   presenter into the ViewModel.
-2. **RxJava → coroutines** everywhere, which would remove four RxJava dependencies.
-3. **Smaller updates:** Retrofit 2.9 → 2.11; an OkHttp-based OAuth flow to replace
+1. **RxJava → coroutines** everywhere, which would remove four RxJava dependencies.
+   The parts above are where it would start, one at a time.
+2. **Smaller updates:** Retrofit 2.9 → 2.11; an OkHttp-based OAuth flow to replace
    `oauth.signpost` and its Apache HttpComponents dependency.
 
 Deferred for now: removing `allowMainThreadQueries()` from Room (needs every
