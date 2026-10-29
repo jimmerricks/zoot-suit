@@ -6,6 +6,9 @@ Fixed:
 - Signing out names the edits not synced yet that it would delete (new notes, tag
   changes, edited attachments), and says to sync first. Before, it warned in general
   terms only, and tag changes and new notes waiting to sync were lost without a count.
+- A file changed in Zotero since the last sync (edited on another device, or uploaded
+  from this one) can be downloaded again before the next sync. It was checked against
+  the md5 from the last sync, reported as "Download damaged" and deleted.
 
 Removed:
 - The Attachment Manager (overflow menu). Its "Download all attachments" downloaded

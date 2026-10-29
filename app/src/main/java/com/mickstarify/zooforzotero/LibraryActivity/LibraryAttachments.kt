@@ -305,6 +305,12 @@ class LibraryAttachments(
 
     fun downloadAttachment(item: Item) = downloadAttachment(item, openWhenDone = true)
 
+    /**
+     * Downloads [item]'s file, then checks it ([verifyDownload]). Online, Zotero's current
+     * md5 is asked for first: the one from the last sync is stale for a file that changed
+     * in Zotero since (edited on another device, or uploaded from this one), and checking
+     * against it threw the new file away as damaged until the next sync.
+     */
     fun downloadAttachment(item: Item, openWhenDone: Boolean) {
         if (isDownloading) {
             Log.d("zotero", "not downloading ${item.getTitle()} because i am already downloading.")
@@ -312,6 +318,20 @@ class LibraryAttachments(
         }
         isDownloading = true
 
+        // "" (no file in Zotero) tells nothing about the file the download brings
+        latestZoteroMd5(item)
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnSubscribe { downloadDisposable = it } // cancellable while it asks
+            .subscribe({ latest ->
+                startDownload(item, openWhenDone, latest.orElse("").ifEmpty { null })
+            }, { e ->
+                Log.e("zotero", "asking for the latest md5 failed: $e") // not expected: it falls back
+                startDownload(item, openWhenDone, null)
+            })
+    }
+
+    /** [latestMd5]: Zotero's md5 for the file now, or null if it couldn't be asked. */
+    private fun startDownload(item: Item, openWhenDone: Boolean, latestMd5: String?) {
         api().downloadItemRx(item, state.currentGroup.id, context)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -321,7 +341,7 @@ class LibraryAttachments(
                 override fun onComplete() {
                     isDownloading = false
                     ui.finishDownloadingAttachment()
-                    verifyDownload(item, openWhenDone)
+                    verifyDownload(item, openWhenDone, latestMd5 ?: zoteroDB.getMd5Key(item))
                 }
 
                 override fun onSubscribe(d: Disposable) {
@@ -331,11 +351,12 @@ class LibraryAttachments(
 
                 override fun onNext(t: DownloadProgress) {
                     ui.updateAttachmentDownloadProgress(t.progress, t.total)
-                    if (!receivedMetadata && t.metadataHash != "") {
+                    val md5 = latestMd5 ?: t.metadataHash
+                    if (!receivedMetadata && md5 != "") {
                         receivedMetadata = true
                         zoteroDB.updateAttachmentMetadata(
                             item.itemKey,
-                            t.metadataHash,
+                            md5,
                             t.mtime,
                             if (preferences.isWebDAVEnabled()) {
                                 AttachmentInfo.WEBDAV
@@ -368,8 +389,7 @@ class LibraryAttachments(
      * Checks a finished download against Zotero's md5 and records it as the copy's base,
      * hashing the file once, off the main thread; then opens it or says it's there.
      */
-    private fun verifyDownload(item: Item, openWhenDone: Boolean) {
-        val expected = zoteroDB.getMd5Key(item)
+    private fun verifyDownload(item: Item, openWhenDone: Boolean, expected: String) {
         Single.fromCallable {
             val md5 = attachmentStorageManager.calculateMd5(item)
             val intact = expected.isEmpty() || md5.equals(expected, ignoreCase = true)
