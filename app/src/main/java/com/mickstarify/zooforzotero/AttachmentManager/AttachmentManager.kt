@@ -2,10 +2,10 @@ package com.mickstarify.zooforzotero.AttachmentManager
 
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.LaunchedEffect
 import com.mickstarify.zooforzotero.AttachmentManager.ui.AttachmentManagerScreen
 import com.mickstarify.zooforzotero.AttachmentManager.viewmodel.AttachmentManagerViewModel
@@ -16,7 +16,7 @@ import dagger.hilt.android.AndroidEntryPoint
 private const val TAG = "AttachmentManager"
 
 @AndroidEntryPoint
-class AttachmentManager : ComponentActivity() {
+class AttachmentManager : AppCompatActivity() {
     
     private val viewModel: AttachmentManagerViewModel by viewModels()
 
