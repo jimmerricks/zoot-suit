@@ -43,8 +43,6 @@ import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditUploader
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
 import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ZoteroDB
-import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ZoteroDBPicker
-import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ZoteroGroupDB
 import com.mickstarify.zooforzotero.di.SingletonComponentsEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import io.reactivex.rxjava3.core.Completable
@@ -86,25 +84,14 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
     val attachmentStorageManager: AttachmentStorageManager
     val preferences: PreferenceManager
 
-    private val zoteroGroupDB =
-        ZoteroGroupDB(
-            context
-        )
-    private var zoteroDBPicker =
-        ZoteroDBPicker(
-            ZoteroDB(
-                context,
-                groupID = -1
-            ), zoteroGroupDB
-        )
-    private var groups: List<GroupInfo>? = null
-
-
-    val navigator = LibraryNavigator()
+    val library = OpenLibrary(context)
+    val navigator get() = library.navigator
     val states get() = navigator.states
     val state: LibraryModelState
         get() = navigator.current
-    private var zoteroDB: ZoteroDB by zoteroDBPicker
+    private val zoteroDB: ZoteroDB get() = library.db
+
+    private var groups: List<GroupInfo>? = null
 
     private var performedCleanSync: Boolean = false
 
@@ -151,9 +138,7 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
         return false
     }
 
-    override fun isLoaded(): Boolean {
-        return zoteroDB.isOpen()
-    }
+    override fun isLoaded(): Boolean = library.isLoaded()
 
     /**
      * Answers the list's queries from the database, for the open library (read at each
@@ -432,9 +417,7 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
         syncManager.startCompleteSync(zoteroDB, useSmallLoadingAnimation)
     }
 
-    override fun getCollections(): List<ZoteroCollection> {
-        return zoteroDB.collections ?: LinkedList()
-    }
+    override fun getCollections(): List<ZoteroCollection> = library.collections
 
     override fun openPDF(attachment: Item) {
         /* This method creates an intent to open a PDF for Android. */
@@ -1309,7 +1292,7 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
      * group never synced here waits for the network.
      */
     override fun startGroupSync(group: GroupInfo, refresh: Boolean) {
-        val db = zoteroGroupDB.getGroup(group.id)
+        val db = library.groups.getGroup(group.id)
         if (!refresh) openingGroup = group
         if (!refresh && (db.isOpen() || db.getLastSyncedTimestamp() != 0L)) {
             finishLibrarySync(db) {
@@ -1330,7 +1313,7 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
     }
 
     override fun usePersonalLibrary() {
-        this.zoteroDBPicker.stopGroup()
+        library.usePersonalLibrary()
     }
 
     /** Switches the list and the sidebar to My Library, at its top. */
@@ -1388,9 +1371,7 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
         }
     }
 
-    fun getCollectionFromKey(collectionKey: String): ZoteroCollection? {
-        return zoteroDB.getCollectionById(collectionKey)
-    }
+    fun getCollectionFromKey(collectionKey: String): ZoteroCollection? = library.collection(collectionKey)
 
     fun destroyLibrary() {
         zoteroDB.clearItemsVersion()
@@ -1529,7 +1510,7 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
                 ui.redisplayItems()
             }
         } else if (openingGroup?.id == db.groupID || state.currentGroup.id == db.groupID) {
-            zoteroDBPicker.groupId = db.groupID
+            library.useGroup(db.groupID)
             // opening the group; a refresh of the open group keeps its place
             val opening = openingGroup
             if (opening != null && state.currentGroup.id != db.groupID) {
@@ -1600,7 +1581,7 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
         if (oldState.currentGroup.id != state.currentGroup.id) {
             // back into another library; its database was loaded when we were there
             if (state.isUsingGroup()) {
-                zoteroDBPicker.groupId = state.currentGroup.id
+                library.useGroup(state.currentGroup.id)
             } else {
                 this.usePersonalLibrary()
             }
