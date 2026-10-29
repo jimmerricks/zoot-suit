@@ -39,7 +39,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             model.openMyLibrary()
         } else {
             model.groups.getGroupById(groupId)?.also {
-                model.startGroupSync(it)
+                model.sync.startGroupSync(it)
             }
         }
     }
@@ -73,7 +73,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         // A sync that ended while the activity was stopped (display asleep) couldn't leave
         // the loading screen: navigation is refused once the activity has saved its state.
         // One that was cut off partway (Doze took the network) continues from its page.
-        if (model.isLoaded() && !model.isSyncing() && !model.resumeInterruptedSync() &&
+        if (model.isLoaded() && !model.sync.isSyncing() && !model.sync.resumeInterruptedSync() &&
             view.getCurrentScreen() == AvailableScreens.LIBRARY_LOADING_SCREEN
         ) {
             view.showScreen(R.id.libraryListFragment)
@@ -298,7 +298,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     override fun requestLibraryRefresh() {
         libraryListViewModel.setIsShowingLoadingAnimation(true)
-        model.refreshLibrary(useSmallLoadingAnimation = true)
+        model.sync.refreshLibrary(useSmallLoadingAnimation = true)
     }
 
     override fun selectItem(
@@ -315,7 +315,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             model.completeItem(item)
             model.selectedItem = item
             view.showItemDialog()
-            model.fetchChildrenWhileSyncing(item)
+            model.sync.fetchChildrenWhileSyncing(item)
         }
     }
 
@@ -388,7 +388,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun requestForceResync() {
-        model.destroyLibrary()
+        model.sync.destroyLibrary()
     }
 
     override fun backButtonPressed() {
@@ -487,24 +487,24 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
         Log.d(
             "zotero",
-            "On Launch have model.shouldIUpdateLibrary()=${model.shouldIUpdateLibrary()}"
+            "On Launch have model.sync.shouldIUpdateLibrary()=${model.sync.shouldIUpdateLibrary()}"
         )
-        if (model.isFirstSync()) {
+        if (model.sync.isFirstSync()) {
             Log.d("zotero", "First sync - loading library from scratch")
             model.groups.loadGroups()
             // full loading screen with item counts, not the pull-to-refresh spinner:
             // a first sync of a large library takes many minutes.
-            model.refreshLibrary(useSmallLoadingAnimation = false)
-        } else if (model.shouldIUpdateLibrary()) {
+            model.sync.refreshLibrary(useSmallLoadingAnimation = false)
+        } else if (model.sync.shouldIUpdateLibrary()) {
             Log.d("zotero", "Updating library")
             model.groups.loadGroups()
-            model.loadLibraryLocally {
+            model.sync.loadLibraryLocally {
                 this.requestLibraryRefresh()
             }
         } else {
             Log.d("zotero", "Loading library locally")
             model.groups.loadGroups()
-            model.loadLibraryLocally()
+            model.sync.loadLibraryLocally()
         }
 
         // observed for the presenter's lifetime, not the activity's: re-observing in a

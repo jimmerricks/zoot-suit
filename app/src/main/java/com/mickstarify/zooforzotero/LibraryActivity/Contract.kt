@@ -4,7 +4,6 @@ import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewMo
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryLoadingScreenViewModel
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 interface Contract {
@@ -68,13 +67,9 @@ interface Contract {
     }
 
     interface Model {
-        fun downloadLibrary(doRefresh: Boolean = false, useSmallLoadingAnimation: Boolean = false)
-        fun refreshLibrary(useSmallLoadingAnimation: Boolean = false)
         fun getCollections(): List<Collection>
         fun isLoaded(): Boolean
-        fun startGroupSync(group: GroupInfo, refresh: Boolean = false)
         fun usePersonalLibrary()
         fun loadPriorState()
-        fun isFirstSync(): Boolean
     }
 }
