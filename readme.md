@@ -57,6 +57,8 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
   local copy.
 - Edit and delete notes. Add and remove tags, offline too; the next sync
   uploads them without losing tags added elsewhere (My Library only).
+- Light or dark theme, or the system's choice (Settings → Theme); dark works on
+  Android 7 too, which has no dark mode of its own.
 - Works on Android 7 with Let's Encrypt servers (the root certificate is bundled).
 - Made for large libraries (tested with 18,000 items): the list, sorting and search
   read from the database page by page instead of holding the library in memory.
