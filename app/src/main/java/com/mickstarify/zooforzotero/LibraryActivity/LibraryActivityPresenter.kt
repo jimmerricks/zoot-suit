@@ -323,7 +323,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     fun addNote(item: Item, text: String) = model.edits.addNote(item, text)
 
-    fun hasPendingEdits(item: Item) = model.hasPendingEdits(item)
+    fun hasPendingEdits(item: Item) = model.deviceState.hasPendingEdits(item)
 
     fun canEditItems() = !model.state.isUsingGroup()
 

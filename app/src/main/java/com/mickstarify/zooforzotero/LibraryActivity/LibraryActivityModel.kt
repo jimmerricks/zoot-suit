@@ -121,7 +121,7 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
             database = zoteroDatabase,
             groupId = { zoteroDB.groupID },
             collections = { getCollections() },
-            deviceState = { DeviceState(onDeviceKeys, editedKeys, itemEditKeys) },
+            deviceState = { deviceState.current },
             searchFields = { preferences.getSearchFields() },
         )
     }
@@ -240,13 +240,6 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
     var lastFilteredCount: Int? = null
         private set
 
-    /** Attachment keys whose file is on this device / has edits to sync; see refreshPendingEdits. */
-    @Volatile private var onDeviceKeys: Set<String> = emptySet()
-    @Volatile private var editedKeys: Set<String> = emptySet()
-
-    /** Keys of My Library's items with metadata edits to sync; see refreshPendingEdits. */
-    @Volatile private var itemEditKeys: Set<String> = emptySet()
-
     private val itemEdits by lazy { ItemEditStore(zoteroDatabase) }
 
     // lazy: zoteroDatabase is set in init, after the properties
@@ -258,14 +251,14 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
         AttachmentUploader(context, { zoteroAPI }, attachmentStorageManager, preferences, editedAttachments) { zoteroDB }
     }
 
-    val attachments by lazy {
+    val attachments: LibraryAttachments by lazy {
         LibraryAttachments(
             context, ui, library, { zoteroAPI }, attachmentStorageManager, preferences,
             editedAttachments, uploader, onFilesChanged = { refreshPendingEdits() }
         )
     }
 
-    val edits by lazy {
+    val edits: LibraryItemEdits by lazy {
         LibraryItemEdits(
             ui, library, { zoteroAPI }, zoteroDatabase, itemEdits,
             invalidateList = { itemSource.invalidate() },
@@ -275,7 +268,12 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
         )
     }
 
-    fun hasPendingEdits(item: Item) = !state.isUsingGroup() && item.itemKey in itemEditKeys
+    val deviceState: LibraryDeviceState by lazy {
+        LibraryDeviceState(
+            ui, library, editedAttachments, { attachments.findEditedAttachments() }, itemEdits,
+            filterNeedsDeviceState = { libraryFilter.needsDeviceState },
+        )
+    }
 
     override fun getGroupById(groupId: Int): GroupInfo? {
         return this.groups?.firstOrNull { it.id == groupId }
@@ -415,39 +413,8 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
         ui.showGroups()
     }
 
-    /**
-     * Works out, off the main thread, which attachments are on the device and which have
-     * edits to sync; shows the edit count in the toolbar and both on the list's PDF icons,
-     * and redraws the list if the filter depends on either and they changed. Then [onDone].
-     */
-    fun refreshPendingEdits(onDone: () -> Unit = {}) {
-        Single.fromCallable {
-            Triple(
-                findOnDeviceAttachmentKeys(),
-                attachments.findEditedAttachments().map { it.itemKey }.toSet(),
-                itemEdits.editedItemKeys(GroupInfo.NO_GROUP_ID),
-            )
-        }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ (onDevice, edited, itemsEdited) ->
-                val changed = onDevice != onDeviceKeys || edited != editedKeys || itemsEdited != itemEditKeys
-                onDeviceKeys = onDevice
-                editedKeys = edited
-                itemEditKeys = itemsEdited
-                ui.showPendingEdits(edited.size + itemsEdited.size)
-                ui.showAttachmentStates(onDevice, edited)
-                if (changed && libraryFilter.needsDeviceState) ui.redisplayItems()
-                onDone()
-            }, { e ->
-                Log.e("zotero", "checking attachments on the device failed: $e")
-                onDone()
-            })
-    }
-
-    /** Keys of attachments whose file is on this device (non-empty). */
-    private fun findOnDeviceAttachmentKeys(): Set<String> =
-        if (isLoaded()) editedAttachments.onDeviceKeys() else emptySet()
+    /** Works out again what's on the device and what waits to sync; see LibraryDeviceState. */
+    fun refreshPendingEdits(onDone: () -> Unit = {}) = deviceState.refresh(onDone)
 
     // the group the user asked to open; its load switches the list to it (see finishLibrarySync)
     private var openingGroup: GroupInfo? = null
