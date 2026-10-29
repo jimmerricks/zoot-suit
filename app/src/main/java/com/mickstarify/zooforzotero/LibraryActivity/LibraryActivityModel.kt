@@ -9,17 +9,12 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.google.gson.JsonObject
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
-import com.mickstarify.zooforzotero.ZoteroAPI.AlreadyUploadedException
 import io.reactivex.rxjava3.core.Single
-import com.mickstarify.zooforzotero.ZoteroAPI.RemoteAttachmentChangedException
-import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentFileCheck
 import com.mickstarify.zooforzotero.ZoteroAPI.GROUP_LIST_LIMIT
 import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploadBatch
-import com.mickstarify.zooforzotero.ZoteroAPI.DamagedAttachmentException
-import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploadPreflight
+import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploader
 import com.mickstarify.zooforzotero.ZoteroAPI.DeleteItemListener
 import com.mickstarify.zooforzotero.ZoteroAPI.DownloadProgress
 import com.mickstarify.zooforzotero.ZoteroAPI.ItemChangedSinceException
@@ -280,6 +275,10 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
     // lazy: zoteroDatabase is set in init, after the properties
     private val editedAttachments by lazy {
         EditedAttachments(zoteroDatabase, attachmentStorageManager) { zoteroDB.groupID }
+    }
+
+    private val uploader by lazy {
+        AttachmentUploader(context, { zoteroAPI }, attachmentStorageManager, preferences, editedAttachments) { zoteroDB }
     }
 
     fun hasPendingEdits(item: Item) = !state.isUsingGroup() && item.itemKey in itemEditKeys
@@ -1131,7 +1130,7 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
                 Completable.fromAction {
                     ui.startUploadingAttachmentProgress(attachment, index + 1, total)
                 }.subscribeOn(AndroidSchedulers.mainThread())
-                    .andThen(uploadOne(attachment).subscribeOn(Schedulers.io()))
+                    .andThen(uploader.upload(attachment).subscribeOn(Schedulers.io()))
                     .toSingleDefault(AttachmentUploadBatch.Outcome(name))
                     .onErrorReturn { e ->
                         Log.e("zotero", "upload of ${attachment.itemKey} failed: $e")
@@ -1159,68 +1158,6 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
             })
     }
 
-    /** Uploads one edited attachment and records it as synced. Subscribe on io. */
-    private fun uploadOne(attachment: Item): Completable = Completable.defer {
-        // throws FileNotFoundException if the copy is gone
-        val md5Key = attachmentStorageManager.calculateMd5(attachment)
-        fileCheckProblem(attachment)?.let { throw DamagedAttachmentException(it) }
-        var mtime = attachmentStorageManager.getMtime(attachment)
-        if (mtime < attachment.getMtime()) {
-            Log.e("zotero", "for some reason our mtime is older than the original???")
-            mtime = attachment.getMtime()
-        }
-        val webdav = preferences.isWebDAVEnabled()
-        val upload = if (webdav) {
-            uploadWithWebdav(attachment, md5Key, mtime)
-        } else {
-            val baseMd5 = attachmentBase(attachment) ?: attachment.getMd5Key()
-            zoteroAPI.updateAttachment(attachment, baseMd5).onErrorResumeNext { e ->
-                if (e is AlreadyUploadedException) Completable.complete() else Completable.error(e)
-            }
-        }
-        upload.andThen(Completable.fromAction {
-            recordBase(attachment, md5Key)
-            zoteroDB.updateAttachmentMetadata(
-                attachment.itemKey,
-                md5Key,
-                attachmentStorageManager.getMtime(attachment),
-                if (webdav) AttachmentInfo.WEBDAV else AttachmentInfo.ZOTEROAPI
-            ).blockingAwait()
-        })
-    }
-
-    private fun uploadWithWebdav(attachment: Item, md5Key: String, mtime: Long): Completable =
-        // Check for remote changes BEFORE touching the WebDAV server: the upload
-        // replaces KEY.zip/.prop outright, and only the later metadata patch is
-        // version-checked by Zotero. See AttachmentUploadPreflight.
-        Single.fromCallable {
-            val (serverVersion, serverMd5) =
-                zoteroAPI.getAttachmentFileState(attachment.itemKey).blockingGet()
-            val remoteProp = zoteroAPI.getWebdavRemoteProp(attachment, context)
-            // the version this device's edits are based on; for copies downloaded
-            // before bases were recorded, the md5 as of the last sync (weaker)
-            val baseMd5 = attachmentBase(attachment) ?: attachment.getMd5Key()
-            AttachmentUploadPreflight.conflictReason(
-                baseMd5, serverMd5, remoteProp?.hash
-            )?.let { throw RemoteAttachmentChangedException(it) }
-            Pair(serverVersion, remoteProp)
-        }.flatMapCompletable { (serverVersion, remoteProp) ->
-            // the .prop's ETag makes the WebDAV replace conditional; see WebdavUploader
-            zoteroAPI.uploadAttachmentWithWebdav(
-                attachment, context, remoteProp, md5Key, mtime
-            ).andThen(
-                Completable.fromAction {
-                    val modificationJsonObject = JsonObject()
-                    modificationJsonObject.addProperty("md5", md5Key)
-                    modificationJsonObject.addProperty("mtime", mtime)
-                    // the version just checked, so attachment edits that didn't touch
-                    // the file (e.g. a tag) don't fail the patch after the upload
-                    zoteroAPI.patchItem(attachment, modificationJsonObject, serverVersion)
-                        .blockingAwait()
-                }
-            )
-        }
-
     /**
      * Attachments in My Library edited on this device and not uploaded yet; see
      * EditedAttachments. Hashes files whose size or mtime changed, so call it off the main
@@ -1247,38 +1184,6 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
     private fun attachmentBase(item: Item): String? = editedAttachments.base(item)
 
     private fun recordBase(item: Item, md5: String) = editedAttachments.recordBase(item, md5)
-
-    /** Reads the first and last few bytes and runs [AttachmentFileCheck]. */
-    private fun fileCheckProblem(attachment: Item): String? {
-        val window = AttachmentFileCheck.WINDOW
-        val size = attachmentStorageManager.getFileSize(
-            attachmentStorageManager.getAttachmentUri(attachment)
-        )
-        fun readUpTo(stream: java.io.InputStream, n: Int): ByteArray {
-            val buf = ByteArray(n)
-            var read = 0
-            while (read < n) {
-                val r = stream.read(buf, read, n - read)
-                if (r < 0) break
-                read += r
-            }
-            return buf.copyOf(read)
-        }
-        val head = attachmentStorageManager.getItemInputStream(attachment).use { readUpTo(it, window) }
-        val tail = attachmentStorageManager.getItemInputStream(attachment).use { stream ->
-            var toSkip = maxOf(0L, size - window)
-            while (toSkip > 0) {
-                val skipped = stream.skip(toSkip)
-                if (skipped <= 0) break
-                toSkip -= skipped
-            }
-            readUpTo(stream, window)
-        }
-        val isPdf = attachment.data["contentType"] == "application/pdf" ||
-                attachmentStorageManager.getFilenameForItem(attachment).endsWith(".pdf", ignoreCase = true)
-        return AttachmentFileCheck.problem(head, tail, size, isPdf)
-    }
-
 
     // the group the user asked to open; its load switches the list to it (see finishLibrarySync)
     private var openingGroup: GroupInfo? = null
