@@ -21,6 +21,6 @@ forked at v4.0.0. The main differences:
 | Adding items | Zotero Save, ISBN scanner, share target | Removed |
 | Downloading all attachments | Attachment Manager | Removed; the "on device" filter shows which files are downloaded |
 | Sharing an item | Share button in the item view | Removed |
-| Signing out | Clear the app's data | Settings → Sign out |
+| Signing out | Clear the app's data | Settings → Sign out, which first lists the edits not synced yet |
 
 The commit history lists every change.

@@ -54,7 +54,8 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
 - Before uploading, checks whether someone else changed the file on the server,
   so a newer version is not overwritten.
 - Long-press an attachment to open it, download it, upload your changes or delete the
-  local copy.
+  local copy. Opening or downloading asks Zotero for the current version first, so a
+  file changed elsewhere since the last sync comes down intact.
 - Add notes, and add and remove tags, offline too; the next sync uploads them without
   losing tags added elsewhere. Edit and delete notes (online, unless not yet synced).
   My Library only.
@@ -66,6 +67,7 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
 - A first sync of a large library downloads four pages at a time, opens the library
   once the top-level items are in and fetches attachment details and notes behind it.
   It keeps the display on, and picks up where it stopped if the device slept anyway.
+- Settings → Sign out lists the edits not synced yet that signing out would delete.
 
 ## Known limitations
 

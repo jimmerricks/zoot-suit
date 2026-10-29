@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.3
+
+Updates 0.2.2 in place (same app id and signing key).
 
 Fixed:
 - Signing out names the edits not synced yet that it would delete (new notes, tag
@@ -16,6 +18,12 @@ Removed:
   for downloads that had failed; to see which items have their files on the device, use
   the "on device" filter. Downloading a whole collection or filter at once may come back
   later in a different form.
+
+Changed, inside:
+- The code behind the library screen was reorganised into separate parts (lists,
+  sync, attachments, item edits, groups), with no change meant to how the app
+  behaves. Messages and dialogs raised while the app is in the background, or during
+  a rotation, now appear when it is back on screen instead of going nowhere.
 
 ## 0.2.2
 
