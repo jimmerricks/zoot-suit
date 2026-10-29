@@ -76,7 +76,6 @@ interface Contract {
         fun usePersonalLibrary()
         fun getGroupById(groupId: Int): GroupInfo?
         fun loadPriorState()
-        fun loadTags(onResult: (List<Pair<String, Int>>) -> Unit)
         fun isFirstSync(): Boolean
     }
 }

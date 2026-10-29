@@ -165,29 +165,29 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 //        view.updateLibraryLoadingProgress(progress, total, message)
     }
 
-    fun warmSearchIndex() = model.warmSearchIndex()
+    fun warmSearchIndex() = model.lists.warmSearchIndex()
 
     /** The open library's search, or "" for none. */
-    fun currentSearch(): String = model.librarySearch
+    fun currentSearch(): String = model.lists.librarySearch
 
     /** Narrows every list of the open library to items matching [query]; "" ends the search. */
     fun search(query: String) {
-        model.librarySearch = query
+        model.lists.librarySearch = query
         redisplayItems()
     }
 
     override fun loadTags(onResult: (List<Pair<String, Int>>) -> Unit) {
-        if (model.isLoaded()) model.loadTags(onResult) else onResult(emptyList())
+        if (model.isLoaded()) model.lists.loadTags(onResult) else onResult(emptyList())
     }
 
     /** The open library: GroupInfo.NO_GROUP_ID for My Library, else the group's id. */
     fun currentLibraryId(): Int = model.state.currentGroup.id
 
-    fun getLibraryFilter(): LibraryFilter = model.libraryFilter
+    fun getLibraryFilter(): LibraryFilter = model.lists.libraryFilter
 
     /** Sets the list's filter and redraws the list. */
     fun setLibraryFilter(filter: LibraryFilter) {
-        model.libraryFilter = filter
+        model.lists.libraryFilter = filter
         redisplayItems()
     }
 
@@ -196,9 +196,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
      * through them; and what the list says if it is empty.
      */
     private fun showFilterSummary() {
-        val search = model.librarySearch
-        val filter = model.libraryFilter
-        val shown = model.lastFilteredCount
+        val search = model.lists.librarySearch
+        val filter = model.lists.libraryFilter
+        val shown = model.lists.lastFilteredCount
         subtitle.value =
             if ((search.isEmpty() && !filter.isActive) || shown == null) null
             else listOfNotNull(
@@ -330,8 +330,8 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     override fun showEditedItem(item: Item) {
         libraryListViewModel.onItemChanged(item)
         // only a list that can depend on tags is redrawn; a large one is slow to redraw
-        if (model.libraryFilter.tags.isNotEmpty() ||
-            model.librarySearch.isNotEmpty()
+        if (model.lists.libraryFilter.tags.isNotEmpty() ||
+            model.lists.librarySearch.isNotEmpty()
         ) redisplayItems()
     }
 
@@ -370,7 +370,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
      * list asked for meanwhile replaces this one (see LibraryActivityModel.listItems).
      */
     private fun showList(place: LibraryPlace) {
-        model.listItems(place) { pages ->
+        model.lists.listItems(place) { pages ->
             model.isDisplayingItems = pages.size > 0
             libraryListViewModel.setItems(pages)
             showFilterSummary()
@@ -520,7 +520,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         }
         // the empty list's button: clears whatever it named, search and filter alike
         observe(libraryListViewModel.getOnClearFilterRequested()) {
-            model.librarySearch = ""
+            model.lists.librarySearch = ""
             setLibraryFilter(LibraryFilter())
         }
     }
