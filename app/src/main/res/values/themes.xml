@@ -16,11 +16,11 @@
 
     <!-- Every toolbar: white title, subtitle, navigation/overflow icons and search field on
          the brand purple, in dark mode too (where the theme's colorPrimary is a light tint);
-         the overflow menu itself stays light. -->
+         the overflow menu itself is light, or dark in dark mode. -->
     <style name="Widget.ZooForZotero.Toolbar" parent="Widget.MaterialComponents.Toolbar.Primary">
         <item name="android:theme">@style/ThemeOverlay.ZooForZotero.Toolbar</item>
         <item name="android:background">@color/colorPrimary</item>
-        <item name="popupTheme">@style/ThemeOverlay.MaterialComponents.Light</item>
+        <item name="popupTheme">@style/ThemeOverlay.AppCompat.DayNight</item>
         <item name="titleTextColor">@android:color/white</item>
         <item name="subtitleTextColor">@android:color/white</item>
     </style>
