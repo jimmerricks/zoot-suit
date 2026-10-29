@@ -71,20 +71,14 @@ interface Contract {
         fun downloadLibrary(doRefresh: Boolean = false, useSmallLoadingAnimation: Boolean = false)
         fun refreshLibrary(useSmallLoadingAnimation: Boolean = false)
         fun getCollections(): List<Collection>
-        fun downloadAttachment(item: Item)
-        fun cancelAttachmentDownload()
         fun isLoaded(): Boolean
         fun modifyNote(note: Note)
         fun deleteNote(note: Note)
-        fun openPDF(attachment: Item)
-        fun openAttachment(item: Item)
-        fun uploadAttachment(attachment: Item)
         fun startGroupSync(group: GroupInfo, refresh: Boolean = false)
         fun usePersonalLibrary()
         fun getGroupById(groupId: Int): GroupInfo?
         fun loadPriorState()
         fun loadTags(onResult: (List<Pair<String, Int>>) -> Unit)
-        fun deleteLocalAttachment(attachment: Item)
         fun isFirstSync(): Boolean
     }
 }

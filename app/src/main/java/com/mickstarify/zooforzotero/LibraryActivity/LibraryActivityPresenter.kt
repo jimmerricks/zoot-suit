@@ -135,7 +135,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun cancelAttachmentDownload() {
-        model.cancelAttachmentDownload()
+        model.attachments.cancelAttachmentDownload()
         view.hideAttachmentDownloadProgress()
     }
 
@@ -270,7 +270,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun openAttachment(item: Item) {
-        model.openAttachment(item)
+        model.attachments.openAttachment(item)
     }
 
     override fun updateAttachmentDownloadProgress(progress: Long, total: Long) {
@@ -378,12 +378,12 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun uploadAttachment(item: Item) {
-        model.uploadAttachment(item)
+        model.attachments.uploadAttachment(item)
     }
 
     override fun uploadEditedAttachments() {
         if (model.isLoaded()) {
-            model.chooseEditedAttachmentsToUpload()
+            model.attachments.chooseEditedAttachmentsToUpload()
         }
     }
 
@@ -544,18 +544,18 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     fun describeAttachment(attachment: Item, onState: (AttachmentLocalState) -> Unit) {
-        model.describeAttachment(attachment, onState)
+        model.attachments.describeAttachment(attachment, onState)
     }
 
     fun uploadChanges(attachment: Item) {
-        model.uploadChanges(attachment)
+        model.attachments.uploadChanges(attachment)
     }
 
     fun downloadAttachmentOnly(attachment: Item) {
-        model.downloadAttachmentOnly(attachment)
+        model.attachments.downloadAttachmentOnly(attachment)
     }
 
     fun deleteLocalAttachment(attachment: Item) {
-        model.deleteLocalAttachment(attachment)
+        model.attachments.deleteLocalAttachment(attachment)
     }
 }
