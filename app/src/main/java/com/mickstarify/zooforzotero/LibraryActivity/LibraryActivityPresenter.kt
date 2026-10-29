@@ -38,7 +38,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         if (groupId == GroupInfo.NO_GROUP_ID) {
             model.openMyLibrary()
         } else {
-            model.getGroupById(groupId)?.also {
+            model.groups.getGroupById(groupId)?.also {
                 model.startGroupSync(it)
             }
         }
@@ -100,7 +100,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             model.preferences.setSidebarExpandedCollections(groupId, expanded)
         }
         sidebar.value = SidebarRows.build(
-            model.getGroups(), model.preferences.isSidebarGroupsExpanded(),
+            model.groups.getGroups(), model.preferences.isSidebarGroupsExpanded(),
             groupId, current, tree, expanded
         )
     }
@@ -491,19 +491,19 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         )
         if (model.isFirstSync()) {
             Log.d("zotero", "First sync - loading library from scratch")
-            model.loadGroups()
+            model.groups.loadGroups()
             // full loading screen with item counts, not the pull-to-refresh spinner:
             // a first sync of a large library takes many minutes.
             model.refreshLibrary(useSmallLoadingAnimation = false)
         } else if (model.shouldIUpdateLibrary()) {
             Log.d("zotero", "Updating library")
-            model.loadGroups()
+            model.groups.loadGroups()
             model.loadLibraryLocally {
                 this.requestLibraryRefresh()
             }
         } else {
             Log.d("zotero", "Loading library locally")
-            model.loadGroups()
+            model.groups.loadGroups()
             model.loadLibraryLocally()
         }
 

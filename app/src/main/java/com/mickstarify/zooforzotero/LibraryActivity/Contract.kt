@@ -74,7 +74,6 @@ interface Contract {
         fun isLoaded(): Boolean
         fun startGroupSync(group: GroupInfo, refresh: Boolean = false)
         fun usePersonalLibrary()
-        fun getGroupById(groupId: Int): GroupInfo?
         fun loadPriorState()
         fun isFirstSync(): Boolean
     }

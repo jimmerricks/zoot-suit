@@ -7,7 +7,6 @@ import android.util.Log
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
 import io.reactivex.rxjava3.core.Single
-import com.mickstarify.zooforzotero.ZoteroAPI.GROUP_LIST_LIMIT
 import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploader
 import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.OnSyncChangeListener
 import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncManager
@@ -23,10 +22,7 @@ import com.mickstarify.zooforzotero.di.SingletonComponentsEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Maybe
-import io.reactivex.rxjava3.core.MaybeObserver
-import io.reactivex.rxjava3.core.Observer
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.LinkedList
 import java.util.concurrent.TimeUnit
@@ -61,8 +57,6 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
     val state: LibraryModelState
         get() = navigator.current
     private val zoteroDB: ZoteroDB get() = library.db
-
-    private var groups: List<GroupInfo>? = null
 
     private var performedCleanSync: Boolean = false
 
@@ -111,6 +105,8 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
 
     override fun isLoaded(): Boolean = library.isLoaded()
 
+    val groups by lazy { LibraryGroups(ui, { zoteroAPI }, zoteroDatabase, preferences) }
+
     val lists: LibraryLists by lazy {
         LibraryLists(ui, library, zoteroDatabase, preferences) { deviceState.current }
     }
@@ -150,12 +146,6 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
         )
     }
 
-    override fun getGroupById(groupId: Int): GroupInfo? {
-        return this.groups?.firstOrNull { it.id == groupId }
-    }
-
-    fun getGroups(): List<GroupInfo> = groups ?: emptyList()
-
     override fun downloadLibrary(doRefresh: Boolean, useSmallLoadingAnimation: Boolean) {
         if (!doRefresh && zoteroDB.isOpen()) {
             Log.d("zotero", "not resyncing library, already have a copy.")
@@ -169,85 +159,6 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
 
     override fun getCollections(): List<ZoteroCollection> = library.collections
 
-    fun displayGroupsOnUI() {
-        val groups = zoteroDatabase.getGroups()
-        groups.subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .unsubscribeOn(Schedulers.io())
-            .subscribe(object : MaybeObserver<List<GroupInfo>> {
-                override fun onSuccess(groupInfo: List<GroupInfo>) {
-                    Log.d("zotero", "completed get group info.")
-                    this@LibraryActivityModel.groups = groupInfo
-                    ui.showGroups()
-                }
-
-                override fun onComplete() {
-                    Log.d("zotero", "User has no groups.")
-                    this@LibraryActivityModel.groups = emptyList()
-                    ui.showGroups()
-                }
-
-                override fun onSubscribe(d: Disposable) {
-                }
-
-                override fun onError(e: Throwable) {
-                    Log.e("zotero", "error loading groups.")
-                    ui.createErrorAlert(
-                        "Couldn't load the group list",
-                        "Details: ${e.message}",
-                        {})
-                }
-
-            })
-    }
-
-    /**
-     * Lists the groups in the sidebar: first the ones on this device (so they're there
-     * offline), then Zotero's current list, which also drops groups the user has left.
-     * It does not deal with getting items or collections.
-     */
-    fun loadGroups() {
-        if (!preferences.isGroupLibrarySyncEnabled()) {
-            Log.d("zotero", "group library sync disabled in settings; not loading groups")
-            return
-        }
-        displayGroupsOnUI()
-
-        val groupsObserver = zoteroAPI.getGroupInfo()
-        groupsObserver.subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .unsubscribeOn(Schedulers.io())
-            .subscribe(object : Observer<List<GroupInfo>> {
-                override fun onComplete() {
-                    Log.d("zotero", "completed getting group info")
-                    displayGroupsOnUI()
-                }
-
-                override fun onSubscribe(d: Disposable) {
-                    Log.d("zotero", "subscribed to group info")
-                }
-
-                override fun onNext(groupInfo: List<GroupInfo>) {
-                    groupInfo.forEach {
-                        val status = zoteroDatabase.addGroup(it)
-                        status.blockingAwait() // wait until the db add is finished.
-                    }
-                    // a full page may not be the whole list; then forget nothing
-                    if (groupInfo.size >= GROUP_LIST_LIMIT) return
-                    val current = groupInfo.map { it.id }.toSet()
-                    zoteroDatabase.getGroups().blockingGet()
-                        ?.filter { it.id !in current }
-                        ?.forEach { zoteroDatabase.deleteGroup(it) }
-                }
-
-                override fun onError(e: Throwable) {
-                    // offline or refused: the groups on the device stay listed
-                    Log.e("zotero", "could not refresh the group list: $e")
-                }
-
-            })
-    }
-
     /**
      * Applies Settings → Group libraries at once. On: the groups are listed. Off: they
      * go from the sidebar, an open group closes (back to My Library) and Back forgets
@@ -255,10 +166,10 @@ class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
      */
     fun setGroupLibrariesEnabled(enabled: Boolean) {
         if (enabled) {
-            loadGroups()
+            groups.loadGroups()
             return
         }
-        groups = emptyList()
+        groups.clear()
         openingGroup = null
         openingGroupCollection = null
         if (navigator.leaveGroups()) {
