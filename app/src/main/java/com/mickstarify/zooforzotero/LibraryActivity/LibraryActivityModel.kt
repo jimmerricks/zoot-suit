@@ -32,9 +32,8 @@ import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroNotFoundException
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentOpenCheck
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
-import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachmentFinder
+import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachments
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.AttachmentInfo
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.FileHash
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdit
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind
@@ -292,6 +291,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     @Volatile private var itemEditKeys: Set<String> = emptySet()
 
     private val itemEdits by lazy { ItemEditStore(zoteroDatabase) }
+
+    // lazy: zoteroDatabase is set in init, after the properties
+    private val editedAttachments by lazy {
+        EditedAttachments(zoteroDatabase, attachmentStorageManager) { zoteroDB.groupID }
+    }
 
     fun hasPendingEdits(item: Item) = !state.isUsingGroup() && item.itemKey in itemEditKeys
 
@@ -1048,40 +1052,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     /** Keys of attachments whose file is on this device (non-empty). */
-    private fun findOnDeviceAttachmentKeys(): Set<String> {
-        if (!isLoaded()) return emptySet()
-        return downloadedAttachments().filterValues { item ->
-            attachmentStorageManager.getFileSize(item).getOrDefault(0L) > 0
-        }.keys
-    }
-
-    /**
-     * The open library's attachments (not trashed) whose folder is on this device, by key,
-     * read from the database. Kept for [attachmentItem] until the next call. Blocking.
-     */
-    private fun downloadedAttachments(): Map<String, Item> {
-        val group = zoteroDB.groupID
-        val items = libraryItems(group, attachmentStorageManager.listDownloadedItemKeys())
-        downloadedCache = group to items
-        return items
-    }
-
-    @Volatile
-    private var downloadedCache: Pair<Int, Map<String, Item>> = GroupInfo.NO_GROUP_ID to emptyMap()
-
-    /** The open library's attachment [key] (not trashed), or null; from the last [downloadedAttachments], else the database. */
-    private fun attachmentItem(key: String): Item? {
-        val group = zoteroDB.groupID
-        val (cachedGroup, cached) = downloadedCache
-        if (cachedGroup == group) cached[key]?.let { return it }
-        return libraryItems(group, listOf(key))[key]
-    }
-
-    /** Library [group]'s items (not trashed) among [keys], by key, from the database. Blocking. */
-    private fun libraryItems(group: Int, keys: Collection<String>): Map<String, Item> =
-        zoteroDatabase.loadItemsByKeys(keys.toList(), withChildren = false)
-            .filter { it.getGroup() == group && !it.itemInfo.deleted }
-            .associateBy { it.itemKey }
+    private fun findOnDeviceAttachmentKeys(): Set<String> =
+        if (isLoaded()) editedAttachments.onDeviceKeys() else emptySet()
 
     /** "Upload edited attachments": lists every edited attachment to pick which to upload. */
     fun chooseEditedAttachmentsToUpload() {
@@ -1132,7 +1104,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     fun uploadChanges(item: Item) {
         Single.fromCallable {
             AttachmentLocalState.of(
-                editFinder.currentMd5(item.itemKey), attachmentBase(item), zoteroDB.getMd5Key(item)
+                editedAttachments.currentMd5(item.itemKey), attachmentBase(item), zoteroDB.getMd5Key(item)
             )
         }
             .subscribeOn(Schedulers.io())
@@ -1266,53 +1238,21 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             )
         }
 
-    private val editFinder = EditedAttachmentFinder(
-        stampOf = { key ->
-            attachmentItem(key)?.let { item ->
-                runCatching {
-                    Pair(
-                        attachmentStorageManager.getFileSize(item).getOrThrow(),
-                        attachmentStorageManager.getMtime(item)
-                    )
-                }.getOrNull()
-            }
-        },
-        md5Of = { key ->
-            attachmentStorageManager.calculateMd5(
-                attachmentItem(key) ?: throw FileNotFoundException(key)
-            )
-        },
-        store = object : EditedAttachmentFinder.Store {
-            override fun get(itemKey: String) = zoteroDatabase.getFileHash(itemKey)
-                ?.let { EditedAttachmentFinder.Cached(it.size, it.mtime, it.md5) }
-
-            override fun put(itemKey: String, cached: EditedAttachmentFinder.Cached) =
-                zoteroDatabase.putFileHash(FileHash(itemKey, cached.size, cached.mtime, cached.md5))
-
-            override fun remove(itemKey: String) = zoteroDatabase.deleteFileHash(itemKey)
-        }
-    )
-
     /**
      * Attachments in My Library edited on this device and not uploaded yet; see
-     * EditedAttachmentFinder. Hashes files whose size or mtime changed, so call it off
-     * the main thread.
+     * EditedAttachments. Hashes files whose size or mtime changed, so call it off the main
+     * thread.
      */
     fun findEditedAttachments(): List<Item> {
         if (state.isUsingGroup() || !preferences.isAttachmentUploadingEnabled() || !isLoaded()) return emptyList()
-        val downloaded = downloadedAttachments()
-        val bases = HashMap<String, String>()
-        for (key in downloaded.keys) {
-            zoteroDatabase.getAttachmentBase(key, zoteroDB.groupID)?.let { bases[key] = it }
-        }
-        return editFinder.edited(bases).mapNotNull { downloaded[it] }
+        return editedAttachments.edited()
     }
 
     /** Where [item]'s file stands on this device; worked out off the main thread. */
     fun describeAttachment(item: Item, onState: (AttachmentLocalState) -> Unit) {
         Single.fromCallable {
             AttachmentLocalState.of(
-                editFinder.currentMd5(item.itemKey), attachmentBase(item), zoteroDB.getMd5Key(item)
+                editedAttachments.currentMd5(item.itemKey), attachmentBase(item), zoteroDB.getMd5Key(item)
             )
         }
             .subscribeOn(Schedulers.io())
@@ -1321,35 +1261,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     }
 
     /** md5 of the file this device last downloaded/uploaded for [item]; see AttachmentBase. */
-    private fun attachmentBase(item: Item): String? =
-        zoteroDatabase.getAttachmentBase(item.itemKey, zoteroDB.groupID)
+    private fun attachmentBase(item: Item): String? = editedAttachments.base(item)
 
-    private fun recordBase(item: Item, md5: String) {
-        if (md5.isNotEmpty()) zoteroDatabase.setAttachmentBase(item.itemKey, zoteroDB.groupID, md5)
-    }
-
-    /**
-     * Gives downloaded copies from before AttachmentBase existed a base: first from
-     * AttachmentInfo while it still has a row, then, for files still without one, Zotero's
-     * md5 if the file provably matches it. A copy that matches neither (edited before the
-     * upgrade, and its AttachmentInfo already wiped by a sync) stays without a base and
-     * falls back to the weaker check. Only files lacking a base are hashed.
-     */
-    private fun adoptAttachmentBases(db: ZoteroDB) {
-        zoteroDatabase.backfillAttachmentBases()
-        val withBase = zoteroDatabase.attachmentKeysWithBase(db.groupID)
-        val onDisk = attachmentStorageManager.listDownloadedItemKeys() - withBase
-        if (onDisk.isEmpty()) return
-        libraryItems(db.groupID, onDisk).values.filter { it.itemType == Item.ATTACHMENT_TYPE }
-            .forEach { item ->
-                val zoteroMd5 = item.getMd5Key()
-                if (zoteroMd5.isEmpty()) return@forEach
-                val local = runCatching { attachmentStorageManager.calculateMd5(item) }.getOrNull()
-                if (local != null && local.equals(zoteroMd5, ignoreCase = true)) {
-                    zoteroDatabase.setAttachmentBase(item.itemKey, db.groupID, local)
-                }
-            }
-    }
+    private fun recordBase(item: Item, md5: String) = editedAttachments.recordBase(item, md5)
 
     /** Reads the first and last few bytes and runs [AttachmentFileCheck]. */
     private fun fileCheckProblem(attachment: Item): String? {
@@ -1528,7 +1442,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         val upkeep = Completable.fromAction {
             runCatching { zoteroAPI } // built here rather than on the main thread; see its declaration
             try {
-                adoptAttachmentBases(db)
+                editedAttachments.adoptBases(db.groupID)
             } catch (e: Exception) {
                 Log.e(TAG, "adopting attachment bases failed: $e")
             }
@@ -1717,9 +1631,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             presenter.makeToastAlert("Deleted from this device: ${attachment.getTitle()}")
         }
         Single.fromCallable {
-            val base = attachmentBase(attachment)
-            base != null &&
-                    editFinder.currentMd5(attachment.itemKey)?.equals(base, ignoreCase = true) == false
+            editedAttachments.isEdited(attachment)
         }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
