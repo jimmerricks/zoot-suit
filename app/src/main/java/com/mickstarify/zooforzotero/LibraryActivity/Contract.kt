@@ -44,61 +44,24 @@ interface Contract {
         fun hideLoadingAlertDialog()
     }
 
-    interface Presenter {
-        fun createErrorAlert(title: String, message: String, onClick: () -> Unit)
-        fun receiveCollections(collections: List<Collection>)
-        fun setCollection(collectionName: String)
+    interface Presenter : LibraryUi {
         fun selectItem(item: Item, longPress: Boolean = false)
         fun requestLibraryRefresh()
-        fun showLibraryLoadingAnimation()
-        fun hideLibraryLoadingAnimation()
         fun openAttachment(item: Item)
-        fun finishDownloadingAttachment()
-        fun makeToastAlert(message: String)
-        fun attachmentDownloadError(message: String = "")
-        fun updateAttachmentDownloadProgress(progress: Long, total: Long)
-        fun updateLibraryRefreshProgress(
-            progress: Int,
-            total: Int,
-            message: String
-        )
-
         fun isShowingContent(): Boolean
         fun cancelAttachmentDownload()
-        fun redisplayItems()
         fun modifyNote(note: Note)
         fun deleteNote(note: Note)
-        fun refreshItemView()
-
-        /** [item] changed on this device (a tag edit): redraws its dialog and lists that depend on it. */
-        fun showEditedItem(item: Item)
-        fun showGroups()
         fun openLibrary(groupId: Int)
-        fun startUploadingAttachmentProgress(attachment: Item, position: Int, total: Int)
-        fun stopUploadingAttachmentProgress()
         fun onResume()
-        fun createYesNoPrompt(
-            title: String, message: String, yesText: String, noText: String, onYesClick: () -> Unit,
-            onNoClick: () -> Unit
-        )
-
-        fun showBasicSyncAnimation()
-        fun hideBasicSyncAnimation()
         fun openTrash()
         fun uploadAttachment(item: Item)
         fun uploadEditedAttachments()
-        fun showPendingEdits(count: Int)
-        fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>)
-        fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit)
         fun requestForceResync()
         fun backButtonPressed()
         fun openMyPublications()
         /** The open library's tags with their item counts, read off the main thread; [onResult] runs on it. */
         fun loadTags(onResult: (List<Pair<String, Int>>) -> Unit)
-        fun showLoadingAlertDialog(message: String)
-        fun hideLoadingAlertDialog()
-        fun finishLibrary()
-        fun startActivity(intent: android.content.Intent)
 
         var libraryListViewModel: LibraryListViewModel
         var libraryLoadingViewModel: LibraryLoadingScreenViewModel

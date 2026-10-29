@@ -65,7 +65,7 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection as ZoteroC
 
 private const val TAG = "LibraryActivityModel"
 
-class LibraryActivityModel(private val presenter: Contract.Presenter, val context: Context) :
+class LibraryActivityModel(private val ui: LibraryUi, val context: Context) :
     Contract.Model, OnSyncChangeListener {
 
     // stores the current item being viewed by the user. (useful for refreshing the view)
@@ -209,7 +209,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             }, { e ->
                 Log.e(TAG, "building the list for $place failed: $e")
                 if (generation == listGeneration) {
-                    presenter.createErrorAlert("Couldn't show the list", "Details: ${e.message ?: e}") {}
+                    ui.createErrorAlert("Couldn't show the list", "Details: ${e.message ?: e}") {}
                 }
             })
     }
@@ -305,7 +305,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
      */
     fun editTag(item: Item, tag: String, add: Boolean) {
         if (state.isUsingGroup()) {
-            presenter.makeToastAlert("Tags can be edited only in My Library, not in groups.")
+            ui.makeToastAlert("Tags can be edited only in My Library, not in groups.")
             return
         }
         val edit = ItemEdit(if (add) ItemEditKind.ADD_TAG else ItemEditKind.REMOVE_TAG, tag)
@@ -316,10 +316,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 if (!changed) return@subscribe
                 itemSource.invalidate() // its search holds the item's tags
                 // after the count, so the dialog says whether edits are waiting
-                refreshPendingEdits { presenter.showEditedItem(item) }
+                refreshPendingEdits { ui.showEditedItem(item) }
             }, { e ->
                 Log.e("zotero", "editing a tag of ${item.itemKey} failed: $e")
-                presenter.createErrorAlert("Couldn't change the tag", "Details: ${e.message ?: e}") {}
+                ui.createErrorAlert("Couldn't change the tag", "Details: ${e.message ?: e}") {}
             })
     }
 
@@ -329,11 +329,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
      */
     fun addNote(item: Item, text: String) {
         if (state.isUsingGroup()) {
-            presenter.makeToastAlert("Notes can be added only in My Library, not in groups.")
+            ui.makeToastAlert("Notes can be added only in My Library, not in groups.")
             return
         }
         val html = ItemEdits.noteHtml(text) ?: run {
-            presenter.makeToastAlert("The note is empty, so it wasn't added.")
+            ui.makeToastAlert("The note is empty, so it wasn't added.")
             return
         }
         Single.fromCallable { itemEdits.createNote(GroupInfo.NO_GROUP_ID, item, html) }
@@ -341,10 +341,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ _ ->
                 itemSource.invalidate() // "Has notes" and searching notes read the database
-                refreshPendingEdits { presenter.showEditedItem(item) }
+                refreshPendingEdits { ui.showEditedItem(item) }
             }, { e ->
                 Log.e("zotero", "adding a note to ${item.itemKey} failed: $e")
-                presenter.createErrorAlert("Couldn't add the note", "Details: ${e.message ?: e}") {}
+                ui.createErrorAlert("Couldn't add the note", "Details: ${e.message ?: e}") {}
             })
     }
 
@@ -361,16 +361,16 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 when (result) {
                     ItemEditStore.NewNoteChange.DONE -> {
                         itemSource.invalidate()
-                        refreshPendingEdits { presenter.refreshItemView() }
+                        refreshPendingEdits { ui.refreshItemView() }
                         onDone()
                     }
                     ItemEditStore.NewNoteChange.NOT_NEW -> notNew()
                     ItemEditStore.NewNoteChange.UPLOADING ->
-                        presenter.makeToastAlert("The note is being synced. Try again in a moment.")
+                        ui.makeToastAlert("The note is being synced. Try again in a moment.")
                 }
             }, { e ->
                 Log.e("zotero", "changing a new note failed: $e")
-                presenter.createErrorAlert("Couldn't change the note", "Details: ${e.message ?: e}") {}
+                ui.createErrorAlert("Couldn't change the note", "Details: ${e.message ?: e}") {}
             })
     }
 
@@ -385,7 +385,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .subscribe({ result ->
                 // offline is said once by the sync that follows
                 if (result.hasProblems) {
-                    presenter.createErrorAlert("Some edits weren't synced", itemEditProblems(result)) {}
+                    ui.createErrorAlert("Some edits weren't synced", itemEditProblems(result)) {}
                 }
                 refreshPendingEdits()
                 onDone()
@@ -442,20 +442,20 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         run {
             try {
                 val intent = attachmentStorageManager.openAttachment(attachment)
-                presenter.startActivity(intent)
+                ui.startActivity(intent)
             } catch (exception: ActivityNotFoundException) {
-                presenter.createYesNoPrompt("No app opens this file",
+                ui.createYesNoPrompt("No app opens this file",
                     "Nothing on this device opens .${attachment.getFileExtension()} files. Install a PDF reader such as Xodo?",
                     "Get Xodo", "Cancel", onYesClick = {
                         try {
-                            presenter.startActivity(
+                            ui.startActivity(
                                 Intent(
                                     Intent.ACTION_VIEW,
                                     Uri.parse("market://details?id=com.xodo.pdf.reader")
                                 )
                             )
                         } catch (e: ActivityNotFoundException) {
-                            presenter.startActivity(
+                            ui.startActivity(
                                 Intent(
                                     Intent.ACTION_VIEW,
                                     Uri.parse("https://play.google.com/store/apps/details?id=com.xodo.pdf.reader")
@@ -464,12 +464,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                         }
                     }, onNoClick = {})
             } catch (e: IllegalArgumentException) {
-                presenter.createErrorAlert("Couldn't open the file",
+                ui.createErrorAlert("Couldn't open the file",
                     "Android refused access to the file. This is a known problem on Huawei " +
                             "devices: in Settings, set Attachment folder to Custom Path.",
                     {})
             } catch (e: FileNotFoundException) {
-                presenter.createErrorAlert("File not found",
+                ui.createErrorAlert("File not found",
                     "The file is missing from this device. Download it again.",
                     {})
             }
@@ -484,13 +484,13 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         if (item.data["linkMode"] == "linked_file") {
             val intent = attachmentStorageManager.openLinkedAttachment(item)
             if (intent != null) {
-                presenter.startActivity(intent)
+                ui.startActivity(intent)
             } else {
-                presenter.makeToastAlert("Linked file not found: ${item.data["path"]}")
+                ui.makeToastAlert("Linked file not found: ${item.data["path"]}")
             }
             return
         }
-        presenter.showLoadingAlertDialog("Opening…")
+        ui.showLoadingAlertDialog("Opening…")
         // check to see if the attachment exists but is invalid
         val attachmentExists: Boolean
         try {
@@ -499,32 +499,32 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 checkMd5 = false
             )
         } catch (e: Exception) {
-            presenter.hideLoadingAlertDialog()
-            presenter.makeToastAlert("File not found on this device.")
+            ui.hideLoadingAlertDialog()
+            ui.makeToastAlert("File not found on this device.")
             return
         }
         if (attachmentExists) {
-            presenter.showLoadingAlertDialog("Checking for a newer version…")
+            ui.showLoadingAlertDialog("Checking for a newer version…")
             latestZoteroMd5(item)
                 .observeOn(Schedulers.io())
                 .map { latest -> Pair(latest, if (latest.isPresent) localCopyState(item) else null) }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ (latest, local) ->
-                    presenter.hideLoadingAlertDialog()
+                    ui.hideLoadingAlertDialog()
                     if (!latest.isPresent || local == null) {
-                        presenter.makeToastAlert("Offline: opening the copy on this device.")
+                        ui.makeToastAlert("Offline: opening the copy on this device.")
                         openPDF(item)
                     } else {
                         openLocalCopy(item, latest.get(), local)
                     }
                 }, { e ->
-                    presenter.hideLoadingAlertDialog()
+                    ui.hideLoadingAlertDialog()
                     Log.e("zotero", "checking for a newer version failed: $e")
                     openPDF(item)
                 })
         } else {
-            presenter.hideLoadingAlertDialog()
-            presenter.updateAttachmentDownloadProgress(0, -1)
+            ui.hideLoadingAlertDialog()
+            ui.updateAttachmentDownloadProgress(0, -1)
             downloadAttachment(item)
         }
 
@@ -576,21 +576,21 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         val base = local.base
         when (AttachmentOpenCheck.decide(base, latestMd5, localMd5)) {
             AttachmentOpenCheck.Action.REDOWNLOAD -> {
-                presenter.makeToastAlert("Zotero has a newer version of this file. Downloading it.")
-                presenter.updateAttachmentDownloadProgress(0, -1)
+                ui.makeToastAlert("Zotero has a newer version of this file. Downloading it.")
+                ui.updateAttachmentDownloadProgress(0, -1)
                 attachmentStorageManager.deleteAttachment(item)
                 downloadAttachment(item)
                 return
             }
             AttachmentOpenCheck.Action.ASK_EDITED_STALE -> {
-                presenter.createYesNoPrompt(
+                ui.createYesNoPrompt(
                     "Newer version in Zotero",
                     "This file changed in Zotero after you downloaded it, and your copy has " +
                             "edits of its own. Your copy can't be uploaded without overwriting the " +
                             "newer version.\n\nDownload the newer version (your edits are " +
                             "replaced), or open your copy and save your annotations as a new file.",
                     "Download newer", "Open my copy", {
-                        presenter.updateAttachmentDownloadProgress(0, -1)
+                        ui.updateAttachmentDownloadProgress(0, -1)
                         attachmentStorageManager.deleteAttachment(item)
                         downloadAttachment(item)
                     }, {
@@ -608,11 +608,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         if (base == null && latestMd5.isNotEmpty() && preferences.shouldCheckMd5SumBeforeOpening() &&
             !localMd5.equals(latestMd5, ignoreCase = true)
         ) {
-            presenter.createYesNoPrompt(
+            ui.createYesNoPrompt(
                 "Different from Zotero's copy",
                 "The file on this device differs from the one in Zotero. Download Zotero's version?",
                 "Download", "Open mine", {
-                    presenter.updateAttachmentDownloadProgress(0, -1)
+                    ui.updateAttachmentDownloadProgress(0, -1)
                     attachmentStorageManager.deleteAttachment(item)
                     downloadAttachment(item)
                 }, {
@@ -653,7 +653,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
      */
     fun downloadAttachmentOnly(item: Item) {
         if (item.data["linkMode"] == "linked_file" || item.data["linkMode"] == "linked_url") {
-            presenter.makeToastAlert("Linked attachments aren't stored in Zotero.")
+            ui.makeToastAlert("Linked attachments aren't stored in Zotero.")
             return
         }
         val exists = try {
@@ -662,7 +662,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             false
         }
         if (!exists) {
-            presenter.updateAttachmentDownloadProgress(0, -1)
+            ui.updateAttachmentDownloadProgress(0, -1)
             downloadAttachment(item, openWhenDone = false)
             return
         }
@@ -674,7 +674,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 if (latest.isPresent && local != null) {
                     downloadIfOutdated(item, latest.get(), local)
                 } else {
-                    presenter.makeToastAlert("Offline: keeping the copy on this device.")
+                    ui.makeToastAlert("Offline: keeping the copy on this device.")
                 }
             }, { e -> Log.e("zotero", "checking for a newer version failed: $e") })
     }
@@ -684,24 +684,24 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         when (AttachmentOpenCheck.decide(local.base, latestMd5, localMd5)) {
             AttachmentOpenCheck.Action.REDOWNLOAD -> {
                 attachmentStorageManager.deleteAttachment(item)
-                presenter.updateAttachmentDownloadProgress(0, -1)
+                ui.updateAttachmentDownloadProgress(0, -1)
                 downloadAttachment(item, openWhenDone = false)
             }
-            AttachmentOpenCheck.Action.ASK_EDITED_STALE -> presenter.createYesNoPrompt(
+            AttachmentOpenCheck.Action.ASK_EDITED_STALE -> ui.createYesNoPrompt(
                 "Newer version in Zotero",
                 "This file changed in Zotero after you downloaded it, and your copy has " +
                         "edits of its own. Downloading the newer version replaces your edits.",
                 "Download newer", "Keep my copy", {
                     attachmentStorageManager.deleteAttachment(item)
-                    presenter.updateAttachmentDownloadProgress(0, -1)
+                    ui.updateAttachmentDownloadProgress(0, -1)
                     downloadAttachment(item, openWhenDone = false)
                 }, {}
             )
             AttachmentOpenCheck.Action.RECORD_BASE_AND_OPEN -> {
                 recordBase(item, localMd5)
-                presenter.makeToastAlert("Already on this device.")
+                ui.makeToastAlert("Already on this device.")
             }
-            AttachmentOpenCheck.Action.OPEN -> presenter.makeToastAlert("Already on this device.")
+            AttachmentOpenCheck.Action.OPEN -> ui.makeToastAlert("Already on this device.")
         }
     }
 
@@ -722,7 +722,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
                 override fun onComplete() {
                     isDownloading = false
-                    presenter.finishDownloadingAttachment()
+                    ui.finishDownloadingAttachment()
                     verifyDownload(item, openWhenDone)
                 }
 
@@ -732,7 +732,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 }
 
                 override fun onNext(t: DownloadProgress) {
-                    presenter.updateAttachmentDownloadProgress(t.progress, t.total)
+                    ui.updateAttachmentDownloadProgress(t.progress, t.total)
                     if (!receivedMetadata && t.metadataHash != "") {
                         receivedMetadata = true
                         zoteroDB.updateAttachmentMetadata(
@@ -751,11 +751,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 override fun onError(e: Throwable) {
                     Log.e("zotero", "got error ${e}")
                     if (e is ZoteroNotFoundException) {
-                        presenter.attachmentDownloadError(
+                        ui.attachmentDownloadError(
                             "The file isn't in Zotero's storage (or on your WebDAV server)."
                         )
                     } else {
-                        presenter.attachmentDownloadError(
+                        ui.attachmentDownloadError(
                             "Check your connection and try again.\n\nDetails: ${e.message}"
                         )
                     }
@@ -784,7 +784,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 if (!intact) {
                     Log.d("zotero", "md5 error on attachment $expected")
                     attachmentStorageManager.deleteAttachment(item)
-                    presenter.createErrorAlert(
+                    ui.createErrorAlert(
                         "Download damaged",
                         "The downloaded file doesn't match Zotero's checksum, so it was " +
                                 "deleted. Try again.",
@@ -795,11 +795,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 if (openWhenDone) {
                     openPDF(item)
                 } else {
-                    presenter.makeToastAlert("Downloaded ${item.data["filename"] ?: item.getTitle()}.")
+                    ui.makeToastAlert("Downloaded ${item.data["filename"] ?: item.getTitle()}.")
                 }
             }, { e ->
                 Log.e("zotero", "checking the download of ${item.itemKey} failed: $e")
-                presenter.attachmentDownloadError("The downloaded file can't be read.\n\nDetails: ${e.message}")
+                ui.attachmentDownloadError("The downloaded file can't be read.\n\nDetails: ${e.message}")
             })
     }
 
@@ -813,11 +813,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     override fun modifyNote(note: Note) {
         if (state.isUsingGroup()) {
-            presenter.makeToastAlert("Notes can be edited only in My Library, not in groups.")
+            ui.makeToastAlert("Notes can be edited only in My Library, not in groups.")
             return
         }
         changeNewNote({ itemEdits.editNewNote(GroupInfo.NO_GROUP_ID, note.key, note.note) },
-            notNew = { uploadNoteEdit(note) }) { presenter.makeToastAlert("Note saved.") }
+            notNew = { uploadNoteEdit(note) }) { ui.makeToastAlert("Note saved.") }
     }
 
     private fun uploadNoteEdit(note: Note) {
@@ -826,35 +826,35 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : CompletableObserver {
                 override fun onComplete() {
-                    presenter.hideBasicSyncAnimation()
+                    ui.hideBasicSyncAnimation()
                     syncManager.startItemsSync(db = zoteroDB)
-                    presenter.makeToastAlert("Note saved.")
+                    ui.makeToastAlert("Note saved.")
                 }
 
                 override fun onSubscribe(d: Disposable) {
-                    presenter.showBasicSyncAnimation()
+                    ui.showBasicSyncAnimation()
                 }
 
                 override fun onError(e: Throwable) {
                     if (e is ItemLockedException) {
-                        presenter.createErrorAlert(
+                        ui.createErrorAlert(
                             "Couldn't save the note",
                             "The note is locked, or your API key can't change it."
                         ) {}
                     } else if (e is ItemChangedSinceException) {
-                        presenter.createErrorAlert(
+                        ui.createErrorAlert(
                             "Couldn't save the note",
                             "The note changed in Zotero since this device last synced. Pull down " +
                                     "to sync, then edit it again."
                         ) {}
 
                     } else {
-                        presenter.createErrorAlert(
+                        ui.createErrorAlert(
                             "Couldn't save the note",
                             "Check your connection and try again.\n\nDetails: ${e.message ?: e}"
                         ) {}
                     }
-                    presenter.hideBasicSyncAnimation()
+                    ui.hideBasicSyncAnimation()
                 }
             })
     }
@@ -862,17 +862,17 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     /** Deletes [note] from Zotero after asking: the API deletes it for good, not to the trash. */
     override fun deleteNote(note: Note) {
         if (state.isUsingGroup()) {
-            presenter.makeToastAlert("Notes can be deleted only in My Library, not in groups.")
+            ui.makeToastAlert("Notes can be deleted only in My Library, not in groups.")
             return
         }
         // version 0: made on this device, Zotero doesn't have it (yet)
         val message = if (note.version == 0) "It hasn't been synced yet, so it's only on this device."
         else "It's deleted from Zotero on all your devices, not moved to the trash. This can't be undone."
-        presenter.createYesNoPrompt("Delete this note?", message, "Delete", "Cancel", {
+        ui.createYesNoPrompt("Delete this note?", message, "Delete", "Cancel", {
             changeNewNote({ itemEdits.deleteNewNote(GroupInfo.NO_GROUP_ID, note.key) },
                 notNew = { deleteNoteNow(note) }) {
                 selectedItem?.notes?.removeAll { it.key == note.key }
-                presenter.makeToastAlert("Note deleted.")
+                ui.makeToastAlert("Note deleted.")
             }
         }, {})
     }
@@ -880,25 +880,25 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     private fun deleteNoteNow(note: Note) {
         zoteroAPI.deleteItem(note.key, note.version, object : DeleteItemListener {
             override fun success() {
-                presenter.makeToastAlert("Note deleted.")
+                ui.makeToastAlert("Note deleted.")
                 // the list reads the database; the next sync would remove it there too
                 zoteroDatabase.deleteItem(note.key)
                     .subscribeOn(Schedulers.io())
                     .subscribe({ itemSource.invalidate() }, { Log.e(TAG, "deleting note ${note.key} locally failed: $it") })
                 // the open item is a row read before: it still lists the note
                 selectedItem?.notes?.removeAll { it.key == note.key }
-                presenter.refreshItemView()
+                ui.refreshItemView()
             }
 
             override fun failedItemLocked() {
-                presenter.createErrorAlert(
+                ui.createErrorAlert(
                     "Couldn't delete the note",
                     "The note is locked, or your API key can't change it."
                 ) {}
             }
 
             override fun failedItemChangedSince() {
-                presenter.createErrorAlert(
+                ui.createErrorAlert(
                     "Couldn't delete the note",
                     "The note changed in Zotero since this device last synced. Pull down to " +
                             "sync, then try again."
@@ -906,14 +906,14 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             }
 
             override fun failed(code: Int) {
-                presenter.createErrorAlert(
+                ui.createErrorAlert(
                     "Couldn't delete the note",
                     "Zotero answered with an error (HTTP $code). Try again later."
                 ) {}
             }
 
             override fun failedNoConnection(e: Throwable) {
-                presenter.createErrorAlert(
+                ui.createErrorAlert(
                     "Couldn't delete the note",
                     "Couldn't reach Zotero. Check your connection and try again."
                 ) {}
@@ -930,13 +930,13 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 override fun onSuccess(groupInfo: List<GroupInfo>) {
                     Log.d("zotero", "completed get group info.")
                     this@LibraryActivityModel.groups = groupInfo
-                    presenter.showGroups()
+                    ui.showGroups()
                 }
 
                 override fun onComplete() {
                     Log.d("zotero", "User has no groups.")
                     this@LibraryActivityModel.groups = emptyList()
-                    presenter.showGroups()
+                    ui.showGroups()
                 }
 
                 override fun onSubscribe(d: Disposable) {
@@ -944,7 +944,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
                 override fun onError(e: Throwable) {
                     Log.e("zotero", "error loading groups.")
-                    presenter.createErrorAlert(
+                    ui.createErrorAlert(
                         "Couldn't load the group list",
                         "Details: ${e.message}",
                         {})
@@ -1015,10 +1015,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         openingGroupCollection = null
         if (navigator.leaveGroups()) {
             usePersonalLibrary()
-            presenter.receiveCollections(getCollections())
-            presenter.redisplayItems()
+            ui.receiveCollections(getCollections())
+            ui.redisplayItems()
         }
-        presenter.showGroups()
+        ui.showGroups()
     }
 
     /**
@@ -1041,9 +1041,9 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 onDeviceKeys = onDevice
                 editedKeys = edited
                 itemEditKeys = itemsEdited
-                presenter.showPendingEdits(edited.size + itemsEdited.size)
-                presenter.showAttachmentStates(onDevice, edited)
-                if (changed && libraryFilter.needsDeviceState) presenter.redisplayItems()
+                ui.showPendingEdits(edited.size + itemsEdited.size)
+                ui.showAttachmentStates(onDevice, edited)
+                if (changed && libraryFilter.needsDeviceState) ui.redisplayItems()
                 onDone()
             }, { e ->
                 Log.e("zotero", "checking attachments on the device failed: $e")
@@ -1058,11 +1058,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     /** "Upload edited attachments": lists every edited attachment to pick which to upload. */
     fun chooseEditedAttachmentsToUpload() {
         if (state.isUsingGroup()) {
-            presenter.makeToastAlert("Uploads work only in My Library, not in groups.")
+            ui.makeToastAlert("Uploads work only in My Library, not in groups.")
             return
         }
         if (!preferences.isAttachmentUploadingEnabled()) {
-            presenter.makeToastAlert("Uploading is off. Turn on “Upload edited attachments” in Settings.")
+            ui.makeToastAlert("Uploading is off. Turn on “Upload edited attachments” in Settings.")
             return
         }
         Single.fromCallable {
@@ -1072,7 +1072,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ changed ->
                 if (changed.isEmpty()) {
-                    presenter.makeToastAlert("No edited attachments to upload.")
+                    ui.makeToastAlert("No edited attachments to upload.")
                 } else {
                     askToUploadAttachments(changed)
                 }
@@ -1091,7 +1091,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     /** Lists every edited attachment, all ticked; unticked ones stay edited for a later sync. */
     private fun askToUploadAttachments(changed: List<Pair<Item, String>>) {
-        presenter.chooseAttachmentsToUpload(changed.map { it.second }) { chosen ->
+        ui.chooseAttachmentsToUpload(changed.map { it.second }) { chosen ->
             uploadAttachments(chosen.map { changed[it].first })
         }
     }
@@ -1112,10 +1112,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .subscribe({ state ->
                 when (state) {
                     AttachmentLocalState.NOT_DOWNLOADED ->
-                        presenter.makeToastAlert("This file isn't on this device.")
+                        ui.makeToastAlert("This file isn't on this device.")
                     AttachmentLocalState.ON_DEVICE, AttachmentLocalState.OUTDATED ->
                         if (attachmentBase(item) != null) {
-                            presenter.makeToastAlert("No changes to upload.")
+                            ui.makeToastAlert("No changes to upload.")
                         } else {
                             uploadAttachments(listOf(item)) // can't tell; upload as asked
                         }
@@ -1138,7 +1138,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
     fun uploadAttachments(attachments: List<Item>, onDone: (() -> Unit)? = null) {
         if (attachments.isEmpty()) return
         if (isUploading()) {
-            presenter.makeToastAlert("Already uploading attachments.")
+            ui.makeToastAlert("Already uploading attachments.")
             return
         }
         val total = attachments.size
@@ -1146,7 +1146,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .concatMapSingle { (index, attachment) ->
                 val name = attachment.data["filename"] ?: attachment.itemKey
                 Completable.fromAction {
-                    presenter.startUploadingAttachmentProgress(attachment, index + 1, total)
+                    ui.startUploadingAttachmentProgress(attachment, index + 1, total)
                 }.subscribeOn(AndroidSchedulers.mainThread())
                     .andThen(uploadOne(attachment).subscribeOn(Schedulers.io()))
                     .toSingleDefault(AttachmentUploadBatch.Outcome(name))
@@ -1158,19 +1158,19 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .toList()
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ outcomes ->
-                presenter.stopUploadingAttachmentProgress()
+                ui.stopUploadingAttachmentProgress()
                 val summary = AttachmentUploadBatch.summary(outcomes)
                 if (summary.quiet) {
-                    presenter.makeToastAlert(summary.message)
+                    ui.makeToastAlert(summary.message)
                 } else {
-                    presenter.createErrorAlert(summary.title, summary.message, {})
+                    ui.createErrorAlert(summary.title, summary.message, {})
                 }
                 refreshPendingEdits()
                 onDone?.invoke()
             }, { e ->
                 Log.e("zotero", "upload batch failed: $e")
-                presenter.stopUploadingAttachmentProgress()
-                presenter.createErrorAlert("Upload failed", "Details: ${e.message ?: e}", {})
+                ui.stopUploadingAttachmentProgress()
+                ui.createErrorAlert("Upload failed", "Details: ${e.message ?: e}", {})
                 refreshPendingEdits()
                 onDone?.invoke()
             })
@@ -1322,7 +1322,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
         if (syncManager.isSyncing()) {
             Log.e("zotero", "cannot sync groups, still in a sync")
-            presenter.makeToastAlert("Still syncing. Open the group when the sync finishes.")
+            ui.makeToastAlert("Still syncing. Open the group when the sync finishes.")
             openingGroup = null
             return
         }
@@ -1338,11 +1338,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         if (state.isUsingGroup()) {
             usePersonalLibrary()
             navigator.openLibrary(null)
-            presenter.receiveCollections(getCollections())
+            ui.receiveCollections(getCollections())
         } else {
             navigator.openLibrary(null)
         }
-        presenter.redisplayItems()
+        ui.redisplayItems()
     }
 
     fun isSyncing(): Boolean = syncManager.isSyncing()
@@ -1379,7 +1379,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             }
         } catch (e: Exception) {
             Log.e("zotero", "error testing storage. ${e}")
-            presenter.createErrorAlert(
+            ui.createErrorAlert(
                 "Can't use the attachment folder",
                 "The app can't access the folder set in Settings → Attachment folder, so " +
                         "it's back to the default. Choose the folder again in Settings.",
@@ -1470,7 +1470,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .doOnComplete {
                 Log.d(TAG, "opened library ${db.groupID} in ${(System.nanoTime() - start) / 1_000_000} ms")
                 itemSource.invalidate() // the sync may have changed anything
-                presenter.hideBasicSyncAnimation()
+                ui.hideBasicSyncAnimation()
                 showOpenedLibrary(db)
             }
             .andThen(upkeep)
@@ -1478,8 +1478,8 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .doOnComplete { refreshPendingEdits() }
             .onErrorComplete {
                 Log.e(TAG, "opening library ${db.groupID} failed: $it")
-                presenter.createErrorAlert("Couldn't load the library", "Details: ${it.message ?: it}", {})
-                presenter.hideBasicSyncAnimation()
+                ui.createErrorAlert("Couldn't load the library", "Details: ${it.message ?: it}", {})
+                ui.hideBasicSyncAnimation()
                 true
             }
             .doAfterTerminate {
@@ -1506,27 +1506,27 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 if (childKeys(fresh) == before) return@subscribe
                 item.attachments = fresh.attachments
                 item.notes = fresh.notes
-                presenter.showEditedItem(item)
-                if (selectedItem === item) presenter.refreshItemView()
+                ui.showEditedItem(item)
+                if (selectedItem === item) ui.refreshItemView()
             }, { Log.d(TAG, "fetching the children of ${item.itemKey} failed: $it") })
     }
 
     override fun showNewItems(db: ZoteroDB) {
         if (db.groupID != zoteroDB.groupID || !isLoaded()) return
         itemSource.invalidate()
-        presenter.redisplayItems()
+        ui.redisplayItems()
     }
 
     /** Shows library [db], just opened: My Library, the group being opened, or a refresh of the open one. */
     private fun showOpenedLibrary(db: ZoteroDB) {
         if (db.groupID == GroupInfo.NO_GROUP_ID) {
-            presenter.receiveCollections(getCollections())
+            ui.receiveCollections(getCollections())
             if (state.currentCollection == "unset") {
                 val place = preferences.getLibraryPlace() // before "all" overwrites it
-                presenter.setCollection("all")
+                ui.setCollection("all")
                 place?.let { restorePlace(it) }
             } else {
-                presenter.redisplayItems()
+                ui.redisplayItems()
             }
         } else if (openingGroup?.id == db.groupID || state.currentGroup.id == db.groupID) {
             zoteroDBPicker.groupId = db.groupID
@@ -1536,13 +1536,13 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
                 navigator.openLibrary(opening)
             }
             openingGroup = null
-            presenter.receiveCollections(getCollections())
+            ui.receiveCollections(getCollections())
             val restore = openingGroupCollection
             openingGroupCollection = null
             if (restore != null && isPlaceInOpenLibrary(restore)) {
-                presenter.setCollection(restore)
+                ui.setCollection(restore)
             } else {
-                presenter.redisplayItems()
+                ui.redisplayItems()
             }
         }
         // else: a background refresh of a group the user has since left: loaded, not shown
@@ -1558,7 +1558,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         val (groupId, collection) = place
         if (groupId == GroupInfo.NO_GROUP_ID) {
             if (collection != LibraryNavigator.ALL && isPlaceInOpenLibrary(collection)) {
-                presenter.setCollection(collection)
+                ui.setCollection(collection)
             }
             return
         }
@@ -1586,12 +1586,12 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         // check at 2.
         if (states.size <= 2) {
             if (doubleBackToExitPressedOnce) {
-                presenter.finishLibrary()
+                ui.finishLibrary()
                 return
             }
 
             this.doubleBackToExitPressedOnce = true
-            presenter.makeToastAlert("Press Back again to exit.")
+            ui.makeToastAlert("Press Back again to exit.")
             Handler(Looper.getMainLooper()).postDelayed({ doubleBackToExitPressedOnce = false }, 2000)
             return
         }
@@ -1604,10 +1604,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             } else {
                 this.usePersonalLibrary()
             }
-            presenter.receiveCollections(getCollections())
-            presenter.redisplayItems()
+            ui.receiveCollections(getCollections())
+            ui.redisplayItems()
         } else if (oldState.currentCollection != state.currentCollection) {
-            presenter.redisplayItems()
+            ui.redisplayItems()
         } else {
             Log.e("zotero", "error unable to determine state differences!!")
         }
@@ -1628,7 +1628,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         val delete = {
             attachmentStorageManager.deleteAttachment(attachment)
             refreshPendingEdits()
-            presenter.makeToastAlert("Deleted from this device: ${attachment.getTitle()}")
+            ui.makeToastAlert("Deleted from this device: ${attachment.getTitle()}")
         }
         Single.fromCallable {
             editedAttachments.isEdited(attachment)
@@ -1637,7 +1637,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ edited ->
                 if (edited) {
-                    presenter.createYesNoPrompt(
+                    ui.createYesNoPrompt(
                         "Delete your edits?",
                         "This copy has edits that haven't been uploaded. Deleting it loses them.",
                         "Delete", "Keep", delete, {}
@@ -1660,10 +1660,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         // the initial (root) library state is seeded by LibraryNavigator's init.
 
         if (!auth.hasCredentials()) {
-            presenter.createErrorAlert(
+            ui.createErrorAlert(
                 "Sign in again",
                 "The stored Zotero login is no longer valid."
-            ) { presenter.finishLibrary() }
+            ) { ui.finishLibrary() }
             auth.destroyCredentials()
             zoteroDB.clearItemsVersion()
         }
@@ -1673,25 +1673,25 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
 
     override fun startSyncAnimation(useSmallAnimation: Boolean) {
         if (useSmallAnimation) {
-            presenter.showBasicSyncAnimation()
+            ui.showBasicSyncAnimation()
         } else {
-            presenter.showLibraryLoadingAnimation()
+            ui.showLibraryLoadingAnimation()
         }
     }
 
     override fun stopSyncAnimation() {
-        presenter.hideLibraryLoadingAnimation()
+        ui.hideLibraryLoadingAnimation()
     }
 
     override fun createErrorAlert(title: String, message: String, onClick: () -> Unit) {
-        presenter.createErrorAlert(title, message, onClick)
+        ui.createErrorAlert(title, message, onClick)
     }
 
     override fun setSyncProgress(progress: Int, total: Int) {
-        presenter.updateLibraryRefreshProgress(progress, total, "")
+        ui.updateLibraryRefreshProgress(progress, total, "")
     }
 
     override fun makeToastAlert(message: String) {
-        presenter.makeToastAlert(message)
+        ui.makeToastAlert(message)
     }
 }
