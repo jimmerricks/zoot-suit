@@ -601,18 +601,6 @@ class LibraryActivity : AppCompatActivity(),
         presenter.modifyNote(note)
     }
 
-    override fun shareText(shareText: String) {
-        /* Used to share zotero items. */
-
-        val sendIntent: Intent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, shareText)
-            type = "text/plain"
-        }
-        val shareIntent = Intent.createChooser(sendIntent, null)
-        startActivity(shareIntent)
-    }
-
     override fun onTagAdd(item: Item, tag: String) = presenter.editTag(item, tag, add = true)
 
     override fun onTagRemove(item: Item, tag: String) = presenter.editTag(item, tag, add = false)

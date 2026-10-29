@@ -102,13 +102,6 @@
         android:paddingEnd="12dp"
         android:paddingBottom="4dp">
 
-        <Button
-            android:id="@+id/button_item_share"
-            style="?android:attr/buttonBarNeutralButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Share" />
-
         <Space
             android:layout_width="0dp"
             android:layout_height="0dp"

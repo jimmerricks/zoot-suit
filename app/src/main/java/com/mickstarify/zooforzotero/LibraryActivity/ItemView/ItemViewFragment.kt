@@ -35,7 +35,6 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
  */
 class ItemViewFragment : DialogFragment(),
     NoteInteractionListener,
-    onShareItemListener,
     ItemTagEntry.OnTagEntryInteractionListener {
 
     lateinit var libraryViewModel: LibraryListViewModel
@@ -50,17 +49,6 @@ class ItemViewFragment : DialogFragment(),
         val theme = TypedValue()
         requireContext().theme.resolveAttribute(android.R.attr.alertDialogTheme, theme, true)
         setStyle(STYLE_NO_TITLE, theme.resourceId)
-    }
-
-    private fun showShareItemDialog() {
-        val item = libraryViewModel.getOnItemClicked().value
-        if (item == null) {
-            Toast.makeText(requireContext(), "The item is still loading.", Toast.LENGTH_SHORT).show()
-        } else {
-            ShareItemDialog(item).show(context, this)
-        }
-
-
     }
 
     override fun editNote(note: Note) {
@@ -137,9 +125,6 @@ class ItemViewFragment : DialogFragment(),
 
         requireView().findViewById<Button>(R.id.button_item_add_note).setOnClickListener {
             showCreateNoteDialog()
-        }
-        requireView().findViewById<Button>(R.id.button_item_share).setOnClickListener {
-            showShareItemDialog()
         }
         requireView().findViewById<Button>(R.id.button_item_close).setOnClickListener {
             dismiss()
@@ -327,7 +312,6 @@ class ItemViewFragment : DialogFragment(),
         fun onNoteCreate(note: Note)
         fun onNoteEdit(note: Note)
         fun onNoteDelete(note: Note)
-        fun shareText(shareText: String)
         fun onTagAdd(item: Item, tag: String)
         fun onTagRemove(item: Item, tag: String)
 
@@ -343,10 +327,6 @@ class ItemViewFragment : DialogFragment(),
         @JvmStatic
         fun newInstance() =
             ItemViewFragment()
-    }
-
-    override fun shareItem(shareText: String) {
-        listener?.shareText(shareText)
     }
 
     override fun tagRemovePressed(tag: String) {
