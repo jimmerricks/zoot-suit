@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Removed:
+- The Attachment Manager (overflow menu). Its "Download all attachments" downloaded
+  every file in My Library, stopped when you left the screen, and could report success
+  for downloads that had failed; to see which items have their files on the device, use
+  the "on device" filter. Downloading a whole collection or filter at once may come back
+  later in a different form.
+
 ## 0.2.2
 
 Updates 0.2.1 in place (same app id and signing key).

@@ -161,7 +161,8 @@ class ZoteroDB(
     /**
      * Whether the library is open for the library screen: its collections and the
      * attachment records are loaded. Its items stay in the database (RoomItemSource);
-     * [isPopulated] says whether they are in memory too (the Attachment Manager loads them).
+     * [isPopulated] says whether they are in memory too (only ItemSourceEquivalenceTest
+     * loads them, for InMemoryItemSource).
      */
     fun isOpen(): Boolean = collections != null && attachmentInfo != null
 

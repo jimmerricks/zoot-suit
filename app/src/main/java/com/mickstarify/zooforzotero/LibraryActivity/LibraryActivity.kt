@@ -38,7 +38,6 @@ import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.mickstarify.zooforzotero.AttachmentManager.AttachmentManager
 import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemAttachmentEntry
 import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemViewFragment
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListener
@@ -281,11 +280,6 @@ class LibraryActivity : AppCompatActivity(),
 
             R.id.settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
-                startActivity(intent)
-            }
-
-            R.id.attachment_manager -> {
-                val intent = Intent(this, AttachmentManager::class.java)
                 startActivity(intent)
             }
 

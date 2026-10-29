@@ -23,8 +23,6 @@
     <string name="library_header">Library</string>
     <string name="title_activity_web_davsetup">WebDAV</string>
     <string name="setting_sync_attachments_location">Attachment folder</string>
-    <string name="title_activity_attachment_manager">Attachment Manager</string>
-    <string name="attachment_manager">Attachment Manager</string>
     <string name="filter">Filter</string>
     <string name="force_resync">Re-download library</string>
     <string name="app_frontpage_disclaimer">Zoot Suit syncs with your zotero.org account.</string>
