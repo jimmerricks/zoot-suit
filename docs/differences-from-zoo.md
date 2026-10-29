@@ -13,10 +13,14 @@ forked at v4.0.0. The main differences:
 | Search | Every field, on each keystroke | Chosen fields (title, creators, year by default), indexed; runs on Search |
 | Filtering | One tag at a time | Several tags plus attachment and edit filters |
 | Tags | Read only | Add and remove, offline too; uploaded at the next sync |
+| New notes | Online only, uploaded at once | Offline too; uploaded at the next sync |
 | Large libraries | Whole library held in memory | List, sort and search read from the database |
 | Sidebar | Top-level collections; groups in a flat list | Collection tree; groups with their own collections |
 | Rotation and restart | Reloads the library; restarts in My Library | Keeps your place |
+| Theme | Follows the system | Settings → Theme: auto, light or dark (dark on Android 7–9 too) |
 | Adding items | Zotero Save, ISBN scanner, share target | Removed |
+| Downloading all attachments | Attachment Manager | Removed; the "on device" filter shows which files are downloaded |
+| Sharing an item | Share button in the item view | Removed |
 | Signing out | Clear the app's data | Settings → Sign out |
 
 The commit history lists every change.
