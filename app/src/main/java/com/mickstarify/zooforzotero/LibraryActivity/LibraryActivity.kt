@@ -44,6 +44,7 @@ import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListene
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteView
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.AttachmentStates
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
+import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryLoadingScreenViewModel
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.SettingsActivity
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
@@ -61,7 +62,7 @@ class LibraryActivity : AppCompatActivity(),
     NoteInteractionListener,
     LibraryScreen {
 
-    lateinit var presenter: LibraryActivityPresenter
+    private lateinit var viewModel: LibraryViewModel
     private var itemView: ItemViewFragment? = null
 
     lateinit var navController: NavController
@@ -95,7 +96,7 @@ class LibraryActivity : AppCompatActivity(),
                 if (drawer.isDrawerOpen(GravityCompat.START)) {
                     drawer.closeDrawer(GravityCompat.START)
                 } else {
-                    presenter.backButtonPressed()
+                    viewModel.backButtonPressed()
                 }
             }
         })
@@ -111,9 +112,12 @@ class LibraryActivity : AppCompatActivity(),
         this.setupActionbar()
 
         initUI()
-        presenter = ViewModelProvider(this).get(LibraryViewModel::class.java).presenter
-        presenter.commands.attach(this, this)
-        presenter.attach(this)
+        viewModel = ViewModelProvider(this).get(LibraryViewModel::class.java)
+        viewModel.commands.attach(this, this)
+        viewModel.attach(
+            libraryListViewModel,
+            ViewModelProvider(this).get(LibraryLoadingScreenViewModel::class.java)
+        )
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
@@ -131,12 +135,12 @@ class LibraryActivity : AppCompatActivity(),
             }
         }
 
-        // the presenter's state outlives this activity; a recreated one just renders it
-        presenter.title.observe(this) { supportActionBar?.title = it }
-        presenter.subtitle.observe(this) { supportActionBar?.subtitle = it }
-        presenter.sidebar.observe(this) { showSidebar(it) }
-        presenter.pendingEdits.observe(this) { showPendingEdits(it) }
-        presenter.screen.observe(this) {
+        // LibraryViewModel's state outlives this activity; a recreated one just renders it
+        viewModel.title.observe(this) { supportActionBar?.title = it }
+        viewModel.subtitle.observe(this) { supportActionBar?.subtitle = it }
+        viewModel.sidebar.observe(this) { showSidebar(it) }
+        viewModel.pendingEdits.observe(this) { showPendingEdits(it) }
+        viewModel.screen.observe(this) {
             showScreen(
                 when (it!!) {
                     AvailableScreens.LIBRARY_LOADING_SCREEN -> R.id.libraryLoadingScreen
@@ -228,33 +232,33 @@ class LibraryActivity : AppCompatActivity(),
 
     override fun onLibrarySelected(groupId: Int) {
         closeSidebar()
-        presenter.openLibrary(groupId)
+        viewModel.openLibrary(groupId)
     }
 
     override fun onGroupsToggled() {
-        presenter.toggleSidebarGroups()
+        viewModel.toggleSidebarGroups()
     }
 
     override fun onCollectionSelected(key: String) {
         closeSidebar()
-        presenter.setCollection(key)
+        viewModel.setCollection(key)
     }
 
     override fun onCollectionToggled(key: String) {
-        presenter.toggleSidebarCollection(key)
+        viewModel.toggleSidebarCollection(key)
     }
 
     override fun onViewSelected(view: SidebarView) {
         closeSidebar()
         when (view) {
-            SidebarView.UNFILED -> presenter.setCollection(view.collectionId)
-            SidebarView.MY_PUBLICATIONS -> presenter.openMyPublications()
-            SidebarView.TRASH -> presenter.openTrash()
+            SidebarView.UNFILED -> viewModel.setCollection(view.collectionId)
+            SidebarView.MY_PUBLICATIONS -> viewModel.openMyPublications()
+            SidebarView.TRASH -> viewModel.openTrash()
         }
     }
 
     fun showFilterMenu() {
-        LibrarySortDialog(this, presenter.currentLibraryId()) { presenter.redisplayItems() }.show()
+        LibrarySortDialog(this, viewModel.currentLibraryId()) { viewModel.redisplayItems() }.show()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -268,25 +272,25 @@ class LibraryActivity : AppCompatActivity(),
             }
 
             R.id.search -> {
-                presenter.warmSearchIndex()
-                LibrarySearchDialog(this, presenter.currentSearch()) { presenter.search(it) }.show()
+                viewModel.warmSearchIndex()
+                LibrarySearchDialog(this, viewModel.currentSearch()) { viewModel.search(it) }.show()
             }
 
             R.id.library_filter -> {
-                presenter.loadTags { tags ->
+                viewModel.loadTags { tags ->
                     if (isFinishing || isDestroyed) return@loadTags
-                    LibraryFilterDialog(this, presenter.getLibraryFilter(), tags) {
-                        presenter.setLibraryFilter(it)
+                    LibraryFilterDialog(this, viewModel.getLibraryFilter(), tags) {
+                        viewModel.setLibraryFilter(it)
                     }.show()
                 }
             }
 
             R.id.pending_edits -> {
-                presenter.requestLibraryRefresh()
+                viewModel.requestLibraryRefresh()
             }
 
             R.id.upload_edited_attachments -> {
-                presenter.uploadEditedAttachments()
+                viewModel.uploadEditedAttachments()
             }
 
             R.id.settings -> {
@@ -304,7 +308,7 @@ class LibraryActivity : AppCompatActivity(),
                             "all of it again from Zotero. Downloaded files stay.\n\n" +
                             "Edits waiting to sync are lost: new notes and tag changes are " +
                             "deleted, and edited files are no longer seen as edited. Sync first.",
-                    "Re-download", "Cancel", { presenter.requestForceResync() }, {}
+                    "Re-download", "Cancel", { viewModel.requestForceResync() }, {}
                 )
             }
 
@@ -431,7 +435,7 @@ class LibraryActivity : AppCompatActivity(),
             progressDialog = ProgressDialog(this)
             progressDialog?.setTitle("Downloading")
             progressDialog?.setButton("Cancel") { dialogInterface, _ ->
-                presenter.cancelAttachmentDownload()
+                viewModel.cancelAttachmentDownload()
             }
         }
         if (true) { // if (total == 0) {
@@ -519,12 +523,12 @@ class LibraryActivity : AppCompatActivity(),
 
     /* Is called by the fragment when an attachment is openned by the user. */
     override fun openAttachmentFileListener(item: Item) {
-        presenter.openAttachment(item)
+        viewModel.openAttachment(item)
     }
 
 
     override fun describeAttachment(item: Item, onState: (AttachmentLocalState) -> Unit) {
-        presenter.describeAttachment(item, onState)
+        viewModel.describeAttachment(item, onState)
     }
 
     /**
@@ -533,10 +537,10 @@ class LibraryActivity : AppCompatActivity(),
      */
     override fun showAttachmentMenu(item: Item) {
         val actions = listOf<Pair<String, () -> Unit>>(
-            "Open" to { presenter.openAttachment(item) },
-            "Download" to { presenter.downloadAttachmentOnly(item) },
-            "Upload changes" to { presenter.uploadChanges(item) },
-            "Delete from this device" to { presenter.deleteLocalAttachment(item) },
+            "Open" to { viewModel.openAttachment(item) },
+            "Download" to { viewModel.downloadAttachmentOnly(item) },
+            "Upload changes" to { viewModel.uploadChanges(item) },
+            "Delete from this device" to { viewModel.deleteLocalAttachment(item) },
         )
         try {
             AlertDialog.Builder(this)
@@ -550,7 +554,7 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     override fun openLinkedAttachmentListener(item: Item) {
-        presenter.openAttachment(item)
+        viewModel.openAttachment(item)
     }
 
 
@@ -575,7 +579,7 @@ class LibraryActivity : AppCompatActivity(),
 
     override fun onPostResume() {
         super.onPostResume()
-        presenter.onResume()
+        viewModel.onResume()
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -588,34 +592,34 @@ class LibraryActivity : AppCompatActivity(),
         Log.d("zotero", "onResume called.")
     }
 
-    override fun onNoteAdd(item: Item, text: String) = presenter.addNote(item, text)
+    override fun onNoteAdd(item: Item, text: String) = viewModel.addNote(item, text)
 
     override fun onNoteEdit(note: Note) {
-        presenter.modifyNote(note)
+        viewModel.modifyNote(note)
     }
 
     override fun onNoteDelete(note: Note) {
-        presenter.deleteNote(note)
+        viewModel.deleteNote(note)
     }
 
     override fun deleteNote(note: Note) {
-        presenter.deleteNote(note)
+        viewModel.deleteNote(note)
     }
 
     override fun editNote(note: Note) {
-        presenter.modifyNote(note)
+        viewModel.modifyNote(note)
     }
 
-    override fun onTagAdd(item: Item, tag: String) = presenter.editTag(item, tag, add = true)
+    override fun onTagAdd(item: Item, tag: String) = viewModel.editTag(item, tag, add = true)
 
-    override fun onTagRemove(item: Item, tag: String) = presenter.editTag(item, tag, add = false)
+    override fun onTagRemove(item: Item, tag: String) = viewModel.editTag(item, tag, add = false)
 
-    override fun canEditItems(): Boolean = presenter.canEditItems()
+    override fun canEditItems(): Boolean = viewModel.canEditItems()
 
     override fun libraryTags(onResult: (List<String>) -> Unit) =
-        presenter.loadTags { tags -> onResult(tags.map { it.first }) }
+        viewModel.loadTags { tags -> onResult(tags.map { it.first }) }
 
-    override fun hasPendingEdits(item: Item): Boolean = presenter.hasPendingEdits(item)
+    override fun hasPendingEdits(item: Item): Boolean = viewModel.hasPendingEdits(item)
 
     // this  lets keyboard close when clicked in backgroud
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {

@@ -146,7 +146,7 @@ class PreferenceManager @Inject constructor(context: Context) {
 
     /** Off by default: group sync needs an API key with group access, and a key
      *  without it gets HTTP 403 on every group request. Applied at once on returning
-     *  from Settings (LibraryActivityPresenter.setGroupLibrariesEnabled). */
+     *  from Settings (LibraryViewModel.setGroupLibrariesEnabled). */
     fun isGroupLibrarySyncEnabled(): Boolean {
         return sharedPreferences.getBoolean("group_library_sync_enabled", false)
     }
