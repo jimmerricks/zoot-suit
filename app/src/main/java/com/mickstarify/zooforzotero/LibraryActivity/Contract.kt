@@ -72,8 +72,6 @@ interface Contract {
         fun refreshLibrary(useSmallLoadingAnimation: Boolean = false)
         fun getCollections(): List<Collection>
         fun isLoaded(): Boolean
-        fun modifyNote(note: Note)
-        fun deleteNote(note: Note)
         fun startGroupSync(group: GroupInfo, refresh: Boolean = false)
         fun usePersonalLibrary()
         fun getGroupById(groupId: Int): GroupInfo?

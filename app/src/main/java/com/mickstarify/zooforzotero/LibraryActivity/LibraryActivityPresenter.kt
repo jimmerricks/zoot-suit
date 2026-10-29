@@ -120,11 +120,11 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun modifyNote(note: Note) {
-        model.modifyNote(note)
+        model.edits.modifyNote(note)
     }
 
     override fun deleteNote(note: Note) {
-        model.deleteNote(note)
+        model.edits.deleteNote(note)
     }
 
     override fun redisplayItems() {
@@ -319,9 +319,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         }
     }
 
-    fun editTag(item: Item, tag: String, add: Boolean) = model.editTag(item, tag, add)
+    fun editTag(item: Item, tag: String, add: Boolean) = model.edits.editTag(item, tag, add)
 
-    fun addNote(item: Item, text: String) = model.addNote(item, text)
+    fun addNote(item: Item, text: String) = model.edits.addNote(item, text)
 
     fun hasPendingEdits(item: Item) = model.hasPendingEdits(item)
 
