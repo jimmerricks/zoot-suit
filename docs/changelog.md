@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.1
+
+Updates 0.2.0 in place (same app id and signing key).
 
 Faster on large libraries:
 - The first sync downloads up to four pages of items at once, Zotero's documented

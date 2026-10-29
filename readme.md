@@ -34,8 +34,8 @@ account (OAuth) has not been tested to the end yet.
 4. Sign in with your Zotero account or an API key, then set up WebDAV in Settings if
    you use it.
 
-Coming from 0.1.0: 0.2.0 has a new app id and installs as a separate app. Sync your
-edits in 0.1.0 first, then uninstall it once 0.2.0 is set up.
+Coming from 0.1.0: 0.2.0 and later have a new app id and install as a separate app.
+Sync your edits in 0.1.0 first, then uninstall it once the new one is set up.
 
 To edit PDFs you need a PDF app that saves changes back to the file it opened.
 
@@ -60,8 +60,9 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
 - Works on Android 7 with Let's Encrypt servers (the root certificate is bundled).
 - Made for large libraries (tested with 18,000 items): the list, sorting and search
   read from the database page by page instead of holding the library in memory.
-- A first sync of a large library keeps the display on while it downloads, and picks up
-  where it stopped if the device slept anyway.
+- A first sync of a large library downloads four pages at a time, opens the library
+  once the top-level items are in and fetches attachment details and notes behind it.
+  It keeps the display on, and picks up where it stopped if the device slept anyway.
 
 ## Known limitations
 

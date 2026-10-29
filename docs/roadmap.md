@@ -73,6 +73,7 @@ For the library screen's search, filter and sort:
 - A "whole library" option in search (it currently narrows the list on screen).
 - Back clearing an active search first.
 
-Large libraries: the list, sort and search already run in the database (0.2.0). Left:
+Large libraries: the list, sort and search run in the database (0.2.0); a first sync
+fetches four pages at once and opens the library before attachments and notes (0.2.1). Left:
 the edit check at each start still looks at every downloaded file once (about 1 ms
 each), and R8 minification would make the APK smaller.
