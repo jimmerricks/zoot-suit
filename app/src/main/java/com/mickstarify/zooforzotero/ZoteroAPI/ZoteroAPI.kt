@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.google.gson.Gson
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.mickstarify.zooforzotero.BuildConfig
 import com.mickstarify.zooforzotero.PreferenceManager
@@ -428,6 +429,22 @@ class ZoteroAPI(
             val root = Gson().fromJson(response.body()!!.string(), JsonObject::class.java)
             Pair(root.get("version").asInt, root.getAsJsonObject("data"))
         })
+    }
+
+    /**
+     * Creates [item] (a "data" object with its own "key" and "version" 0) in My Library.
+     * Zotero answers 200 whether or not it was created: null if it was, else why not
+     * (WriteResponse.Failure; 412 means the key exists already). Blocking.
+     */
+    fun createItem(item: JsonObject): WriteResponse.Failure? {
+        val response = service.createItems(userID, JsonArray().apply { add(item) }).blockingFirst()
+        when (response.code()) {
+            200 -> {}
+            403 -> throw WriteAccessDeniedException("This app's API key may only read the library.")
+            409 -> throw ItemLockedException("The library is locked.")
+            else -> throw Exception("Zotero server gave back code ${response.code()} creating an item")
+        }
+        return WriteResponse.firstFailure(response.body()?.string() ?: "")
     }
 
     /**
