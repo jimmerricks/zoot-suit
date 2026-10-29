@@ -1,7 +1,9 @@
 package com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits
 
+import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ItemData
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.ItemInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ItemTag
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.PendingItemEdit
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
@@ -37,6 +39,7 @@ class ItemEditStore(private val database: ZoteroDatabase) {
             ItemEditKind.ADD_TAG -> dao.putTag(ItemTag(key, edit.name))
             ItemEditKind.REMOVE_TAG -> dao.deleteTag(key, edit.name)
             ItemEditKind.SET_FIELD -> writeField(key, edit.name, edit.value ?: "")
+            ItemEditKind.CREATE_NOTE -> throw IllegalArgumentException("a new note is made by createNote")
         }
         database.fillKeys(listOf(key)) // the title, date or tags sorted and searched by may have changed
         val applied = listOf(edit)
@@ -46,6 +49,75 @@ class ItemEditStore(private val database: ZoteroDatabase) {
             item.tags = ItemEdits.applyToTags(tags, applied).map { ItemTag(key, it) }
         }
         true
+    }
+
+    /**
+     * Adds a note with [html] to [parent] (of library [group]): stored as an item at once,
+     * so it shows like any other note, and uploaded with the other edits. Returns it, also
+     * added to [parent]'s notes.
+     */
+    fun createNote(group: Int, parent: Item, html: String): Note = database.db.runInTransaction<Note> {
+        var key = ItemEdits.newItemKey()
+        while (dao.hasItem(key)) key = ItemEdits.newItemKey()
+        val edit = ItemEdit(ItemEditKind.CREATE_NOTE, parent.itemKey, html)
+        dao.insert(PendingItemEdit.of(edit, key, group))
+        writeNote(group, key, edit)
+        Note().apply {
+            this.parent = parent.itemKey
+            this.key = key
+            this.note = html
+            this.version = 0
+            this.tags = emptyList()
+        }.also { parent.notes.add(it) }
+    }
+
+    /** What [editNewNote] or [deleteNewNote] did. */
+    enum class NewNoteChange {
+        /** Done, on this device only: Zotero doesn't have the note yet. */
+        DONE,
+        /** Not a new note: Zotero has it, so the change goes to Zotero. */
+        NOT_NEW,
+        /** Being uploaded right now; try again once the sync is done. */
+        UPLOADING,
+    }
+
+    /** Gives [noteKey], if it is a note made here and not uploaded yet, the text [html]. */
+    fun editNewNote(group: Int, noteKey: String, html: String): NewNoteChange =
+        database.db.runInTransaction<NewNoteChange> {
+            val creation = newNoteEdit(group, noteKey) ?: return@runInTransaction NewNoteChange.NOT_NEW
+            if (noteKey in uploading) return@runInTransaction NewNoteChange.UPLOADING
+            dao.setValue(creation.id, html)
+            writeField(noteKey, "note", html)
+            database.fillKeys(listOf(noteKey)) // searched by its text
+            NewNoteChange.DONE
+        }
+
+    /** Deletes [noteKey], if it is a note made here and not uploaded yet: Zotero never gets it. */
+    fun deleteNewNote(group: Int, noteKey: String): NewNoteChange =
+        database.db.runInTransaction<NewNoteChange> {
+            if (newNoteEdit(group, noteKey) == null) return@runInTransaction NewNoteChange.NOT_NEW
+            if (noteKey in uploading) return@runInTransaction NewNoteChange.UPLOADING
+            dao.delete(dao.forItem(group, noteKey).map { it.id })
+            dao.deleteItem(noteKey)
+            NewNoteChange.DONE
+        }
+
+    private fun newNoteEdit(group: Int, noteKey: String): ItemEdit? =
+        pendingFor(group, noteKey).firstOrNull { it.kind == ItemEditKind.CREATE_NOTE }
+
+    /**
+     * A new note as an item, the way a sync would store it from Zotero (version 0: none
+     * yet). Through this DAO, not ZoteroDatabase.writeItem: that one's Rx inserts run on
+     * Room's own thread and would wait forever for the transaction this runs in.
+     */
+    private fun writeNote(group: Int, noteKey: String, creation: ItemEdit) {
+        dao.putItem(ItemInfo(noteKey, group, 0, false, parent = creation.name, itemType = "note"))
+        val data = mapOf(
+            "key" to noteKey, "itemType" to "note",
+            "parentItem" to creation.name, "note" to (creation.value ?: ""),
+        )
+        for ((name, value) in data) writeField(noteKey, name, value)
+        database.fillKeys(listOf(noteKey)) // searched by its text
     }
 
     /** The pending edits of [group]'s items, by item key, in the order they were made. */
@@ -60,9 +132,23 @@ class ItemEditStore(private val database: ZoteroDatabase) {
     /** Keys of [group]'s items with edits waiting to be uploaded. */
     fun pendingItemKeys(group: Int): Set<String> = pending(group).keys
 
+    /**
+     * Keys of the items to show as having edits to sync: [pendingItemKeys], with a new
+     * note's parent in place of the note, which isn't listed on its own.
+     */
+    fun editedItemKeys(group: Int): Set<String> = pending(group).map { (key, edits) ->
+        edits.firstOrNull { it.kind == ItemEditKind.CREATE_NOTE }?.name ?: key
+    }.toSet()
+
     /** Forgets edits: uploaded, or of an item that is gone. */
     fun remove(edits: List<ItemEdit>) {
         if (edits.isNotEmpty()) dao.delete(edits.map { it.id })
+    }
+
+    /** Forgets new note [noteKey] and its [edits]: its item is gone, so it can't be uploaded. */
+    fun dropNewNote(noteKey: String, edits: List<ItemEdit>) = database.db.runInTransaction {
+        remove(edits)
+        dao.deleteItem(noteKey)
     }
 
     /**
@@ -87,6 +173,12 @@ class ItemEditStore(private val database: ZoteroDatabase) {
      */
     fun reapply(group: Int) = database.db.runInTransaction {
         for ((key, edits) in pending(group)) {
+            val creation = edits.firstOrNull { it.kind == ItemEditKind.CREATE_NOTE }
+            if (creation != null) {
+                // only a sync that cleared the library removes it: Zotero doesn't have it
+                if (!dao.hasItem(key)) writeNote(group, key, creation)
+                continue
+            }
             if (!dao.hasItem(key)) continue // gone; the upload finds out and drops the edits
             val tags = dao.tagsOf(key)
             val wantedTags = ItemEdits.applyToTags(tags, edits)

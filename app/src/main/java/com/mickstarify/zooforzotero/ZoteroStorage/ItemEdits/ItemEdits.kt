@@ -14,6 +14,12 @@ enum class ItemEditKind {
 
     /** Sets a field of the item's data ("title", "date", ...); "" clears it. */
     SET_FIELD,
+
+    /**
+     * Creates a child note: the edit's item is the note itself, under a key made on this
+     * device ([ItemEdits.newItemKey]); name is the parent's key, value the note's HTML.
+     */
+    CREATE_NOTE,
 }
 
 /**
@@ -23,8 +29,8 @@ enum class ItemEditKind {
  * meantime survive, and what this device doesn't store (a tag's type, automatic or manual)
  * is kept as Zotero has it.
  *
- * @param name the tag, or the field's name
- * @param value a field's new value
+ * @param name the tag, the field's name, or a new note's parent
+ * @param value a field's new value, or a new note's HTML
  * @param oldValue a field's value before this device first changed it; a different value
  *   in Zotero at upload means it was changed elsewhere too (a conflict)
  * @param id the PendingItemEdit row; 0 for an edit not stored yet
@@ -72,6 +78,7 @@ object ItemEdits {
                 else -> Recording(insert = edit)
             }
         }
+        ItemEditKind.CREATE_NOTE -> Recording(insert = edit)
         ItemEditKind.SET_FIELD -> {
             val current = fields[edit.name] ?: ""
             val value = edit.value ?: ""
@@ -146,6 +153,45 @@ object ItemEdits {
             }
         }
         return Patch(body, conflicts)
+    }
+
+    /** The characters of a Zotero object key: digits and capitals without 0, 1 and O. */
+    private const val KEY_CHARS = "23456789ABCDEFGHIJKLMNPQRSTUVWXYZ"
+
+    /**
+     * A key for an item made on this device, as Zotero's own clients make them: eight
+     * random [KEY_CHARS]. Zotero takes it as the item's key, so an upload that is retried
+     * can't create the item twice.
+     */
+    fun newItemKey(random: kotlin.random.Random = kotlin.random.Random.Default): String =
+        String(CharArray(8) { KEY_CHARS[random.nextInt(KEY_CHARS.length)] })
+
+    /**
+     * A note typed as plain text, as the HTML Zotero stores notes in: a paragraph for each
+     * run of lines between blank lines, its lines kept apart by line breaks. Null if blank.
+     */
+    fun noteHtml(text: String): String? {
+        val paragraphs = text.trim().split(Regex("\\n\\s*\\n"))
+            .map { it.trim() }.filter { it.isNotEmpty() }
+        if (paragraphs.isEmpty()) return null
+        return paragraphs.joinToString("") { p ->
+            "<p>" + p.lines().joinToString("<br>") { escapeHtml(it.trim()) } + "</p>"
+        }
+    }
+
+    private fun escapeHtml(s: String) =
+        s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+
+    /** What creates a [ItemEditKind.CREATE_NOTE] edit's note in Zotero (POST <prefix>/items). */
+    fun newNoteJson(noteKey: String, edit: ItemEdit): JsonObject = JsonObject().apply {
+        addProperty("key", noteKey)
+        addProperty("version", 0) // create, never overwrite
+        addProperty("itemType", "note")
+        addProperty("parentItem", edit.name)
+        addProperty("note", edit.value ?: "")
+        add("tags", JsonArray())
+        add("collections", JsonArray())
+        add("relations", JsonObject())
     }
 
     private fun tagName(tag: JsonObject): String? = tag.get("tag")?.takeUnless { it.isJsonNull }?.asString

@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import com.google.gson.Gson
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdit
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind.ADD_TAG
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind.CREATE_NOTE
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind.REMOVE_TAG
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind.SET_FIELD
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
@@ -146,5 +147,34 @@ class ItemEditsTest {
     @Test
     fun `an item without tags in Zotero gets the added one`() {
         assertEquals(data("""{"tags":[{"tag":"t"}]}"""), ItemEdits.buildPatch(data("{}"), listOf(add("t"))).body)
+    }
+
+    // new notes
+
+    @Test
+    fun `a new item key is eight of Zotero's key characters`() {
+        repeat(100) { assertTrue(ItemEdits.newItemKey().matches(Regex("[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}"))) }
+    }
+
+    @Test
+    fun `a typed note becomes paragraphs with line breaks, escaped`() {
+        assertEquals("<p>one</p>", ItemEdits.noteHtml("  one \n"))
+        assertEquals("<p>a<br>b</p><p>c &amp; &lt;d&gt;</p>", ItemEdits.noteHtml("a\n b\n\n \nc & <d>"))
+        assertNull(ItemEdits.noteHtml(" \n\n "))
+    }
+
+    @Test
+    fun `a new note is always recorded`() {
+        val edit = ItemEdit(CREATE_NOTE, "PARENT22", "<p>x</p>")
+        assertEquals(ItemEdits.Recording(insert = edit), ItemEdits.record(emptyList(), edit, emptyList(), emptyMap()))
+    }
+
+    @Test
+    fun `a new note is created under its own key at version 0`() {
+        val json = ItemEdits.newNoteJson("NOTE2345", ItemEdit(CREATE_NOTE, "PARENT22", "<p>x</p>"))
+        assertEquals(
+            data("""{"key":"NOTE2345","version":0,"itemType":"note","parentItem":"PARENT22","note":"<p>x</p>","tags":[],"collections":[],"relations":{}}"""),
+            json
+        )
     }
 }

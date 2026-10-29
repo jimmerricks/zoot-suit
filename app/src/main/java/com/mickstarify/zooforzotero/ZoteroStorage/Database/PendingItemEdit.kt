@@ -56,8 +56,18 @@ interface PendingItemEditDao {
     @Query("DELETE FROM PendingItemEdit WHERE id IN (:ids)")
     fun delete(ids: List<Long>)
 
+    @Query("UPDATE PendingItemEdit SET value = :value WHERE id = :id")
+    fun setValue(id: Long, value: String)
+
     @Query("SELECT COUNT(*) != 0 FROM ItemInfo WHERE itemKey = :itemKey")
     fun hasItem(itemKey: String): Boolean
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun putItem(item: ItemInfo)
+
+    /** With its fields, tags and the rest (foreign keys cascade). */
+    @Query("DELETE FROM ItemInfo WHERE itemKey = :itemKey")
+    fun deleteItem(itemKey: String)
 
     @Query("SELECT tag FROM ItemTags WHERE parent = :itemKey")
     fun tagsOf(itemKey: String): List<String>

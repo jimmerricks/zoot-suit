@@ -11,6 +11,7 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
  * Uploads the metadata edits of My Library's items, one item at a time: fetches the item
  * as Zotero has it, replays the edits onto it (ItemEdits.buildPatch) and PATCHes the result
  * against that version. If the item changes in Zotero in between, it is fetched again.
+ * A note made on this device is created in Zotero under its own key instead.
  * Edits that went up, or whose item is gone, are forgotten; the rest stay for the next
  * sync. Offline, it stops at the first item. Blocking; call off the main thread.
  */
@@ -21,12 +22,14 @@ class ItemEditUploader(private val api: ZoteroAPI, private val store: ItemEditSt
         val uploaded: Int = 0,
         /** Items removed from Zotero since they were edited here; their edits are dropped. */
         val gone: Int = 0,
+        /** New notes whose item was removed from Zotero before they went up; dropped. */
+        val orphanedNotes: Int = 0,
         /** Items with a field changed both here and in Zotero; those edits stay. */
         val conflicts: Int = 0,
         val failures: List<Throwable> = emptyList(),
         val offline: Boolean = false,
     ) {
-        val hasProblems get() = gone > 0 || conflicts > 0 || failures.isNotEmpty()
+        val hasProblems get() = gone > 0 || orphanedNotes > 0 || conflicts > 0 || failures.isNotEmpty()
     }
 
     fun uploadAll(): Result {
@@ -35,6 +38,17 @@ class ItemEditUploader(private val api: ZoteroAPI, private val store: ItemEditSt
             val edits = store.beginUpload(GroupInfo.NO_GROUP_ID, key)
             try {
                 if (edits.isEmpty()) continue // undone since the list was read
+                val creation = edits.firstOrNull { it.kind == ItemEditKind.CREATE_NOTE }
+                if (creation != null) {
+                    if (createNote(key, creation)) {
+                        store.remove(edits)
+                        result = result.copy(uploaded = result.uploaded + 1)
+                    } else {
+                        store.dropNewNote(key, edits)
+                        result = result.copy(orphanedNotes = result.orphanedNotes + 1)
+                    }
+                    continue
+                }
                 val conflicts = upload(key, edits)
                 result = if (conflicts) result.copy(conflicts = result.conflicts + 1)
                 else result.copy(uploaded = result.uploaded + 1)
@@ -50,6 +64,26 @@ class ItemEditUploader(private val api: ZoteroAPI, private val store: ItemEditSt
             }
         }
         return result
+    }
+
+    /**
+     * Creates the note [noteKey] in Zotero; true if it is there now (created, or by an
+     * earlier attempt whose answer was lost: 412, the key exists), false if its parent
+     * was removed from Zotero. Throws if it couldn't be created otherwise.
+     */
+    private fun createNote(noteKey: String, creation: ItemEdit): Boolean {
+        val failure = api.createItem(ItemEdits.newNoteJson(noteKey, creation)) ?: return true
+        if (failure.code == 412) return true
+        if (failure.code == 409) {
+            // 409 says the parent wasn't found; make sure before dropping the text
+            try {
+                api.getItemData(creation.name).blockingGet()
+            } catch (e: Exception) {
+                if (generateSequence<Throwable>(e) { it.cause }.any { it is ItemGoneException }) return false
+                throw e
+            }
+        }
+        throw Exception("Zotero did not create the note ($failure)")
     }
 
     /** Uploads [edits] of one item; true if some conflicted (and stay pending). */
