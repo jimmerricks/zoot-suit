@@ -23,6 +23,16 @@
             android:title="Sign out" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="Appearance">
+        <ListPreference
+            app:defaultValue="auto"
+            app:entries="@array/theme_entries"
+            app:entryValues="@array/theme_values"
+            app:key="theme"
+            app:title="Theme"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/syncing_header">
 
         <ListPreference

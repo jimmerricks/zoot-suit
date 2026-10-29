@@ -15,4 +15,17 @@
         <item>EXTERNAL_CACHE</item>
         <item>CUSTOM</item>
     </string-array>
+
+    <!-- auto follows the system's dark mode; Android 9 and older have none, so it is light -->
+    <string-array name="theme_entries">
+        <item>Auto (follow the system)</item>
+        <item>Light</item>
+        <item>Dark</item>
+    </string-array>
+
+    <string-array name="theme_values">
+        <item>auto</item>
+        <item>light</item>
+        <item>dark</item>
+    </string-array>
 </resources>

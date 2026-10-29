@@ -138,6 +138,7 @@ class SettingsActivity : AppCompatActivity() {
         ) {
             Log.d("zotero", "sharedpreference change ${key}")
             when (key) {
+                AppTheme.KEY -> AppTheme.apply(requireContext())
                 "attachment_sync_location" -> {
                     if (sharedPreferences?.getString(
                             "attachment_sync_location",

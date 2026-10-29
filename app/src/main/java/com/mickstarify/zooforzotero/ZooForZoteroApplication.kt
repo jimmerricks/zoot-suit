@@ -12,6 +12,7 @@ import org.acra.ktx.initAcra
 class ZooForZoteroApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        AppTheme.apply(this)
 
         // off in debug builds, and when no address is configured (apikeys.properties)
         if (!BuildConfig.DEBUG && BuildConfig.crash_report_email.isNotBlank()) {
