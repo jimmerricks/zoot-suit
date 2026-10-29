@@ -321,6 +321,8 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     fun editTag(item: Item, tag: String, add: Boolean) = model.editTag(item, tag, add)
 
+    fun addNote(item: Item, text: String) = model.addNote(item, text)
+
     fun hasPendingEdits(item: Item) = model.hasPendingEdits(item)
 
     fun canEditItems() = !model.state.isUsingGroup()

@@ -75,6 +75,8 @@
                     android:text="Notes" />
             </LinearLayout>
 
+            <include layout="@layout/item_add_note_entry" />
+
             <LinearLayout
                 android:id="@+id/item_fragment_scrollview_ll_tags"
                 android:layout_width="match_parent"

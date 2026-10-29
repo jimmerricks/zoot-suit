@@ -55,8 +55,9 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
   so a newer version is not overwritten.
 - Long-press an attachment to open it, download it, upload your changes or delete the
   local copy.
-- Edit and delete notes. Add and remove tags, offline too; the next sync
-  uploads them without losing tags added elsewhere (My Library only).
+- Add notes, and add and remove tags, offline too; the next sync uploads them without
+  losing tags added elsewhere. Edit and delete notes (online, unless not yet synced).
+  My Library only.
 - Light or dark theme, or the system's choice (Settings → Theme); dark works on
   Android 7 too, which has no dark mode of its own.
 - Works on Android 7 with Let's Encrypt servers (the root certificate is bundled).

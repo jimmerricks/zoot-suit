@@ -39,6 +39,7 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdit
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditStore
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditUploader
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
@@ -318,6 +319,57 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             })
     }
 
+    /**
+     * Adds a note with [text] (plain text, as typed) to [item], on this device at once;
+     * Zotero gets it with the next sync, like a tag. My Library only.
+     */
+    fun addNote(item: Item, text: String) {
+        if (state.isUsingGroup()) {
+            presenter.makeToastAlert("Notes can be added only in My Library, not in groups.")
+            return
+        }
+        val html = ItemEdits.noteHtml(text) ?: run {
+            presenter.makeToastAlert("The note is empty, so it wasn't added.")
+            return
+        }
+        Single.fromCallable { itemEdits.createNote(GroupInfo.NO_GROUP_ID, item, html) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ _ ->
+                itemSource.invalidate() // "Has notes" and searching notes read the database
+                refreshPendingEdits { presenter.showEditedItem(item) }
+            }, { e ->
+                Log.e("zotero", "adding a note to ${item.itemKey} failed: $e")
+                presenter.createErrorAlert("Couldn't add the note", "Details: ${e.message ?: e}") {}
+            })
+    }
+
+    /**
+     * Applies [change] (an edit or a deletion) to a note made on this device that Zotero
+     * doesn't have yet, off the main thread; then [onDone] on the main thread, if it was
+     * such a note, or [notNew] if Zotero has it.
+     */
+    private fun changeNewNote(change: () -> ItemEditStore.NewNoteChange, notNew: () -> Unit, onDone: () -> Unit) {
+        Single.fromCallable(change)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ result ->
+                when (result) {
+                    ItemEditStore.NewNoteChange.DONE -> {
+                        itemSource.invalidate()
+                        refreshPendingEdits { presenter.refreshItemView() }
+                        onDone()
+                    }
+                    ItemEditStore.NewNoteChange.NOT_NEW -> notNew()
+                    ItemEditStore.NewNoteChange.UPLOADING ->
+                        presenter.makeToastAlert("The note is being synced. Try again in a moment.")
+                }
+            }, { e ->
+                Log.e("zotero", "changing a new note failed: $e")
+                presenter.createErrorAlert("Couldn't change the note", "Details: ${e.message ?: e}") {}
+            })
+    }
+
     /** Uploads My Library's metadata edits, if there are any, says what went wrong, then [onDone]. */
     private fun uploadItemEdits(onDone: () -> Unit) {
         Single.fromCallable {
@@ -343,6 +395,10 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
         result.gone.takeIf { it > 0 }?.let {
             if (it == 1) "1 edited item was deleted in Zotero; its edits were dropped."
             else "$it edited items were deleted in Zotero; their edits were dropped."
+        },
+        result.orphanedNotes.takeIf { it > 0 }?.let {
+            if (it == 1) "The item of 1 new note was deleted in Zotero; the note was dropped."
+            else "The items of $it new notes were deleted in Zotero; the notes were dropped."
         },
         result.conflicts.takeIf { it > 0 }?.let {
             "$it item${if (it == 1) "" else "s"} had a field changed here and in Zotero; " +
@@ -756,6 +812,11 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             presenter.makeToastAlert("Notes can be edited only in My Library, not in groups.")
             return
         }
+        changeNewNote({ itemEdits.editNewNote(GroupInfo.NO_GROUP_ID, note.key, note.note) },
+            notNew = { uploadNoteEdit(note) }) { presenter.makeToastAlert("Note saved.") }
+    }
+
+    private fun uploadNoteEdit(note: Note) {
         zoteroAPI.modifyNote(note, zoteroDB.getLibraryVersion())
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -800,12 +861,16 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             presenter.makeToastAlert("Notes can be deleted only in My Library, not in groups.")
             return
         }
-        presenter.createYesNoPrompt(
-            "Delete this note?",
-            "It's deleted from Zotero on all your devices, not moved to the trash. " +
-                    "This can't be undone.",
-            "Delete", "Cancel", { deleteNoteNow(note) }, {}
-        )
+        // version 0: made on this device, Zotero doesn't have it (yet)
+        val message = if (note.version == 0) "It hasn't been synced yet, so it's only on this device."
+        else "It's deleted from Zotero on all your devices, not moved to the trash. This can't be undone."
+        presenter.createYesNoPrompt("Delete this note?", message, "Delete", "Cancel", {
+            changeNewNote({ itemEdits.deleteNewNote(GroupInfo.NO_GROUP_ID, note.key) },
+                notNew = { deleteNoteNow(note) }) {
+                selectedItem?.notes?.removeAll { it.key == note.key }
+                presenter.makeToastAlert("Note deleted.")
+            }
+        }, {})
     }
 
     private fun deleteNoteNow(note: Note) {
@@ -962,7 +1027,7 @@ class LibraryActivityModel(private val presenter: Contract.Presenter, val contex
             Triple(
                 findOnDeviceAttachmentKeys(),
                 findEditedAttachments().map { it.itemKey }.toSet(),
-                itemEdits.pendingItemKeys(GroupInfo.NO_GROUP_ID),
+                itemEdits.editedItemKeys(GroupInfo.NO_GROUP_ID),
             )
         }
             .subscribeOn(Schedulers.io())

@@ -581,6 +581,8 @@ class LibraryActivity : AppCompatActivity(),
         Log.d("zotero", "onResume called.")
     }
 
+    override fun onNoteAdd(item: Item, text: String) = presenter.addNote(item, text)
+
     override fun onNoteEdit(note: Note) {
         presenter.modifyNote(note)
     }
@@ -601,7 +603,7 @@ class LibraryActivity : AppCompatActivity(),
 
     override fun onTagRemove(item: Item, tag: String) = presenter.editTag(item, tag, add = false)
 
-    override fun canEditTags(): Boolean = presenter.canEditItems()
+    override fun canEditItems(): Boolean = presenter.canEditItems()
 
     override fun libraryTags(onResult: (List<String>) -> Unit) =
         presenter.loadTags { tags -> onResult(tags.map { it.first }) }

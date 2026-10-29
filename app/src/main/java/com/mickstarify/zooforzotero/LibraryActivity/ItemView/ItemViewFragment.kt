@@ -104,6 +104,9 @@ class ItemViewFragment : DialogFragment(),
         requireView().findViewById<View>(R.id.row_add_tag).setOnClickListener {
             libraryViewModel.getOnItemClicked().value?.let { showAddTagDialog(it) }
         }
+        requireView().findViewById<View>(R.id.row_add_note).setOnClickListener {
+            libraryViewModel.getOnItemClicked().value?.let { showAddNoteDialog(it) }
+        }
 
         libraryViewModel.getOnItemClicked().observe(viewLifecycleOwner) { render(it) }
         libraryViewModel.getOnItemChanged().observe(viewLifecycleOwner) { item ->
@@ -129,11 +132,12 @@ class ItemViewFragment : DialogFragment(),
         }
         this.addAttachments(attachments)
         this.populateNotes(notes)
-        val editable = listener?.canEditTags() == true
+        val editable = listener?.canEditItems() == true
         this.populateTags(item.tags.map { it.tag }.sortedWith(String.CASE_INSENSITIVE_ORDER), editable)
         showSection(R.id.item_fragment_scrollview_ll_attachments, attachments.isNotEmpty())
-        showSection(R.id.item_fragment_scrollview_ll_notes, notes.isNotEmpty())
-        // with editing, the section shows even without tags: its "Add tag" row
+        // with editing, notes and tags show even when empty: their "Add note"/"Add tag" rows
+        showSection(R.id.item_fragment_scrollview_ll_notes, editable || notes.isNotEmpty())
+        showSection(R.id.row_add_note, editable)
         showSection(R.id.item_fragment_scrollview_ll_tags, editable || item.tags.isNotEmpty())
         showSection(R.id.row_add_tag, editable)
     }
@@ -150,6 +154,20 @@ class ItemViewFragment : DialogFragment(),
 
     private fun showSection(id: Int, show: Boolean) {
         requireView().findViewById<View>(id).visibility = if (show) View.VISIBLE else View.GONE
+    }
+
+    /**
+     * Asks for a note to add to [item]. Added on this device at once; it goes to Zotero
+     * with the next sync, like a tag.
+     */
+    private fun showAddNoteDialog(item: Item) {
+        EditNoteDialog().show(context, "", object : onEditNoteChangeListener {
+            override fun onCancel() {}
+
+            override fun onSubmit(noteText: String) {
+                listener?.onNoteAdd(item, noteText)
+            }
+        })
     }
 
     /**
@@ -281,13 +299,14 @@ class ItemViewFragment : DialogFragment(),
      */
     interface OnItemFragmentInteractionListener {
         fun onListFragmentInteraction(item: Item?)
+        fun onNoteAdd(item: Item, text: String)
         fun onNoteEdit(note: Note)
         fun onNoteDelete(note: Note)
         fun onTagAdd(item: Item, tag: String)
         fun onTagRemove(item: Item, tag: String)
 
-        /** Whether tags can be added and removed here (My Library, not a group). */
-        fun canEditTags(): Boolean
+        /** Whether notes can be added and tags added and removed here (My Library, not a group). */
+        fun canEditItems(): Boolean
 
         /** The open library's tags, for suggestions; [onResult] runs on the main thread. */
         fun libraryTags(onResult: (List<String>) -> Unit)
