@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.2.2
+
+Updates 0.2.1 in place (same app id and signing key).
+
+New:
+- Add notes from the item dialog ("Add note" under Notes), online or offline, like
+  tags: the note shows at once and the next sync uploads it. Until then, editing or
+  deleting it changes only the device's copy. My Library only.
+- Choose the theme in Settings → Theme: auto (follow the system), light or dark. On
+  Android 9 and older, which have no system dark mode, auto means light and Dark is
+  the way to a dark app.
+
+Changed:
+- The item dialog's Share and Add note buttons are gone; notes are added from the
+  new row. Close is the dialog's only button.
+
+Fixed, in dark mode:
+- Settings, dialogs, checkboxes and switches used the dark brand purple, nearly
+  invisible on dark surfaces; they now use a light purple.
+- The WebDAV server screen had a white card under light text.
+- The overflow menu was a light sheet; it is dark now.
+- The sidebar's selected row was unreadable.
+- The Attachment Manager's top bar was light purple, unlike the other screens.
+
 ## 0.2.1
 
 Updates 0.2.0 in place (same app id and signing key).
