@@ -8,7 +8,7 @@
          unreadable. Toolbars keep the brand purple in both. -->
     <color name="themePrimary">#3F3577</color>
     <color name="themeOnPrimary">#FFFFFF</color>
-    <!-- the sidebar's selected row: colorPrimary at 12% -->
+    <!-- the sidebar's selected row: themePrimary at 12% (20% in dark mode) -->
     <color name="sidebarSelected">#1F3F3577</color>
     <!-- badges on the library list's PDF icon -->
     <color name="attachmentOnDevice">#2E7D32</color>

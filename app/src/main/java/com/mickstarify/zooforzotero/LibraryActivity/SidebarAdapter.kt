@@ -93,7 +93,7 @@ class SidebarAdapter(private val listener: Listener) :
             icon.setImageResource(iconRes)
             itemView.isActivated = selected
             val highlight = selected || bold
-            val primary = ContextCompat.getColor(itemView.context, R.color.colorPrimary)
+            val primary = ContextCompat.getColor(itemView.context, R.color.themePrimary)
             if (highlight) title.setTextColor(primary) else title.setTextColor(normalTextColors)
             title.setTypeface(null, if (highlight) Typeface.BOLD else Typeface.NORMAL)
             ImageViewCompat.setImageTintList(
