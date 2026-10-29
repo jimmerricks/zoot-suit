@@ -159,15 +159,39 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Asks before signing out, naming the edits not synced yet that signing out would
+     * delete; counting them hashes edited files, so it runs in the background first.
+     */
     fun confirmSignOut() {
-        AlertDialog.Builder(this)
-            .setTitle("Sign out?")
-            .setMessage(
-                "This device forgets your Zotero login, your libraries and the app's " +
-                        "settings, WebDAV login included. Edits waiting to sync are lost: " +
-                        "upload them first. Files in an attachment folder you chose stay there."
+        Thread {
+            val unsynced = runCatching { SignOut.unsyncedEdits(zoteroDatabase, myStorageManager) }
+                .onFailure { Log.e("zotero", "counting unsynced edits failed: $it") }
+                .getOrNull()
+            runOnUiThread { if (!isFinishing && !isDestroyed) showSignOutDialog(unsynced) }
+        }.start()
+    }
+
+    /** [unsynced]: the edits that would be lost, or null if they couldn't be counted. */
+    private fun showSignOutDialog(unsynced: SignOut.UnsyncedEdits?) {
+        val forgets = "This device forgets your Zotero login, your libraries and the app's " +
+                "settings, WebDAV login included. Files in an attachment folder you chose stay there."
+        val builder = AlertDialog.Builder(this).setTitle("Sign out?")
+        when {
+            unsynced == null -> builder.setMessage(
+                "$forgets\n\nEdits waiting to sync are lost: sync first."
             )
-            .setPositiveButton("Sign out") { _, _ -> SignOut.signOut(this, zoteroDatabase) }
+            unsynced.isEmpty -> builder.setMessage(forgets)
+            else -> builder.setMessage(
+                "Not synced yet, and lost if you sign out now:\n" +
+                        unsynced.describe().joinToString("\n") { "• $it" } +
+                        "\n\nGo back to the library and sync first: pull down the list.\n\n$forgets"
+            )
+        }
+        builder
+            .setPositiveButton(if (unsynced?.isEmpty == true) "Sign out" else "Sign out anyway") { _, _ ->
+                SignOut.signOut(this, zoteroDatabase)
+            }
             .setNegativeButton("Cancel", null)
             .show()
     }

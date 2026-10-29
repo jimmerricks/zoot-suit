@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+Fixed:
+- Signing out names the edits not synced yet that it would delete (new notes, tag
+  changes, edited attachments), and says to sync first. Before, it warned in general
+  terms only, and tag changes and new notes waiting to sync were lost without a count.
+
 Removed:
 - The Attachment Manager (overflow menu). Its "Download all attachments" downloaded
   every file in My Library, stopped when you left the screen, and could report success
