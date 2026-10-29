@@ -107,12 +107,15 @@ fun StatusBarIcons(dark: Boolean) {
     }
 }
 
-/** The app's toolbar look (Widget.ZooForZotero.Toolbar): indigo with white title and icons. */
+/**
+ * The app's toolbar look (Widget.ZooForZotero.Toolbar): indigo with white title and icons,
+ * in dark mode too, where the scheme's primary is a light tint.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun zootTopAppBarColors(): TopAppBarColors = TopAppBarDefaults.topAppBarColors(
-    containerColor = MaterialTheme.colorScheme.primary,
-    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-    actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+    containerColor = ZoteroPrimary,
+    titleContentColor = ZoteroOnPrimary,
+    navigationIconContentColor = ZoteroOnPrimary,
+    actionIconContentColor = ZoteroOnPrimary,
 )
