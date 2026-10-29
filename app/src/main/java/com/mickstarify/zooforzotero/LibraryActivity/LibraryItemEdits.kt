@@ -27,7 +27,7 @@ private const val TAG = "LibraryItemEdits"
  * at once and uploaded with the next sync ([uploadItemEdits]); and edits and deletions of
  * notes, which go to Zotero at once unless the note is new. My Library only.
  *
- * @param api the API client, built on first use (see LibraryActivityModel)
+ * @param api the API client, built on first use (see LibraryComponents)
  * @param invalidateList the list's database queries must be run again (an edit changed
  *   what they find)
  * @param refreshPendingEdits works out again what waits to sync, then calls its argument

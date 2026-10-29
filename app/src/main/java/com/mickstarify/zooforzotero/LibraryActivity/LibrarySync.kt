@@ -27,7 +27,7 @@ private const val TAG = "LibrarySync"
  * here); a library is opened after a sync, at startup and when a group is chosen, and at
  * startup the screen goes back to the place it was left at.
  *
- * @param api the API client, built on first use (see LibraryActivityModel)
+ * @param api the API client, built on first use (see LibraryComponents)
  * @param refreshPendingEdits works out again what's on the device and waits to sync
  * @param selectedItem the item open in the item view, if any
  */

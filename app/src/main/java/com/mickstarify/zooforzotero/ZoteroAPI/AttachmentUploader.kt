@@ -18,7 +18,7 @@ import io.reactivex.rxjava3.core.Single
  * isn't damaged; then records the upload as the copy's new base. No UI: the library
  * screen runs batches and reports.
  *
- * @param api the API client, built on first use (see LibraryActivityModel)
+ * @param api the API client, built on first use (see LibraryComponents)
  * @param db the open library's ZoteroDB, read at each upload
  */
 class AttachmentUploader(

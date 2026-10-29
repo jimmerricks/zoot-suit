@@ -16,7 +16,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
  * The group libraries listed in the sidebar: those on this device, then Zotero's current
  * list. Opening and syncing a group is LibrarySync's.
  *
- * @param api the API client, built on first use (see LibraryActivityModel)
+ * @param api the API client, built on first use (see LibraryComponents)
  */
 class LibraryGroups(
     private val ui: LibraryUi,

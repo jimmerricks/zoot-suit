@@ -2,7 +2,10 @@ package com.mickstarify.zooforzotero.LibraryActivity
 
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
@@ -40,10 +43,10 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     /** Opens My Library ([GroupInfo.NO_GROUP_ID]) or a group at its top, from the sidebar. */
     override fun openLibrary(groupId: Int) {
         if (groupId == GroupInfo.NO_GROUP_ID) {
-            model.openMyLibrary()
+            openMyLibrary()
         } else {
-            model.groups.getGroupById(groupId)?.also {
-                model.sync.startGroupSync(it)
+            parts.groups.getGroupById(groupId)?.also {
+                parts.sync.startGroupSync(it)
             }
         }
     }
@@ -61,23 +64,23 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     private var groupLibrariesShown: Boolean? = null
 
     override fun onResume() {
-        if (model.isLoaded()) {
-            model.checkAttachmentStorageAccess()
-            model.refreshPendingEdits()
+        if (library.isLoaded()) {
+            checkAttachmentStorageAccess()
+            parts.deviceState.refresh()
             val shown = subcollectionItemsShown
-            if (shown != null && shown != model.preferences.showSubcollectionItems()) {
+            if (shown != null && shown != parts.preferences.showSubcollectionItems()) {
                 redisplayItems()
             }
-            val groupsOn = model.preferences.isGroupLibrarySyncEnabled()
+            val groupsOn = parts.preferences.isGroupLibrarySyncEnabled()
             if (groupLibrariesShown != null && groupsOn != groupLibrariesShown) {
-                model.setGroupLibrariesEnabled(groupsOn)
+                setGroupLibrariesEnabled(groupsOn)
             }
             groupLibrariesShown = groupsOn
         }
         // A sync that ended while the activity was stopped (display asleep) couldn't leave
         // the loading screen: navigation is refused once the activity has saved its state.
         // One that was cut off partway (Doze took the network) continues from its page.
-        if (model.isLoaded() && !model.sync.isSyncing() && !model.sync.resumeInterruptedSync() &&
+        if (library.isLoaded() && !parts.sync.isSyncing() && !parts.sync.resumeInterruptedSync() &&
             screen.value == AvailableScreens.LIBRARY_LOADING_SCREEN
         ) {
             showScreen(AvailableScreens.LIBRARY_LISTVIEW_SCREEN)
@@ -93,58 +96,58 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
      * opened from elsewhere (Back, a collection row in search) has its parents expanded.
      */
     fun refreshSidebar() {
-        val groupId = model.state.currentGroup.id
-        val current = model.getCurrentCollection()
-        if (current != "unset") model.preferences.setLibraryPlace(groupId, current)
-        val tree = CollectionTree(model.getCollections())
-        var expanded = model.preferences.getSidebarExpandedCollections(groupId)
+        val groupId = library.state.currentGroup.id
+        val current = navigator.currentCollection()
+        if (current != "unset") parts.preferences.setLibraryPlace(groupId, current)
+        val tree = CollectionTree(library.collections)
+        var expanded = parts.preferences.getSidebarExpandedCollections(groupId)
         val hiddenBy = tree.ancestorsOf(current).filter { it !in expanded }
         if (hiddenBy.isNotEmpty()) {
             expanded = expanded + hiddenBy
-            model.preferences.setSidebarExpandedCollections(groupId, expanded)
+            parts.preferences.setSidebarExpandedCollections(groupId, expanded)
         }
         sidebar.value = SidebarRows.build(
-            model.groups.getGroups(), model.preferences.isSidebarGroupsExpanded(),
+            parts.groups.getGroups(), parts.preferences.isSidebarGroupsExpanded(),
             groupId, current, tree, expanded
         )
     }
 
     fun toggleSidebarGroups() {
-        model.preferences.setSidebarGroupsExpanded(!model.preferences.isSidebarGroupsExpanded())
+        parts.preferences.setSidebarGroupsExpanded(!parts.preferences.isSidebarGroupsExpanded())
         refreshSidebar()
     }
 
     fun toggleSidebarCollection(key: String) {
-        val groupId = model.state.currentGroup.id
-        val expanded = model.preferences.getSidebarExpandedCollections(groupId)
-        model.preferences.setSidebarExpandedCollections(
+        val groupId = library.state.currentGroup.id
+        val expanded = parts.preferences.getSidebarExpandedCollections(groupId)
+        parts.preferences.setSidebarExpandedCollections(
             groupId, if (key in expanded) expanded - key else expanded + key
         )
         refreshSidebar()
     }
 
     override fun modifyNote(note: Note) {
-        model.edits.modifyNote(note)
+        parts.edits.modifyNote(note)
     }
 
     override fun deleteNote(note: Note) {
-        model.edits.deleteNote(note)
+        parts.edits.deleteNote(note)
     }
 
     override fun redisplayItems() {
         // Redraws the current place. Called after a sync finishes and after sort/filter changes.
-        if (model.isLoaded() && model.getCurrentCollection() != "unset") {
-            setCollection(model.getCurrentCollection())
+        if (library.isLoaded() && navigator.currentCollection() != "unset") {
+            setCollection(navigator.currentCollection())
         }
     }
 
     override fun cancelAttachmentDownload() {
-        model.attachments.cancelAttachmentDownload()
+        parts.attachments.cancelAttachmentDownload()
         commands.send { it.hideAttachmentDownloadProgress() }
     }
 
     override fun isShowingContent(): Boolean {
-        return model.isDisplayingItems
+        return isDisplayingItems
     }
 
     override fun updateLibraryRefreshProgress(
@@ -168,29 +171,29 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     }
 
-    fun warmSearchIndex() = model.lists.warmSearchIndex()
+    fun warmSearchIndex() = parts.lists.warmSearchIndex()
 
     /** The open library's search, or "" for none. */
-    fun currentSearch(): String = model.lists.librarySearch
+    fun currentSearch(): String = parts.lists.librarySearch
 
     /** Narrows every list of the open library to items matching [query]; "" ends the search. */
     fun search(query: String) {
-        model.lists.librarySearch = query
+        parts.lists.librarySearch = query
         redisplayItems()
     }
 
     override fun loadTags(onResult: (List<Pair<String, Int>>) -> Unit) {
-        if (model.isLoaded()) model.lists.loadTags(onResult) else onResult(emptyList())
+        if (library.isLoaded()) parts.lists.loadTags(onResult) else onResult(emptyList())
     }
 
     /** The open library: GroupInfo.NO_GROUP_ID for My Library, else the group's id. */
-    fun currentLibraryId(): Int = model.state.currentGroup.id
+    fun currentLibraryId(): Int = library.state.currentGroup.id
 
-    fun getLibraryFilter(): LibraryFilter = model.lists.libraryFilter
+    fun getLibraryFilter(): LibraryFilter = parts.lists.libraryFilter
 
     /** Sets the list's filter and redraws the list. */
     fun setLibraryFilter(filter: LibraryFilter) {
-        model.lists.libraryFilter = filter
+        parts.lists.libraryFilter = filter
         redisplayItems()
     }
 
@@ -199,9 +202,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
      * through them; and what the list says if it is empty.
      */
     private fun showFilterSummary() {
-        val search = model.lists.librarySearch
-        val filter = model.lists.libraryFilter
-        val shown = model.lists.lastFilteredCount
+        val search = parts.lists.librarySearch
+        val filter = parts.lists.libraryFilter
+        val shown = parts.lists.lastFilteredCount
         subtitle.value =
             if ((search.isEmpty() && !filter.isActive) || shown == null) null
             else listOfNotNull(
@@ -210,7 +213,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
                 "$shown " + if (shown == 1) "item" else "items",
             ).joinToString(" · ")
         libraryListViewModel.setEmptyMessage(
-            EmptyListMessage.forList(search, filter, shown != null, model.getCurrentCollection())
+            EmptyListMessage.forList(search, filter, shown != null, navigator.currentCollection())
         )
     }
 
@@ -273,7 +276,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun openAttachment(item: Item) {
-        model.attachments.openAttachment(item)
+        parts.attachments.openAttachment(item)
     }
 
     override fun updateAttachmentDownloadProgress(progress: Long, total: Long) {
@@ -298,7 +301,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     override fun requestLibraryRefresh() {
         libraryListViewModel.setIsShowingLoadingAnimation(true)
-        model.sync.refreshLibrary(useSmallLoadingAnimation = true)
+        parts.sync.refreshLibrary(useSmallLoadingAnimation = true)
     }
 
     override fun selectItem(
@@ -312,31 +315,31 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             val note = Note(item)
             commands.send { it.showNote(note) }
         } else {
-            model.completeItem(item)
-            model.selectedItem = item
+            library.db.completeItem(item)
+            selectedItem = item
             commands.send { it.showItemDialog() }
-            model.sync.fetchChildrenWhileSyncing(item)
+            parts.sync.fetchChildrenWhileSyncing(item)
         }
     }
 
-    fun editTag(item: Item, tag: String, add: Boolean) = model.edits.editTag(item, tag, add)
+    fun editTag(item: Item, tag: String, add: Boolean) = parts.edits.editTag(item, tag, add)
 
-    fun addNote(item: Item, text: String) = model.edits.addNote(item, text)
+    fun addNote(item: Item, text: String) = parts.edits.addNote(item, text)
 
-    fun hasPendingEdits(item: Item) = model.deviceState.hasPendingEdits(item)
+    fun hasPendingEdits(item: Item) = parts.deviceState.hasPendingEdits(item)
 
-    fun canEditItems() = !model.state.isUsingGroup()
+    fun canEditItems() = !library.state.isUsingGroup()
 
     override fun showEditedItem(item: Item) {
         libraryListViewModel.onItemChanged(item)
         // only a list that can depend on tags is redrawn; a large one is slow to redraw
-        if (model.lists.libraryFilter.tags.isNotEmpty() ||
-            model.lists.librarySearch.isNotEmpty()
+        if (parts.lists.libraryFilter.tags.isNotEmpty() ||
+            parts.lists.librarySearch.isNotEmpty()
         ) redisplayItems()
     }
 
     override fun refreshItemView() {
-        val item = model.selectedItem
+        val item = selectedItem
         if (item != null) {
             commands.send { it.closeItemView() }
             commands.send { it.showItemDialog() }
@@ -344,68 +347,68 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun openMyPublications() {
-        if (!model.isLoaded()) {
+        if (!library.isLoaded()) {
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
         }
         title.value = "My Publications"
-        model.setCurrentCollection("zooforzotero_my_publications")
+        navigator.setCollection("zooforzotero_my_publications")
         showList(LibraryPlace.MyPublications)
         refreshSidebar()
     }
 
     override fun openTrash() {
-        if (!model.isLoaded()) {
+        if (!library.isLoaded()) {
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
         }
         title.value = "Trash"
-        model.setCurrentCollection("zooforzotero_Trash")
+        navigator.setCollection("zooforzotero_Trash")
         showList(LibraryPlace.Trash)
         refreshSidebar()
     }
 
     /**
      * Builds the list for [place] off the main thread and shows it with its subtitle. A
-     * list asked for meanwhile replaces this one (see LibraryActivityModel.listItems).
+     * list asked for meanwhile replaces this one (see LibraryLists.listItems).
      */
     private fun showList(place: LibraryPlace) {
-        model.lists.listItems(place) { pages ->
-            model.isDisplayingItems = pages.size > 0
+        parts.lists.listItems(place) { pages ->
+            isDisplayingItems = pages.size > 0
             libraryListViewModel.setItems(pages)
             showFilterSummary()
         }
     }
 
     override fun uploadAttachment(item: Item) {
-        model.attachments.uploadAttachment(item)
+        parts.attachments.uploadAttachment(item)
     }
 
     override fun uploadEditedAttachments() {
-        if (model.isLoaded()) {
-            model.attachments.chooseEditedAttachmentsToUpload()
+        if (library.isLoaded()) {
+            parts.attachments.chooseEditedAttachmentsToUpload()
         }
     }
 
     override fun requestForceResync() {
-        model.sync.destroyLibrary()
+        parts.sync.destroyLibrary()
     }
 
     override fun backButtonPressed() {
-        model.loadPriorState()
+        loadPriorState()
         refreshSidebar()
     }
 
     override fun setCollection(collectionKey: String) {
         /*SetCollection is the method used to display items on the listView. It
         * has to get the data, then sort it, then provide it to the view.*/
-        if (!model.isLoaded()) {
+        if (!library.isLoaded()) {
             Log.e("zotero", "tried to change collection before fully loaded!")
             return
         }
         Log.d("zotero", "Got request to change collection to ${collectionKey}")
-        subcollectionItemsShown = model.preferences.showSubcollectionItems()
-        model.setCurrentCollection(collectionKey)
+        subcollectionItemsShown = parts.preferences.showSubcollectionItems()
+        navigator.setCollection(collectionKey)
         if (collectionKey == "zooforzotero_Trash") {
             openTrash()
             return
@@ -414,19 +417,19 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             openMyPublications()
             return
         }
-        val place = if (collectionKey == "all" && !model.isUsingGroups()) {
+        val place = if (collectionKey == "all" && !navigator.isUsingGroup()) {
             title.value = "My Library"
             LibraryPlace.Library
         } else if (collectionKey == "unfiled_items") {
             title.value = "Unfiled Items"
             LibraryPlace.Unfiled
-        } else if (collectionKey == "group_all" && model.isUsingGroups()) {
-            title.value = model.getCurrentGroup()?.name ?: "ERROR"
+        } else if (collectionKey == "group_all" && navigator.isUsingGroup()) {
+            title.value = navigator.currentGroup()?.name ?: "ERROR"
             LibraryPlace.Library
         } else {
             // a collection, in My Library or the open group;
             // subcollections are reached through the sidebar's tree, not as rows here
-            title.value = model.getCollectionFromKey(collectionKey)?.name ?: "Unknown Collection"
+            title.value = library.collection(collectionKey)?.name ?: "Unknown Collection"
             LibraryPlace.Collection(collectionKey)
         }
         showList(place)
@@ -449,8 +452,13 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         commands.send { it.makeToastAlert(message) }
     }
 
-    // created at the first attach: its constructor can already show error dialogs
-    private val model by lazy { LibraryActivityModel(this, context) }
+    // stores the current item being viewed by the user. (useful for refreshing the view)
+    var selectedItem: Item? = null
+    private var isDisplayingItems = false
+
+    private val parts by lazy { LibraryComponents(this, context) { selectedItem } }
+    private val library get() = parts.library
+    private val navigator get() = library.navigator
 
     private var started = false
 
@@ -467,41 +475,43 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         if (!started) {
             started = true
             start()
-        } else if (model.isLoaded()) {
+        } else if (library.isLoaded()) {
             // the list, title, sidebar and edit count are LiveData the activity observes;
             // only the badges' snapshot is refreshed (files may have changed meanwhile)
-            model.refreshPendingEdits()
+            parts.deviceState.refresh()
         } else {
             showScreen(AvailableScreens.LIBRARY_LOADING_SCREEN)
         }
     }
 
     private fun start() {
-        groupLibrariesShown = model.preferences.isGroupLibrarySyncEnabled()
+        checkCredentials()
+        checkAttachmentStorageAccess()
+        groupLibrariesShown = parts.preferences.isGroupLibrarySyncEnabled()
         title.value = "Loading"
         showScreen(AvailableScreens.LIBRARY_LOADING_SCREEN)
         libraryLoadingViewModel.setLoadingMessage("Loading your library")
 
         Log.d(
             "zotero",
-            "On Launch have model.sync.shouldIUpdateLibrary()=${model.sync.shouldIUpdateLibrary()}"
+            "On Launch have parts.sync.shouldIUpdateLibrary()=${parts.sync.shouldIUpdateLibrary()}"
         )
-        if (model.sync.isFirstSync()) {
+        if (parts.sync.isFirstSync()) {
             Log.d("zotero", "First sync - loading library from scratch")
-            model.groups.loadGroups()
+            parts.groups.loadGroups()
             // full loading screen with item counts, not the pull-to-refresh spinner:
             // a first sync of a large library takes many minutes.
-            model.sync.refreshLibrary(useSmallLoadingAnimation = false)
-        } else if (model.sync.shouldIUpdateLibrary()) {
+            parts.sync.refreshLibrary(useSmallLoadingAnimation = false)
+        } else if (parts.sync.shouldIUpdateLibrary()) {
             Log.d("zotero", "Updating library")
-            model.groups.loadGroups()
-            model.sync.loadLibraryLocally {
+            parts.groups.loadGroups()
+            parts.sync.loadLibraryLocally {
                 this.requestLibraryRefresh()
             }
         } else {
             Log.d("zotero", "Loading library locally")
-            model.groups.loadGroups()
-            model.sync.loadLibraryLocally()
+            parts.groups.loadGroups()
+            parts.sync.loadLibraryLocally()
         }
 
         // observed for the presenter's lifetime, not the activity's: re-observing in a
@@ -517,7 +527,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         }
         // the empty list's button: clears whatever it named, search and filter alike
         observe(libraryListViewModel.getOnClearFilterRequested()) {
-            model.lists.librarySearch = ""
+            parts.lists.librarySearch = ""
             setLibraryFilter(LibraryFilter())
         }
     }
@@ -541,18 +551,119 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     fun describeAttachment(attachment: Item, onState: (AttachmentLocalState) -> Unit) {
-        model.attachments.describeAttachment(attachment, onState)
+        parts.attachments.describeAttachment(attachment, onState)
     }
 
     fun uploadChanges(attachment: Item) {
-        model.attachments.uploadChanges(attachment)
+        parts.attachments.uploadChanges(attachment)
     }
 
     fun downloadAttachmentOnly(attachment: Item) {
-        model.attachments.downloadAttachmentOnly(attachment)
+        parts.attachments.downloadAttachmentOnly(attachment)
     }
 
     fun deleteLocalAttachment(attachment: Item) {
-        model.attachments.deleteLocalAttachment(attachment)
+        parts.attachments.deleteLocalAttachment(attachment)
+    }
+
+    /**
+     * Without a stored login the library can't sync: says so and closes the screen
+     * (LibraryActivity sends the user to sign in when it can see that first).
+     */
+    private fun checkCredentials() {
+        val auth = AuthenticationStorageImpl(context)
+        if (!auth.hasCredentials()) {
+            createErrorAlert(
+                "Sign in again",
+                "The stored Zotero login is no longer valid."
+            ) { finishLibrary() }
+            auth.destroyCredentials()
+            library.db.clearItemsVersion()
+        }
+    }
+
+    fun checkAttachmentStorageAccess() {
+        try {
+            if (parts.attachmentStorageManager.testStorage() == false) {
+                throw Exception()
+            }
+        } catch (e: Exception) {
+            Log.e("zotero", "error testing storage. ${e}")
+            createErrorAlert(
+                "Can't use the attachment folder",
+                "The app can't access the folder set in Settings → Attachment folder, so " +
+                        "it's back to the default. Choose the folder again in Settings.",
+                {})
+            parts.preferences.useExternalCache()
+        }
+    }
+
+    /** Switches the list and the sidebar to My Library, at its top. */
+    private fun openMyLibrary() {
+        if (library.state.isUsingGroup()) {
+            library.usePersonalLibrary()
+            navigator.openLibrary(null)
+            receiveCollections(library.collections)
+        } else {
+            navigator.openLibrary(null)
+        }
+        redisplayItems()
+    }
+
+    /**
+     * Applies Settings → Group libraries at once. On: the groups are listed. Off: they
+     * go from the sidebar, an open group closes (back to My Library) and Back forgets
+     * places in groups. Groups only sync when opened, so nothing else depends on it.
+     */
+    private fun setGroupLibrariesEnabled(enabled: Boolean) {
+        if (enabled) {
+            parts.groups.loadGroups()
+            return
+        }
+        parts.groups.clear()
+        parts.sync.forgetOpeningGroup()
+        if (navigator.leaveGroups()) {
+            library.usePersonalLibrary()
+            receiveCollections(library.collections)
+            redisplayItems()
+        }
+        showGroups()
+    }
+
+    private var doubleBackToExitPressedOnce = false
+
+    /** Back: the previous place in the library; at the top, twice within 2 s exits. */
+    private fun loadPriorState() {
+        val states = navigator.states
+        // check to see if we're at the root level, the first state is a junk state, so we
+        // check at 2.
+        if (states.size <= 2) {
+            if (doubleBackToExitPressedOnce) {
+                finishLibrary()
+                return
+            }
+
+            this.doubleBackToExitPressedOnce = true
+            makeToastAlert("Press Back again to exit.")
+            Handler(Looper.getMainLooper()).postDelayed({ doubleBackToExitPressedOnce = false }, 2000)
+            return
+        }
+        val oldState = states.peek()
+        states.pop()
+        val state = library.state
+        if (oldState.currentGroup.id != state.currentGroup.id) {
+            // back into another library; its database was loaded when we were there
+            if (state.isUsingGroup()) {
+                library.useGroup(state.currentGroup.id)
+            } else {
+                library.usePersonalLibrary()
+            }
+            receiveCollections(library.collections)
+            redisplayItems()
+        } else if (oldState.currentCollection != state.currentCollection) {
+            redisplayItems()
+        } else {
+            Log.e("zotero", "error unable to determine state differences!!")
+        }
     }
 }

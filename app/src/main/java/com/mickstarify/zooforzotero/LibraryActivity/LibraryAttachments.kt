@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit
  * version first when online), downloading, uploading edited files one by one or in a
  * batch, and deleting a copy from the device. Acts on the open library ([library]).
  *
- * @param api the API client, built on first use (see LibraryActivityModel)
+ * @param api the API client, built on first use (see LibraryComponents)
  * @param onFilesChanged called when files on the device may have changed (downloaded,
  *   uploaded, deleted), so the screen's attachment states are worked out again
  */

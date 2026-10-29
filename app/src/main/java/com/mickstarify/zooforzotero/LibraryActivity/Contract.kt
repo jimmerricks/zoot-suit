@@ -3,7 +3,6 @@ package com.mickstarify.zooforzotero.LibraryActivity
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryLoadingScreenViewModel
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 interface Contract {
@@ -28,12 +27,5 @@ interface Contract {
 
         var libraryListViewModel: LibraryListViewModel
         var libraryLoadingViewModel: LibraryLoadingScreenViewModel
-    }
-
-    interface Model {
-        fun getCollections(): List<Collection>
-        fun isLoaded(): Boolean
-        fun usePersonalLibrary()
-        fun loadPriorState()
     }
 }

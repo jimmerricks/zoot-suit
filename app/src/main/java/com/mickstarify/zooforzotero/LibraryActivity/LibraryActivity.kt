@@ -75,7 +75,7 @@ class LibraryActivity : AppCompatActivity(),
 
         super.onCreate(savedInstanceState)
 
-        // Without a stored login the library can't be built (LibraryActivityModel needs
+        // Without a stored login the library can't be built (its API client needs
         // the API key). MainActivity checks this, but the activity is also reachable
         // from recents or its exported filter intent after the login was removed.
         if (!AuthenticationStorageImpl(this).hasCredentials()) {
