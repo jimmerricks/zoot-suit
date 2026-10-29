@@ -9,7 +9,6 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryLoadingScreenViewModel
-import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
@@ -21,14 +20,19 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
  * activity; [view] is whichever activity is on screen (see [attach]).
  */
 class LibraryActivityPresenter(private val context: Context) : Contract.Presenter {
-    lateinit var view: LibraryActivity
-        private set
+    /** Calls to the activity on screen, whichever it is; see ScreenCommands. */
+    val commands = ScreenCommands<LibraryScreen>()
 
     // What the screen shows, kept here so a recreated activity just renders it again
     val title = MutableLiveData<String>()
     val subtitle = MutableLiveData<String?>()
     val sidebar = MutableLiveData<List<SidebarRow>>()
     val pendingEdits = MutableLiveData(0)
+    val screen = MutableLiveData<AvailableScreens>()
+
+    private fun showScreen(next: AvailableScreens) {
+        if (screen.value != next) screen.value = next
+    }
 
     override lateinit var libraryListViewModel: LibraryListViewModel
     override lateinit var libraryLoadingViewModel: LibraryLoadingScreenViewModel
@@ -45,11 +49,11 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun startUploadingAttachmentProgress(attachment: Item, position: Int, total: Int) {
-        view.showAttachmentUploadProgress(attachment, position, total)
+        commands.send { it.showAttachmentUploadProgress(attachment, position, total) }
     }
 
     override fun stopUploadingAttachmentProgress() {
-        view.hideAttachmentUploadProgress()
+        commands.send { it.hideAttachmentUploadProgress() }
     }
 
     // the settings as the screen last applied them; Settings is another activity
@@ -74,9 +78,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         // the loading screen: navigation is refused once the activity has saved its state.
         // One that was cut off partway (Doze took the network) continues from its page.
         if (model.isLoaded() && !model.sync.isSyncing() && !model.sync.resumeInterruptedSync() &&
-            view.getCurrentScreen() == AvailableScreens.LIBRARY_LOADING_SCREEN
+            screen.value == AvailableScreens.LIBRARY_LOADING_SCREEN
         ) {
-            view.showScreen(R.id.libraryListFragment)
+            showScreen(AvailableScreens.LIBRARY_LISTVIEW_SCREEN)
         }
     }
 
@@ -136,7 +140,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
 
     override fun cancelAttachmentDownload() {
         model.attachments.cancelAttachmentDownload()
-        view.hideAttachmentDownloadProgress()
+        commands.send { it.hideAttachmentDownloadProgress() }
     }
 
     override fun isShowingContent(): Boolean {
@@ -150,8 +154,8 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     ) {
         Log.d("zotero", "Updating library loading progress.")
 
-        if (total > 25 && view.getCurrentScreen() != AvailableScreens.LIBRARY_LOADING_SCREEN) {
-            view.showScreen(R.id.libraryLoadingScreen)
+        if (total > 25 && screen.value != AvailableScreens.LIBRARY_LOADING_SCREEN) {
+            showScreen(AvailableScreens.LIBRARY_LOADING_SCREEN)
         }
 
         // total before progress: each observer rewrites the "Downloading X of Y" label,
@@ -162,7 +166,6 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             libraryLoadingViewModel.setLoadingMessage(message)
         }
 
-//        view.updateLibraryLoadingProgress(progress, total, message)
     }
 
     fun warmSearchIndex() = model.lists.warmSearchIndex()
@@ -212,15 +215,15 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun showLoadingAlertDialog(message: String) {
-        view.showLoadingAlertDialog(message)
+        commands.send { it.showLoadingAlertDialog(message) }
     }
 
     override fun hideLoadingAlertDialog() {
-        view.hideLoadingAlertDialog()
+        commands.send { it.hideLoadingAlertDialog() }
     }
 
     override fun attachmentDownloadError(message: String) {
-        view.hideAttachmentDownloadProgress()
+        commands.send { it.hideAttachmentDownloadProgress() }
         if (message == "") {
             createErrorAlert("Couldn't download the file", "Check your connection and try again.") { }
         } else {
@@ -229,11 +232,11 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun finishDownloadingAttachment() {
-        view.hideAttachmentDownloadProgress()
+        commands.send { it.hideAttachmentDownloadProgress() }
     }
 
     override fun finishLibrary() {
-        view.finish()
+        commands.send { it.finish() }
     }
 
     override fun createYesNoPrompt(
@@ -244,7 +247,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         onYesClick: () -> Unit,
         onNoClick: () -> Unit
     ) {
-        view.createYesNoPrompt(title, message, yesText, noText, onYesClick, onNoClick)
+        commands.send { it.createYesNoPrompt(title, message, yesText, noText, onYesClick, onNoClick) }
     }
 
     override fun showPendingEdits(count: Int) {
@@ -252,11 +255,11 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>) {
-        view.showAttachmentStates(onDevice, edited)
+        commands.send { it.showAttachmentStates(onDevice, edited) }
     }
 
     override fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit) {
-        view.chooseAttachmentsToUpload(labels, onUpload)
+        commands.send { it.chooseAttachmentsToUpload(labels, onUpload) }
     }
 
     override fun showBasicSyncAnimation() {
@@ -266,7 +269,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     override fun hideBasicSyncAnimation() {
         libraryListViewModel.setIsShowingLoadingAnimation(false)
         // we are finished loading and should hide the loading screen.
-        view.showScreen(R.id.libraryListFragment)
+        showScreen(AvailableScreens.LIBRARY_LISTVIEW_SCREEN)
     }
 
     override fun openAttachment(item: Item) {
@@ -276,24 +279,21 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     override fun updateAttachmentDownloadProgress(progress: Long, total: Long) {
         val progressKB = (progress / 1000).toInt()
         val totalKB = (total / 1000).toInt()
-        view.updateAttachmentDownloadProgress(progressKB, totalKB)
+        commands.send { it.updateAttachmentDownloadProgress(progressKB, totalKB) }
     }
 
 
     override fun showLibraryLoadingAnimation() {
-//        view.showLoadingAnimation(showScreen = true)
         title.value = "Loading"
 
-        if (view.getCurrentScreen() != AvailableScreens.LIBRARY_LOADING_SCREEN) {
-            view.showScreen(R.id.libraryLoadingScreen)
+        if (screen.value != AvailableScreens.LIBRARY_LOADING_SCREEN) {
+            showScreen(AvailableScreens.LIBRARY_LOADING_SCREEN)
         }
     }
 
     override fun hideLibraryLoadingAnimation() {
-//        view.hideLoadingAnimation()
-//        view.hideLibraryContentDisplay()
         Log.d("zotero", "loading library list fragment")
-        view.showScreen(R.id.libraryListFragment)
+        showScreen(AvailableScreens.LIBRARY_LISTVIEW_SCREEN)
     }
 
     override fun requestLibraryRefresh() {
@@ -310,11 +310,11 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             this.openAttachment(item)
         } else if (item.itemType == "note") {
             val note = Note(item)
-            view.showNote(note)
+            commands.send { it.showNote(note) }
         } else {
             model.completeItem(item)
             model.selectedItem = item
-            view.showItemDialog()
+            commands.send { it.showItemDialog() }
             model.sync.fetchChildrenWhileSyncing(item)
         }
     }
@@ -338,8 +338,8 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     override fun refreshItemView() {
         val item = model.selectedItem
         if (item != null) {
-            view.closeItemView()
-            view.showItemDialog()
+            commands.send { it.closeItemView() }
+            commands.send { it.showItemDialog() }
         }
     }
 
@@ -442,11 +442,11 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
         message: String,
         onClick: () -> Unit
     ) {
-        view.createErrorAlert(title, message, onClick)
+        commands.send { it.createErrorAlert(title, message, onClick) }
     }
 
     override fun makeToastAlert(message: String) {
-        view.makeToastAlert(message)
+        commands.send { it.makeToastAlert(message) }
     }
 
     // created at the first attach: its constructor can already show error dialogs
@@ -460,12 +460,9 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
      * library, the open group and Back all survive. See [LibraryViewModel].
      */
     fun attach(view: LibraryActivity) {
-        this.view = view
         libraryListViewModel = ViewModelProvider(view).get(LibraryListViewModel::class.java)
         libraryLoadingViewModel =
             ViewModelProvider(view).get(LibraryLoadingScreenViewModel::class.java)
-
-        view.initUI()
 
         if (!started) {
             started = true
@@ -475,14 +472,14 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
             // only the badges' snapshot is refreshed (files may have changed meanwhile)
             model.refreshPendingEdits()
         } else {
-            view.showScreen(R.id.libraryLoadingScreen)
+            showScreen(AvailableScreens.LIBRARY_LOADING_SCREEN)
         }
     }
 
     private fun start() {
         groupLibrariesShown = model.preferences.isGroupLibrarySyncEnabled()
         title.value = "Loading"
-        view.showScreen(R.id.libraryLoadingScreen)
+        showScreen(AvailableScreens.LIBRARY_LOADING_SCREEN)
         libraryLoadingViewModel.setLoadingMessage("Loading your library")
 
         Log.d(
@@ -540,7 +537,7 @@ class LibraryActivityPresenter(private val context: Context) : Contract.Presente
     }
 
     override fun startActivity(intent: Intent) {
-        view.startActivity(intent)
+        commands.send { it.startActivity(intent) }
     }
 
     fun describeAttachment(attachment: Item, onState: (AttachmentLocalState) -> Unit) {

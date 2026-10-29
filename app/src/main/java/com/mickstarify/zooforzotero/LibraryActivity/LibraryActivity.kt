@@ -58,7 +58,8 @@ class LibraryActivity : AppCompatActivity(),
     SidebarAdapter.Listener,
     ItemViewFragment.OnItemFragmentInteractionListener,
     ItemAttachmentEntry.OnAttachmentFragmentInteractionListener,
-    NoteInteractionListener {
+    NoteInteractionListener,
+    LibraryScreen {
 
     lateinit var presenter: LibraryActivityPresenter
     private var itemView: ItemViewFragment? = null
@@ -109,7 +110,9 @@ class LibraryActivity : AppCompatActivity(),
 
         this.setupActionbar()
 
+        initUI()
         presenter = ViewModelProvider(this).get(LibraryViewModel::class.java).presenter
+        presenter.commands.attach(this, this)
         presenter.attach(this)
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
@@ -133,6 +136,14 @@ class LibraryActivity : AppCompatActivity(),
         presenter.subtitle.observe(this) { supportActionBar?.subtitle = it }
         presenter.sidebar.observe(this) { showSidebar(it) }
         presenter.pendingEdits.observe(this) { showPendingEdits(it) }
+        presenter.screen.observe(this) {
+            showScreen(
+                when (it!!) {
+                    AvailableScreens.LIBRARY_LOADING_SCREEN -> R.id.libraryLoadingScreen
+                    AvailableScreens.LIBRARY_LISTVIEW_SCREEN -> R.id.libraryListFragment
+                }
+            )
+        }
     }
 
     private fun libraryLoadingScreenShown() {
@@ -148,7 +159,7 @@ class LibraryActivity : AppCompatActivity(),
     private val sidebarAdapter = SidebarAdapter(this)
     private lateinit var sidebar: RecyclerView
 
-    fun initUI() {
+    private fun initUI() {
         setupActionbar()
         sidebar = findViewById(R.id.sidebar)
         sidebar.layoutManager = LinearLayoutManager(this)
@@ -180,7 +191,7 @@ class LibraryActivity : AppCompatActivity(),
      * pushed a new fragment each time (list, loading, list again at every start, more at
      * every sync) on a back stack nothing pops; Back is ours (handleOnBackPressed).
      */
-    fun showScreen(destination: Int) {
+    private fun showScreen(destination: Int) {
         if (navController.currentDestination?.id == destination) return
         navController.navigate(
             destination, null,
@@ -315,7 +326,7 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     /** Attachment keys whose file is on this device / has edits to sync, for the list's PDF icons. */
-    fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>) {
+    override fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>) {
         libraryListViewModel.setAttachmentStates(AttachmentStates(onDevice, edited))
     }
 
@@ -334,7 +345,7 @@ class LibraryActivity : AppCompatActivity(),
         return super.onPrepareOptionsMenu(menu)
     }
 
-    fun createErrorAlert(title: String, message: String, onClick: () -> Unit) {
+    override fun createErrorAlert(title: String, message: String, onClick: () -> Unit) {
         val alert = AlertDialog.Builder(this)
         alert.setIcon(R.drawable.ic_error_black_24dp)
         alert.setTitle(title)
@@ -378,7 +389,7 @@ class LibraryActivity : AppCompatActivity(),
         mDrawerToggle.syncState()
     }
 
-    fun showItemDialog(
+    override fun showItemDialog(
     ) {
         itemView = ItemViewFragment()
         val fm = supportFragmentManager
@@ -386,17 +397,17 @@ class LibraryActivity : AppCompatActivity(),
 
     }
 
-    fun showNote(note: Note) {
+    override fun showNote(note: Note) {
         val noteView = NoteView(this, note, this)
         noteView.show()
     }
 
-    fun closeItemView() {
+    override fun closeItemView() {
         itemView?.dismiss()
         itemView = null
     }
 
-    fun showLoadingAlertDialog(message: String) {
+    override fun showLoadingAlertDialog(message: String) {
         if (progressDialog == null) {
             progressDialog = ProgressDialog(this)
         }
@@ -406,7 +417,7 @@ class LibraryActivity : AppCompatActivity(),
 
     }
 
-    fun hideLoadingAlertDialog() {
+    override fun hideLoadingAlertDialog() {
         progressDialog?.hide()
         progressDialog = null
     }
@@ -415,7 +426,7 @@ class LibraryActivity : AppCompatActivity(),
     var progressDialog: ProgressDialog? = null
 
     @Suppress("DEPRECATION")
-    fun updateAttachmentDownloadProgress(progress: Int, total: Int) {
+    override fun updateAttachmentDownloadProgress(progress: Int, total: Int) {
         if (progressDialog == null) {
             progressDialog = ProgressDialog(this)
             progressDialog?.setTitle("Downloading")
@@ -440,13 +451,13 @@ class LibraryActivity : AppCompatActivity(),
         progressDialog?.show()
     }
 
-    fun hideAttachmentDownloadProgress() {
+    override fun hideAttachmentDownloadProgress() {
         progressDialog?.hide()
         progressDialog = null
     }
 
     var uploadProgressDialog: ProgressDialog? = null
-    fun showAttachmentUploadProgress(attachment: Item, position: Int, total: Int) {
+    override fun showAttachmentUploadProgress(attachment: Item, position: Int, total: Int) {
         if (uploadProgressDialog == null) {
             uploadProgressDialog = ProgressDialog(this)
             uploadProgressDialog?.isIndeterminate = true
@@ -461,12 +472,12 @@ class LibraryActivity : AppCompatActivity(),
         uploadProgressDialog?.show()
     }
 
-    fun hideAttachmentUploadProgress() {
+    override fun hideAttachmentUploadProgress() {
         uploadProgressDialog?.dismiss()
         uploadProgressDialog = null
     }
 
-    fun createYesNoPrompt(
+    override fun createYesNoPrompt(
         title: String,
         message: String, yesText: String, noText: String,
         onYesClick: () -> Unit,
@@ -485,7 +496,7 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     /** Edited attachments to upload, all ticked; [onUpload] gets the ticked indices. */
-    fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit) {
+    override fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit) {
         val checked = BooleanArray(labels.size) { true }
         val alert = AlertDialog.Builder(this)
         alert.setTitle(
@@ -547,7 +558,7 @@ class LibraryActivity : AppCompatActivity(),
         Log.d("zotero", "got onListFragmentInteraction from item ${item?.itemKey}")
     }
 
-    fun makeToastAlert(message: String) {
+    override fun makeToastAlert(message: String) {
         val toast = Toast.makeText(this, message, Toast.LENGTH_LONG)
         toast.show()
     }
@@ -605,14 +616,6 @@ class LibraryActivity : AppCompatActivity(),
         presenter.loadTags { tags -> onResult(tags.map { it.first }) }
 
     override fun hasPendingEdits(item: Item): Boolean = presenter.hasPendingEdits(item)
-
-    fun getCurrentScreen(): AvailableScreens {
-        return when (navController.currentDestination?.id) {
-            R.id.libraryListFragment -> AvailableScreens.LIBRARY_LISTVIEW_SCREEN
-            R.id.libraryLoadingScreen -> AvailableScreens.LIBRARY_LOADING_SCREEN
-            else -> throw (Exception("Unknown current screen ${navController.currentDestination}"))
-        }
-    }
 
     // this  lets keyboard close when clicked in backgroud
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {

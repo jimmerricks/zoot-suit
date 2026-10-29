@@ -7,42 +7,6 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 interface Contract {
-    interface View {
-        fun initUI()
-        fun createErrorAlert(title: String, message: String, onClick: () -> Unit)
-
-        //        fun showLoadingAnimation(showScreen: Boolean)
-        fun updateLibraryLoadingProgress(
-            progress: Int,
-            total: Int = -1,
-            message: String
-        )
-
-        //        fun hideLoadingAnimation()
-        fun setTitle(title: String)
-        fun showItemDialog()
-        fun updateAttachmentDownloadProgress(progress: Int, total: Int)
-        fun hideAttachmentDownloadProgress()
-        fun makeToastAlert(message: String)
-        fun showLibraryContentDisplay(message: String = "")
-        fun hideLibraryContentDisplay()
-        fun closeItemView()
-        fun showAttachmentUploadProgress(attachment: Item, position: Int, total: Int)
-        fun hideAttachmentUploadProgress()
-        fun createYesNoPrompt(
-            title: String, message: String, yesText: String, noText: String, onYesClick: () -> Unit,
-            onNoClick: () -> Unit
-        )
-
-        fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit)
-        fun showPendingEdits(count: Int)
-        fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>)
-        fun showNote(note: Note)
-        fun showSidebar(rows: List<SidebarRow>)
-        fun showLoadingAlertDialog(message: String)
-        fun hideLoadingAlertDialog()
-    }
-
     interface Presenter : LibraryUi {
         fun selectItem(item: Item, longPress: Boolean = false)
         fun requestLibraryRefresh()
