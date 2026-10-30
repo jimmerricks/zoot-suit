@@ -25,7 +25,10 @@ class OpenLibrary(context: Context) {
     private var groupId: Int = GroupInfo.NO_GROUP_ID
 
     /** The open library's ZoteroDB. */
-    val db: ZoteroDB get() = if (groupId == GroupInfo.NO_GROUP_ID) myLibrary else groups.getGroup(groupId)
+    val db: ZoteroDB get() = library(groupId)
+
+    /** Library [id]'s ZoteroDB, open or not: My Library ([GroupInfo.NO_GROUP_ID]) or a group. */
+    fun library(id: Int): ZoteroDB = if (id == GroupInfo.NO_GROUP_ID) myLibrary else groups.getGroup(id)
 
     fun useGroup(id: Int) {
         groupId = id

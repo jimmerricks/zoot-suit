@@ -367,6 +367,8 @@ class LibraryActivity : AppCompatActivity(),
                 }
             }
 
+            R.id.sync_status -> showSyncDetails()
+
             R.id.pending_edits -> {
                 viewModel.requestLibraryRefresh()
             }
@@ -436,6 +438,35 @@ class LibraryActivity : AppCompatActivity(),
             syncLabel = label
             syncMenuItem?.title = label
         }
+        if (status != null) syncDetailsDialog?.let { showSyncDetails(it, status) }
+    }
+
+    // open while the user reads it; redrawn as the sync goes on
+    private var syncDetailsDialog: AlertDialog? = null
+
+    /** The running (or last) sync's stages, from the toolbar's "Syncing n/m". */
+    private fun showSyncDetails() {
+        val status = viewModel.syncStatus.value ?: return
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(" ")
+            .setMessage(" ") // set now, so the message can change once it's shown
+            .setPositiveButton("Close", null)
+            .setOnDismissListener { syncDetailsDialog = null }
+            .create()
+        syncDetailsDialog = dialog
+        showSyncDetails(dialog, status)
+        dialog.show()
+    }
+
+    private fun showSyncDetails(dialog: AlertDialog, status: SyncStatus) {
+        val details = viewModel.syncDetails(status)
+        dialog.setTitle(details.title)
+        dialog.setMessage(details.message)
+    }
+
+    override fun onDestroy() {
+        syncDetailsDialog?.dismiss() // its window would leak with the activity (rotation)
+        super.onDestroy()
     }
 
     /** Attachment keys whose file is on this device / has edits to sync, for the list's PDF icons. */

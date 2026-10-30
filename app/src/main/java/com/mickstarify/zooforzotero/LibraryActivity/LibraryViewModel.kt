@@ -1,6 +1,7 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
 import android.app.Application
+import android.text.format.DateUtils
 import android.content.Context
 import android.content.Intent
 import android.os.Handler
@@ -333,6 +334,18 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     override fun showSyncStatus(status: SyncStatus) {
         syncStatus.value = status
     }
+
+    /** What the sync details dialog says about [status]. */
+    fun syncDetails(status: SyncStatus) = SyncDetails(
+        status,
+        libraryName = { id ->
+            if (id == GroupInfo.NO_GROUP_ID) "My Library" else parts.groups.getGroupById(id)?.name ?: "a group library"
+        },
+        lastSynced = library.library(status.groupID).getLastSyncedTimestamp(),
+        formatTime = {
+            DateUtils.formatDateTime(context, it, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME)
+        },
+    )
 
     override fun showPendingEdits(count: Int) {
         pendingEdits.value = count
