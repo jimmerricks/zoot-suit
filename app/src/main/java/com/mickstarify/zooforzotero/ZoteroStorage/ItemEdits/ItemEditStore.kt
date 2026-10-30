@@ -2,6 +2,7 @@ package com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits
 
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.ItemCollection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ItemData
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ItemInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ItemTag
@@ -40,6 +41,8 @@ class ItemEditStore(private val database: ZoteroDatabase) {
             ItemEditKind.REMOVE_TAG -> dao.deleteTag(key, edit.name)
             ItemEditKind.SET_FIELD -> writeField(key, edit.name, edit.value ?: "")
             ItemEditKind.CREATE_NOTE -> throw IllegalArgumentException("a new note is made by createNote")
+            ItemEditKind.ADD_TO_COLLECTION, ItemEditKind.REMOVE_FROM_COLLECTION ->
+                throw IllegalArgumentException("collections are changed by recordAll")
         }
         database.fillKeys(listOf(key)) // the title, date or tags sorted and searched by may have changed
         val applied = listOf(edit)
@@ -52,29 +55,38 @@ class ItemEditStore(private val database: ZoteroDatabase) {
     }
 
     /**
-     * Records [edit] (a tag edit) for each of the items [keys] of library [group] and
-     * applies it, all in one transaction: a bulk edit is either made whole or not at all.
-     * Items gone meanwhile are skipped. Returns the keys it changed (an item that had the
-     * tag already isn't). The items' in-memory copies are left alone; reload them.
+     * Records [edit] (a tag or collection edit) for each of the items [keys] of library
+     * [group] and applies it, all in one transaction: a bulk edit is either made whole or
+     * not at all. Items gone meanwhile are skipped. Returns the keys it changed (an item
+     * that had the tag already isn't). The items' in-memory copies are left alone; reload
+     * them.
      */
     fun recordAll(group: Int, keys: Collection<String>, edit: ItemEdit): List<String> =
         database.db.runInTransaction<List<String>> {
-            require(edit.kind == ItemEditKind.ADD_TAG || edit.kind == ItemEditKind.REMOVE_TAG) {
-                "only tag edits are made in bulk"
+            val tag = edit.kind == ItemEditKind.ADD_TAG || edit.kind == ItemEditKind.REMOVE_TAG
+            require(tag || edit.kind == ItemEditKind.ADD_TO_COLLECTION || edit.kind == ItemEditKind.REMOVE_FROM_COLLECTION) {
+                "only tag and collection edits are made in bulk"
             }
             val changed = ArrayList<String>()
             for (key in keys) {
                 if (!dao.hasItem(key)) continue
                 val pending = dao.forItem(group, key).mapNotNull { it.toEdit() }
-                val recording = ItemEdits.record(pending, edit, dao.tagsOf(key), emptyMap(), fold = key !in uploading)
+                val recording = ItemEdits.record(
+                    pending, edit, if (tag) dao.tagsOf(key) else emptyList(), emptyMap(), fold = key !in uploading,
+                    collections = if (tag) emptyList() else dao.collectionsOf(key),
+                )
                 if (recording == ItemEdits.Recording.NONE) continue
                 if (recording.delete.isNotEmpty()) dao.delete(recording.delete)
                 recording.insert?.let { dao.insert(PendingItemEdit.of(it, key, group)) }
-                if (edit.kind == ItemEditKind.ADD_TAG) dao.putTag(ItemTag(key, edit.name))
-                else dao.deleteTag(key, edit.name)
+                when (edit.kind) {
+                    ItemEditKind.ADD_TAG -> dao.putTag(ItemTag(key, edit.name))
+                    ItemEditKind.REMOVE_TAG -> dao.deleteTag(key, edit.name)
+                    ItemEditKind.ADD_TO_COLLECTION -> dao.putCollection(ItemCollection(edit.name, key))
+                    else -> dao.deleteCollection(key, edit.name)
+                }
                 changed += key
             }
-            database.fillKeys(changed) // searched by their tags
+            if (tag) database.fillKeys(changed) // searched by their tags
             changed
         }
 
@@ -211,6 +223,11 @@ class ItemEditStore(private val database: ZoteroDatabase) {
             val wantedTags = ItemEdits.applyToTags(tags, edits)
             (tags - wantedTags.toSet()).forEach { dao.deleteTag(key, it) }
             (wantedTags - tags.toSet()).forEach { dao.putTag(ItemTag(key, it)) }
+
+            val collections = dao.collectionsOf(key)
+            val wantedCollections = ItemEdits.applyToCollections(collections, edits)
+            (collections - wantedCollections.toSet()).forEach { dao.deleteCollection(key, it) }
+            (wantedCollections - collections.toSet()).forEach { dao.putCollection(ItemCollection(it, key)) }
 
             val fields = dao.fieldsOf(key).associate { it.name to it.value }
             val wantedFields = ItemEdits.applyToFields(fields, edits)

@@ -78,6 +78,15 @@ interface PendingItemEditDao {
     @Query("DELETE FROM ItemTags WHERE parent = :itemKey AND tag = :tag")
     fun deleteTag(itemKey: String, tag: String)
 
+    @Query("SELECT collectionKey FROM ItemCollection WHERE itemKey = :itemKey")
+    fun collectionsOf(itemKey: String): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun putCollection(membership: ItemCollection)
+
+    @Query("DELETE FROM ItemCollection WHERE itemKey = :itemKey AND collectionKey = :collectionKey")
+    fun deleteCollection(itemKey: String, collectionKey: String)
+
     @Query("SELECT * FROM ItemData WHERE parent = :itemKey")
     fun fieldsOf(itemKey: String): List<ItemData>
 

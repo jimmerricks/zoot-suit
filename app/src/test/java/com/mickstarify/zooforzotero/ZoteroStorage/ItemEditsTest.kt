@@ -4,7 +4,9 @@ import com.google.gson.JsonObject
 import com.google.gson.Gson
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdit
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind.ADD_TAG
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind.ADD_TO_COLLECTION
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind.CREATE_NOTE
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind.REMOVE_FROM_COLLECTION
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind.REMOVE_TAG
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind.SET_FIELD
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
@@ -176,5 +178,66 @@ class ItemEditsTest {
             data("""{"key":"NOTE2345","version":0,"itemType":"note","parentItem":"PARENT22","note":"<p>x</p>","tags":[],"collections":[],"relations":{}}"""),
             json
         )
+    }
+
+    // collections
+
+    private fun into(c: String, id: Long = 0) = ItemEdit(ADD_TO_COLLECTION, c, id = id)
+    private fun outOf(c: String, id: Long = 0) = ItemEdit(REMOVE_FROM_COLLECTION, c, id = id)
+
+    @Test
+    fun `putting an item in a collection it is in, or taking it out of one it isn't, records nothing`() {
+        assertEquals(ItemEdits.Recording.NONE,
+            ItemEdits.record(emptyList(), into("COLL1"), emptyList(), emptyMap(), collections = listOf("COLL1")))
+        assertEquals(ItemEdits.Recording.NONE,
+            ItemEdits.record(emptyList(), outOf("COLL2"), emptyList(), emptyMap(), collections = listOf("COLL1")))
+    }
+
+    @Test
+    fun `taking an item out of a collection it was just put in cancels both`() {
+        val pending = listOf(into("COLL1", id = 7))
+        val recording = ItemEdits.record(pending, outOf("COLL1"), emptyList(), emptyMap(), collections = listOf("COLL1"))
+        assertEquals(ItemEdits.Recording(delete = listOf(7)), recording)
+    }
+
+    @Test
+    fun `while uploading, the opposite edit is appended instead of folded`() {
+        val pending = listOf(into("COLL1", id = 7))
+        val recording = ItemEdits.record(pending, outOf("COLL1"), emptyList(), emptyMap(), fold = false, collections = listOf("COLL1"))
+        assertEquals(ItemEdits.Recording(insert = outOf("COLL1")), recording)
+    }
+
+    @Test
+    fun `a tag and a collection of the same name don't cancel each other`() {
+        val pending = listOf(add("X", id = 3))
+        val recording = ItemEdits.record(pending, outOf("X"), listOf("X"), emptyMap(), collections = listOf("X"))
+        assertEquals(ItemEdits.Recording(insert = outOf("X")), recording)
+    }
+
+    @Test
+    fun `collection edits apply in order`() {
+        val edits = listOf(into("B"), outOf("A"), into("B"), into("C"), outOf("C"))
+        assertEquals(listOf("B"), ItemEdits.applyToCollections(listOf("A"), edits))
+        assertEquals(listOf("B"), ItemEdits.applyToCollections(listOf("B"), edits))
+    }
+
+    @Test
+    fun `the patch sends Zotero's collections with the edits replayed`() {
+        val server = data("""{"key":"ITEM1234","collections":["A","B"],"tags":[]}""")
+        val patch = ItemEdits.buildPatch(server, listOf(into("C"), outOf("A")))
+        assertEquals(data("""{"collections":["B","C"]}"""), patch.body)
+        assertTrue(patch.conflicts.isEmpty())
+    }
+
+    @Test
+    fun `a collection change Zotero has already sends nothing, and leaves the tags alone`() {
+        val server = data("""{"collections":["A"],"tags":[{"tag":"t","type":1}]}""")
+        assertEquals(data("{}"), ItemEdits.buildPatch(server, listOf(into("A"), outOf("Z"))).body)
+    }
+
+    @Test
+    fun `an item without collections in Zotero gets the added one`() {
+        val server = data("""{"key":"ITEM1234","tags":[]}""")
+        assertEquals(data("""{"collections":["A"]}"""), ItemEdits.buildPatch(server, listOf(into("A"))).body)
     }
 }

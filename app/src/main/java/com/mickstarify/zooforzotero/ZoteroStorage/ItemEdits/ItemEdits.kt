@@ -20,6 +20,12 @@ enum class ItemEditKind {
      * device ([ItemEdits.newItemKey]); name is the parent's key, value the note's HTML.
      */
     CREATE_NOTE,
+
+    /** Puts the item in a collection; name is the collection's key. Top-level items only. */
+    ADD_TO_COLLECTION,
+
+    /** Takes the item out of a collection (name: its key); the item itself stays. */
+    REMOVE_FROM_COLLECTION,
 }
 
 /**
@@ -29,7 +35,7 @@ enum class ItemEditKind {
  * meantime survive, and what this device doesn't store (a tag's type, automatic or manual)
  * is kept as Zotero has it.
  *
- * @param name the tag, the field's name, or a new note's parent
+ * @param name the tag, the field's name, a new note's parent, or a collection's key
  * @param value a field's new value, or a new note's HTML
  * @param oldValue a field's value before this device first changed it; a different value
  *   in Zotero at upload means it was changed elsewhere too (a conflict)
@@ -55,11 +61,11 @@ object ItemEdits {
 
     /**
      * How storing [edit] changes an item's [pending] edits: rows to delete, an edit to
-     * insert, or neither. [tags] and [fields] are the item as this device shows it (pending
-     * edits applied). Opposite edits cancel out (add a tag, then remove it: nothing to
-     * upload), and editing a field again replaces the earlier edit but keeps its oldValue.
-     * With [fold] false (the item's edits are being uploaded) nothing is deleted: the edit
-     * is appended, and replaying in order still gives the right result.
+     * insert, or neither. [tags], [fields] and [collections] are the item as this device
+     * shows it (pending edits applied). Opposite edits cancel out (add a tag, then remove
+     * it: nothing to upload), and editing a field again replaces the earlier edit but keeps
+     * its oldValue. With [fold] false (the item's edits are being uploaded) nothing is
+     * deleted: the edit is appended, and replaying in order still gives the right result.
      */
     fun record(
         pending: List<ItemEdit>,
@@ -67,17 +73,14 @@ object ItemEdits {
         tags: List<String>,
         fields: Map<String, String>,
         fold: Boolean = true,
+        collections: List<String> = emptyList(),
     ): Recording = when (edit.kind) {
-        ItemEditKind.ADD_TAG, ItemEditKind.REMOVE_TAG -> {
-            val adding = edit.kind == ItemEditKind.ADD_TAG
-            val opposite = if (adding) ItemEditKind.REMOVE_TAG else ItemEditKind.ADD_TAG
-            val undone = pending.lastOrNull { it.kind == opposite && it.name == edit.name }
-            when {
-                (edit.name in tags) == adding -> Recording.NONE // already so
-                undone != null && fold -> Recording(delete = listOf(undone.id))
-                else -> Recording(insert = edit)
-            }
-        }
+        ItemEditKind.ADD_TAG -> recordMembership(pending, edit, ItemEditKind.REMOVE_TAG, edit.name in tags, true, fold)
+        ItemEditKind.REMOVE_TAG -> recordMembership(pending, edit, ItemEditKind.ADD_TAG, edit.name in tags, false, fold)
+        ItemEditKind.ADD_TO_COLLECTION ->
+            recordMembership(pending, edit, ItemEditKind.REMOVE_FROM_COLLECTION, edit.name in collections, true, fold)
+        ItemEditKind.REMOVE_FROM_COLLECTION ->
+            recordMembership(pending, edit, ItemEditKind.ADD_TO_COLLECTION, edit.name in collections, false, fold)
         ItemEditKind.CREATE_NOTE -> Recording(insert = edit)
         ItemEditKind.SET_FIELD -> {
             val current = fields[edit.name] ?: ""
@@ -90,6 +93,18 @@ object ItemEdits {
                 value == base && fold -> Recording(delete = replaced) // back to Zotero's
                 else -> Recording(delete = replaced, insert = edit.copy(value = value, oldValue = base))
             }
+        }
+    }
+
+    /** An add or remove of a tag or collection: nothing if it is so already, else it cancels its [opposite]. */
+    private fun recordMembership(
+        pending: List<ItemEdit>, edit: ItemEdit, opposite: ItemEditKind, isMember: Boolean, adding: Boolean, fold: Boolean,
+    ): Recording {
+        val undone = pending.lastOrNull { it.kind == opposite && it.name == edit.name }
+        return when {
+            isMember == adding -> Recording.NONE // already so
+            undone != null && fold -> Recording(delete = listOf(undone.id))
+            else -> Recording(insert = edit)
         }
     }
 
@@ -110,6 +125,17 @@ object ItemEdits {
         return result
     }
 
+    /** [collections] (keys) with [edits] applied in order. Applying them twice changes nothing more. */
+    fun applyToCollections(collections: List<String>, edits: List<ItemEdit>): List<String> {
+        val result = collections.toMutableList()
+        for (edit in edits) when (edit.kind) {
+            ItemEditKind.ADD_TO_COLLECTION -> if (edit.name !in result) result.add(edit.name)
+            ItemEditKind.REMOVE_FROM_COLLECTION -> result.removeAll { it == edit.name }
+            else -> {}
+        }
+        return result
+    }
+
     /** [fields] with [edits] applied in order; a field set to "" is left out (blank isn't stored). */
     fun applyToFields(fields: Map<String, String>, edits: List<ItemEdit>): Map<String, String> {
         val result = fields.toMutableMap()
@@ -123,8 +149,8 @@ object ItemEdits {
     /**
      * The PATCH that brings the item as Zotero has it ([serverData], the "data" object of
      * GET /items/{key}) up to date with [edits]: only the changed top-level properties.
-     * "tags" is always sent whole (Zotero replaces the array); tags Zotero has keep their
-     * type. A field changed in Zotero since this device's edit (neither its oldValue nor
+     * "tags" and "collections" are sent whole (Zotero replaces the arrays); tags Zotero has
+     * keep their type. A field changed in Zotero since this device's edit (neither its oldValue nor
      * its new value) is a conflict and left out of the patch.
      */
     fun buildPatch(serverData: JsonObject, edits: List<ItemEdit>): Patch {
@@ -141,6 +167,15 @@ object ItemEdits {
                 else -> {}
             }
             if (tags != serverTags) body.add("tags", JsonArray().apply { tags.forEach { add(it) } })
+        }
+
+        if (edits.any { it.kind == ItemEditKind.ADD_TO_COLLECTION || it.kind == ItemEditKind.REMOVE_FROM_COLLECTION }) {
+            val serverCollections = serverData.getAsJsonArray("collections")
+                ?.mapNotNull { it.takeUnless { e -> e.isJsonNull }?.asString } ?: emptyList()
+            val collections = applyToCollections(serverCollections, edits)
+            if (collections != serverCollections) {
+                body.add("collections", JsonArray().apply { collections.forEach { add(it) } })
+            }
         }
 
         for (edit in edits.filter { it.kind == ItemEditKind.SET_FIELD }.groupBy { it.name }.map { it.value.last() }) {
