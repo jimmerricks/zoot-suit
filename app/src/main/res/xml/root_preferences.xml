@@ -54,7 +54,7 @@
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="true"
             android:key="attachments_uploading_enabled"
-            android:summary="PDFs you annotate on this device are uploaded to Zotero when you sync (My Library only)"
+            android:summary="PDFs you annotate on this device are uploaded to Zotero when you sync (My Library only)."
             android:title="Upload edited attachments" />
 
         <SwitchPreference app:iconSpaceReserved="false"
@@ -63,19 +63,13 @@
             android:summary="Show and sync group libraries. Your API key needs read access to groups."
             android:title="Group libraries" />
 
-        <SwitchPreference app:iconSpaceReserved="false"
-            android:defaultValue="true"
-            android:key="webdav_backup_before_upload"
-            android:summary="Before an upload replaces a file on your WebDAV server, keep the old one in zotero-backup next to the zotero folder. Zotero keeps no file history, so this is your only undo. Old copies are not deleted for you."
-            android:title="Back up files before uploading (WebDAV)" />
-
     </PreferenceCategory>
 
     <PreferenceCategory app:iconSpaceReserved="false" app:title="@string/library_header">
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="false"
             android:key="show_subcollection_items"
-            android:summary="A collection also lists the items in its subcollections, as in Zotero's View menu"
+            android:summary="A collection also lists the items in its subcollections, as in Zotero's View menu."
             android:title="Show items from subcollections" />
 
         <SwitchPreference app:iconSpaceReserved="false"
@@ -104,12 +98,22 @@
             android:enabled="true"
             app:enabled="true"
             android:key="use_webdav"
+            android:summary="Download and upload My Library's attachment files through your own server instead of Zotero's storage."
             android:title="Use WebDAV for attachments" />
 
+        <!-- summary: the address, or that none is set up (SettingsFragment) -->
         <Preference app:iconSpaceReserved="false"
             android:enabled="true"
             android:key="configure_webdav"
             android:title="WebDAV server" />
+
+        <!-- here rather than under Syncing: it applies to WebDAV only, and only while it's on -->
+        <SwitchPreference app:iconSpaceReserved="false"
+            android:defaultValue="true"
+            android:dependency="use_webdav"
+            android:key="webdav_backup_before_upload"
+            android:summary="Before an upload replaces a file on your WebDAV server, keep the old one in zotero-backup next to the zotero folder. Zotero keeps no file history, so this is your only undo. Old copies are not deleted for you."
+            android:title="Back up files before uploading" />
     </PreferenceCategory>
 
     <PreferenceCategory app:iconSpaceReserved="false" android:title="Advanced">

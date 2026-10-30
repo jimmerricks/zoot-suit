@@ -112,6 +112,9 @@ class SettingsActivity : AppCompatActivity() {
 
             this.findPreference<SwitchPreference>("use_webdav")?.isChecked =
                 preferenceManager.sharedPreferences!!.getBoolean("use_webdav", false)
+            // back from the server screen: show what it saved
+            val address = (requireActivity() as SettingsActivity).myPreferenceManager.getWebDAVAddress()
+            findPreference<Preference>("configure_webdav")?.summary = address.ifEmpty { "Not set up" }
         }
 
         override fun onPause() {
