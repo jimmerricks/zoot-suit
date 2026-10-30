@@ -340,12 +340,12 @@ class LibraryAttachments(
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : Observer<DownloadProgress> {
-                var receivedMetadata = false
+                var mtime = 0L
 
                 override fun onComplete() {
                     isDownloading = false
                     ui.finishDownloadingAttachment()
-                    verifyDownload(item, openWhenDone, latestMd5 ?: zoteroDB.getMd5Key(item))
+                    verifyDownload(item, openWhenDone, latestMd5 ?: zoteroDB.getMd5Key(item), mtime)
                 }
 
                 override fun onSubscribe(d: Disposable) {
@@ -355,20 +355,7 @@ class LibraryAttachments(
 
                 override fun onNext(t: DownloadProgress) {
                     ui.updateAttachmentDownloadProgress(t.progress, t.total)
-                    val md5 = latestMd5 ?: t.metadataHash
-                    if (!receivedMetadata && md5 != "") {
-                        receivedMetadata = true
-                        zoteroDB.updateAttachmentMetadata(
-                            item.itemKey,
-                            md5,
-                            t.mtime,
-                            if (preferences.isWebDAVEnabled()) {
-                                AttachmentInfo.WEBDAV
-                            } else {
-                                AttachmentInfo.ZOTEROAPI
-                            }
-                        ).subscribeOn(Schedulers.io()).subscribe()
-                    }
+                    mtime = t.mtime
                 }
 
                 override fun onError(e: Throwable) {
@@ -390,19 +377,29 @@ class LibraryAttachments(
 
 
     /**
-     * Checks a finished download against Zotero's md5 and records it as the copy's base,
-     * hashing the file once, off the main thread; then opens it or says it's there.
+     * Checks a finished download against Zotero's md5 and records it (as the copy's base,
+     * and its md5 and [mtime]), hashing the file once, off the main thread; then opens it
+     * or says it's there. A damaged download is deleted and recorded nowhere, as in a bulk
+     * download (AttachmentDownloadWorker).
      */
-    private fun verifyDownload(item: Item, openWhenDone: Boolean, expected: String) {
+    private fun verifyDownload(item: Item, openWhenDone: Boolean, expected: String, mtime: Long) {
+        // the md5 if the file is intact, else ""
         Single.fromCallable {
             val md5 = attachmentStorageManager.calculateMd5(item)
             val intact = expected.isEmpty() || md5.equals(expected, ignoreCase = true)
             if (intact) recordBase(item, md5)
-            intact
+            if (intact) md5 else ""
         }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ intact ->
+            .subscribe({ md5 ->
+                val intact = md5.isNotEmpty()
+                if (intact) {
+                    // on the main thread: it also updates the open library's records in memory
+                    val source = if (preferences.isWebDAVEnabled()) AttachmentInfo.WEBDAV else AttachmentInfo.ZOTEROAPI
+                    zoteroDB.updateAttachmentMetadata(item.itemKey, md5, mtime, source)
+                        .subscribeOn(Schedulers.io()).subscribe({}, { Log.e("zotero", "recording ${item.itemKey}'s download failed: $it") })
+                }
                 if (!intact) {
                     Log.d("zotero", "md5 error on attachment $expected")
                     attachmentStorageManager.deleteAttachment(item)
