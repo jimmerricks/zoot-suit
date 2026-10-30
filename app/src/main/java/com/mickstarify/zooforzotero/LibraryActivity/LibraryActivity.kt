@@ -333,6 +333,15 @@ class LibraryActivity : AppCompatActivity(),
                     else viewModel.downloadAttachments(missing)
                 }
             }
+            R.id.selection_delete_files -> viewModel.countSelectedAttachments { counts ->
+                if (isFinishing || isDestroyed) return@countSelectedAttachments
+                SelectionDialogs(this).deleteFiles(counts) { files ->
+                    viewModel.findEditedFiles(files) { edited ->
+                        if (isFinishing || isDestroyed) return@findEditedFiles
+                        SelectionDialogs(this).confirmDelete(files, edited) { viewModel.deleteLocalFiles(it) }
+                    }
+                }
+            }
             R.id.stop_downloads -> viewModel.stopDownloads()
             R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
             R.id.invert_selection -> libraryListViewModel.changeSelection { invert(it) }

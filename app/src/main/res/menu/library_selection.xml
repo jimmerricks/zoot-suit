@@ -30,6 +30,10 @@
             android:id="@+id/selection_download"
             android:title="@string/download_attachments"
             app:showAsAction="never" />
+        <item
+            android:id="@+id/selection_delete_files"
+            android:title="@string/delete_files"
+            app:showAsAction="never" />
     </group>
 
     <group android:id="@+id/selection_choose">

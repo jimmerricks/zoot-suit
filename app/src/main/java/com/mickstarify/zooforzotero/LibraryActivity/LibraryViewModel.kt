@@ -266,6 +266,10 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     fun downloadAttachments(attachments: List<Item>) = parts.attachments.downloadAttachments(attachments)
 
+    fun findEditedFiles(files: List<Item>, onResult: (List<Item>) -> Unit) = parts.attachments.findEdited(files, onResult)
+
+    fun deleteLocalFiles(files: List<Item>) = parts.attachments.deleteLocalAttachments(files)
+
     /**
      * Toolbar subtitle naming the active search and filter with the count, if the list goes
      * through them; and what the list says if it is empty.

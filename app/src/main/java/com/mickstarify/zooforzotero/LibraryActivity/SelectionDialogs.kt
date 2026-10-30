@@ -135,4 +135,58 @@ class SelectionDialogs(private val context: Context) {
             .setNegativeButton("Cancel", null)
             .show()
     }
+
+    /**
+     * Which of the selection's files to delete from this device: each kind with how many
+     * of its files are here ([counts]); [onChoose] gets those of the one tapped.
+     */
+    fun deleteFiles(counts: Map<AttachmentKind, AttachmentCounts>, onChoose: (List<Item>) -> Unit) {
+        val here = counts.filterValues { it.onDevice.isNotEmpty() }
+        if (here.isEmpty()) {
+            AlertDialog.Builder(context)
+                .setTitle("Nothing to delete")
+                .setMessage("None of the selected items' files are on this device.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+        val kinds = here.keys.toList()
+        val labels = kinds.map { kind ->
+            val n = here.getValue(kind).onDevice.size
+            "${kind.label}: $n on this device"
+        }
+        AlertDialog.Builder(context)
+            .setTitle("Delete files from this device")
+            .setItems(labels.toTypedArray()) { _, which -> onChoose(here.getValue(kinds[which]).onDevice) }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * Asks before deleting [files] from this device. If some have edits not uploaded yet
+     * ([edited]), says so: those can be kept, or deleted with their edits.
+     */
+    fun confirmDelete(files: List<Item>, edited: List<Item>, onDelete: (List<Item>) -> Unit) {
+        fun files(n: Int) = if (n == 1) "1 file" else "$n files"
+        val dialog = AlertDialog.Builder(context)
+            .setTitle("Delete ${files(files.size)} from this device?")
+            .setNegativeButton("Cancel", null)
+        if (edited.isEmpty()) {
+            dialog.setMessage("They stay in Zotero and can be downloaded again.")
+                .setPositiveButton("Delete") { _, _ -> onDelete(files) }
+        } else {
+            val keys = edited.map { it.itemKey }.toSet()
+            val names = edited.take(5).joinToString("\n") { "• " + (it.data["filename"] ?: it.getTitle()) } +
+                    if (edited.size > 5) "\n…" else ""
+            dialog.setMessage(
+                "${files(edited.size).replaceFirstChar { it.uppercase() }} ${if (edited.size == 1) "has" else "have"} " +
+                        "edits that haven't been uploaded. Deleting loses them.\n\n$names"
+            )
+                .setPositiveButton("Delete all") { _, _ -> onDelete(files) }
+            if (edited.size < files.size) {
+                dialog.setNeutralButton("Keep edited") { _, _ -> onDelete(files.filter { it.itemKey !in keys }) }
+            }
+        }
+        dialog.show()
+    }
 }

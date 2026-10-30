@@ -622,6 +622,37 @@ class LibraryAttachments(
         )
     }
 
+    /** Those of [files] (on this device) with edits not uploaded yet; [onResult] on the main thread. */
+    fun findEdited(files: List<Item>, onResult: (List<Item>) -> Unit) {
+        ui.showLoadingAlertDialog("Checking for edits…")
+        Single.fromCallable { files.filter { editedAttachments.isEdited(it) } }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ edited ->
+                ui.hideLoadingAlertDialog()
+                onResult(edited)
+            }, { e ->
+                ui.hideLoadingAlertDialog()
+                Log.e("zotero", "checking ${files.size} files for edits failed: $e")
+                ui.createErrorAlert("Couldn't check the files for edits", "Nothing was deleted.\n\nDetails: ${e.message ?: e}") {}
+            })
+    }
+
+    /** Deletes the copies of [files] on this device; Zotero keeps them. */
+    fun deleteLocalAttachments(files: List<Item>) {
+        Single.fromCallable { files.count { runCatching { attachmentStorageManager.deleteAttachment(it) }.isSuccess } }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ deleted ->
+                onFilesChanged()
+                ui.makeToastAlert(if (deleted == 1) "Deleted 1 file from this device." else "Deleted $deleted files from this device.")
+            }, { e ->
+                onFilesChanged()
+                Log.e("zotero", "deleting ${files.size} files failed: $e")
+                ui.createErrorAlert("Couldn't delete the files", "Details: ${e.message ?: e}") {}
+            })
+    }
+
     fun deleteLocalAttachment(attachment: Item) {
         val delete = {
             attachmentStorageManager.deleteAttachment(attachment)
