@@ -219,4 +219,14 @@ class ZoteroAPIPagingTest {
         pages.assertComplete()
         assertEquals(7, pages.values().first().lastModifiedVersion)
     }
+
+    @Test
+    fun collectionsFailOnAServerError() {
+        server.enqueue(MockResponse().setResponseCode(500))
+
+        val pages = api.getCollections(libraryVersion = 0).test().awaitDone(5, TimeUnit.SECONDS)
+
+        pages.assertError { it.message!!.contains("500") }
+        pages.assertNoValues()
+    }
 }

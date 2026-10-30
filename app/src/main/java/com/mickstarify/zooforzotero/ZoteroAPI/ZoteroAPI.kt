@@ -627,6 +627,9 @@ class ZoteroAPI(
                 throw UpToDateException("304 Collections up to date.")
             } else if (response.code() == 403) {
                 throw APIKeyRevokedException("403 Api Key Invalid.")
+            } else if (response.code() != 200) {
+                // as items and the trash do: an empty page would count as a finished sync
+                throw Exception("Server gave back ${response.code()} for collections")
             }
 
             val collections = response.body() ?: LinkedList()
