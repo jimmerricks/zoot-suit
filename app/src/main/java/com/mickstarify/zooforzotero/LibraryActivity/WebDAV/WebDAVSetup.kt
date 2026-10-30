@@ -1,6 +1,7 @@
 package com.mickstarify.zooforzotero.LibraryActivity.WebDAV
 
 import android.app.ProgressDialog
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -10,8 +11,13 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
 import com.google.android.material.textfield.TextInputLayout
@@ -43,9 +49,18 @@ class WebDAVSetup : AppCompatActivity() {
     lateinit var checkBox_formatAddress: CheckBox
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // as Settings, which opens it: white status bar icons over the toolbar's colour
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_web_dav_setup)
+        setSupportActionBar(findViewById(R.id.toolbar))
+        supportActionBar?.setTitle(R.string.webdav_config_title)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        // the toolbar's AppBarLayout takes the status bar; keep the form above the nav bar
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.webdav_content)) { view, insets ->
+            view.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom)
+            insets
+        }
 
         preferenceManager = PreferenceManager(this)
 
@@ -102,6 +117,12 @@ class WebDAVSetup : AppCompatActivity() {
         advancedConfigButton.setOnClickListener {
             toggleAdvancedConfig()
         }
+    }
+
+    // back to Settings, which opened this screen, not to the library (parentActivityName)
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 
     /**
