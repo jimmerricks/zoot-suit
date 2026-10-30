@@ -256,6 +256,25 @@ class Item : Parcelable {
         return data["parentItem"] ?: itemKey
     }
 
+    /** For an HTML snapshot (not a link to a web page): the key of the item that has it. */
+    fun htmlOwnerKey(): String? {
+        if (itemType != "attachment" || data["contentType"] != "text/html" || isWebLink()) return null
+        return data["parentItem"] ?: itemKey
+    }
+
+    /**
+     * For an attachment that is neither a PDF nor an HTML snapshot, nor a link to a web page
+     * (an EPUB, an image, a Word file...): the key of the item that has it.
+     */
+    fun otherAttachmentOwnerKey(): String? {
+        if (itemType != "attachment" || isWebLink()) return null
+        val type = data["contentType"]
+        if (type == "application/pdf" || type == "text/html") return null
+        return data["parentItem"] ?: itemKey
+    }
+
+    private fun isWebLink() = data["linkMode"] == "linked_url"
+
     /**
      * Takes [child] (an item whose parentItem is this one) into [attachments] if it is a
      * file that can be opened, or into [notes] if it is a note.

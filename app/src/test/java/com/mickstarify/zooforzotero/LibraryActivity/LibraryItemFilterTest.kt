@@ -70,6 +70,36 @@ class LibraryItemFilterTest {
     }
 
     @Test
+    fun `an html snapshot counts, a web link does not`() {
+        assertEquals("HTML", html("HTML").htmlOwnerKey())
+        val link = item("LINK", mapOf("itemType" to "attachment", "contentType" to "text/html", "linkMode" to "linked_url", "parentItem" to "P"))
+        assertEquals(null, link.htmlOwnerKey())
+        assertEquals(null, link.otherAttachmentOwnerKey())
+        assertEquals(null, pdf("PDF").htmlOwnerKey())
+    }
+
+    @Test
+    fun `other attachments are files that are neither pdf nor html`() {
+        val epub = item("EPUB", mapOf("itemType" to "attachment", "contentType" to "application/epub+zip", "parentItem" to "P"))
+        assertEquals("P", epub.otherAttachmentOwnerKey())
+        val untyped = item("ALONE", mapOf("itemType" to "attachment"))
+        assertEquals("ALONE", untyped.otherAttachmentOwnerKey())
+        assertEquals(null, pdf("P").otherAttachmentOwnerKey())
+        assertEquals(null, html("P").otherAttachmentOwnerKey())
+        assertEquals(null, item("BOOK", mapOf("itemType" to "book")).otherAttachmentOwnerKey())
+    }
+
+    @Test
+    fun `html and other attachment filters narrow like the pdf one`() {
+        val result = LibraryItemFilter.applyDisplayFilters(
+            all, onlyNotes = false, onlyPdfs = false, keysWithPdf = keysWithPdf,
+            onlyHtml = true, keysWithHtml = setOf("HTML", "BOTH"),
+            onlyOther = true, keysWithOther = setOf("BOTH", "NOTE"),
+        )
+        assertEquals(listOf("BOTH"), keys(result))
+    }
+
+    @Test
     fun `both display filters must hold together`() {
         val result = LibraryItemFilter.applyDisplayFilters(all, onlyNotes = true, onlyPdfs = true, keysWithPdf = keysWithPdf)
         assertEquals(listOf("BOTH"), keys(result))

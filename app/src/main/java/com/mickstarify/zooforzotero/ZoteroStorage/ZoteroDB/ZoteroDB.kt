@@ -88,6 +88,12 @@ class ZoteroDB(
     @Volatile
     override var keysWithPdf: Set<String> = emptySet()
         private set
+    @Volatile
+    override var keysWithHtml: Set<String> = emptySet()
+        private set
+    @Volatile
+    override var keysWithOtherAttachment: Set<String> = emptySet()
+        private set
 
     val namespace: String = if (prefix == "") {
         "zoteroDB"
@@ -190,11 +196,17 @@ class ZoteroDB(
 
     private fun associateItemsWithAttachments() {
         val withPdf = HashSet<String>()
+        val withHtml = HashSet<String>()
+        val withOther = HashSet<String>()
         for (item in items!!) {
             item.data["parentItem"]?.let { itemsByKey[it]?.adoptChild(item) }
             item.pdfOwnerKey()?.let { withPdf.add(it) }
+            item.htmlOwnerKey()?.let { withHtml.add(it) }
+            item.otherAttachmentOwnerKey()?.let { withOther.add(it) }
         }
         keysWithPdf = withPdf
+        keysWithHtml = withHtml
+        keysWithOtherAttachment = withOther
     }
 
     fun processItems() {

@@ -43,7 +43,11 @@ class InMemoryItemSource(
             items,
             onlyNotes = filter.hasNotes,
             onlyPdfs = filter.hasPdf,
-            keysWithPdf = lib.keysWithPdf
+            keysWithPdf = lib.keysWithPdf,
+            onlyHtml = filter.hasHtml,
+            keysWithHtml = lib.keysWithHtml,
+            onlyOther = filter.hasOtherAttachment,
+            keysWithOther = lib.keysWithOtherAttachment,
         )
         val searched = if (query.search.isEmpty()) displayed else {
             val matches = searchIndex(lib)?.search(query.search)?.mapTo(HashSet()) { it.itemKey } ?: emptySet()

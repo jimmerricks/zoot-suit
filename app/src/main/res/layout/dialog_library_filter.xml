@@ -21,6 +21,21 @@
 
     <CheckBox
         style="@style/DialogChoice"
+        android:id="@+id/checkBox_filter_has_html"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="HTML snapshot" />
+
+    <!-- EPUB, images, Word files...: not a PDF, an HTML snapshot or a web link -->
+    <CheckBox
+        style="@style/DialogChoice"
+        android:id="@+id/checkBox_filter_has_other"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Other attachment" />
+
+    <CheckBox
+        style="@style/DialogChoice"
         android:id="@+id/checkBox_filter_has_notes"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

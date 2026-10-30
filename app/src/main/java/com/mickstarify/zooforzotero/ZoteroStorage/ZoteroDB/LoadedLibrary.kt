@@ -13,6 +13,10 @@ interface LoadedLibrary {
     val collections: List<Collection>?
     /** Keys of items with a PDF: parents of a PDF attachment, and standalone PDFs. */
     val keysWithPdf: Set<String>
+    /** The same for HTML snapshots (Item.htmlOwnerKey). */
+    val keysWithHtml: Set<String>
+    /** The same for other attachments (Item.otherAttachmentOwnerKey). */
+    val keysWithOtherAttachment: Set<String>
     /** False while the fields left out at load are still loading. */
     val allFieldsLoaded: Boolean
 

@@ -114,12 +114,18 @@ class ItemSourceEquivalenceTest {
                     1 -> pojo(child, mapOf("itemType" to "note", "parentItem" to key), deleted = childTrashed) // blank note: not stored, doesn't parse
                     else -> {
                         attachmentKeys += child
-                        val pdf = random.nextInt(3) != 0
-                        pojo(child, mapOf(
-                            "itemType" to "attachment", "parentItem" to key, "linkMode" to "imported_file",
-                            "title" to "Full Text", "contentType" to if (pdf) "application/pdf" else "text/html",
-                            "filename" to "$child.${if (pdf) "pdf" else "html"}",
-                        ), deleted = childTrashed)
+                        // PDFs, HTML snapshots, other files (EPUB, no type at all), web links
+                        val (type, linkMode) = listOf(
+                            "application/pdf" to "imported_file", "application/pdf" to "imported_file",
+                            "text/html" to "imported_url", "application/epub+zip" to "imported_file",
+                            null to "imported_file", "text/html" to "linked_url",
+                        )[random.nextInt(6)]
+                        val fields = mutableMapOf(
+                            "itemType" to "attachment", "parentItem" to key, "linkMode" to linkMode,
+                            "title" to "Full Text", "filename" to "$child.file",
+                        )
+                        type?.let { fields["contentType"] = it }
+                        pojo(child, fields, deleted = childTrashed)
                     }
                 }
             }
@@ -186,6 +192,8 @@ class ItemSourceEquivalenceTest {
         val filters = listOf(
             LibraryFilter(hasPdf = true), LibraryFilter(hasNotes = true),
             LibraryFilter(hasPdf = true, hasNotes = true),
+            LibraryFilter(hasHtml = true), LibraryFilter(hasOtherAttachment = true),
+            LibraryFilter(hasPdf = true, hasHtml = true),
             LibraryFilter(tags = setOf("to-read")), LibraryFilter(tags = setOf("Method")),
             LibraryFilter(tags = setOf("method", "archive"), hasPdf = true),
             LibraryFilter(tags = setOf("théorie")), LibraryFilter(tags = setOf("absent")),
@@ -195,6 +203,9 @@ class ItemSourceEquivalenceTest {
         }
         val nonEmpty = room.query(LibraryQuery(LibraryPlace.Library, filter = LibraryFilter(hasPdf = true)))
         assertTrue("the fixture has items with PDFs", nonEmpty.size > 0)
+        for (filter in listOf(LibraryFilter(hasHtml = true), LibraryFilter(hasOtherAttachment = true))) {
+            assertTrue("the fixture has items for $filter", room.query(LibraryQuery(LibraryPlace.Library, filter = filter)).size > 0)
+        }
     }
 
     @Test

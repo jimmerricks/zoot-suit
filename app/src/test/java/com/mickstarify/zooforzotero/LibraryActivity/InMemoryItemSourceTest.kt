@@ -31,6 +31,8 @@ class InMemoryItemSourceTest {
         override val items: List<Item>,
         override val collections: List<Collection> = emptyList(),
         override val keysWithPdf: Set<String> = emptySet(),
+        override val keysWithHtml: Set<String> = emptySet(),
+        override val keysWithOtherAttachment: Set<String> = emptySet(),
         val trash: List<Item> = emptyList(),
         val publications: List<Item> = emptyList(),
     ) : LoadedLibrary {

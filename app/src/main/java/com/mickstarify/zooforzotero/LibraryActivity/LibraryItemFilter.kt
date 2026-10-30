@@ -12,14 +12,19 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 object LibraryItemFilter {
 
     /**
-     * Applies the filter's "has notes" / "has PDF". With both set, an item must satisfy
-     * both. [keysWithPdf]: keys of items with a PDF (ZoteroDB.keysWithPdf).
+     * Applies the filter's "has notes", "has PDF", "has HTML snapshot" and "has other
+     * attachment"; an item must satisfy each that is set. [keysWithPdf], [keysWithHtml],
+     * [keysWithOther]: keys of the items with one (ZoteroDB.keysWithPdf and the rest).
      */
     fun applyDisplayFilters(
         items: List<Item>,
         onlyNotes: Boolean,
         onlyPdfs: Boolean,
-        keysWithPdf: Set<String>
+        keysWithPdf: Set<String>,
+        onlyHtml: Boolean = false,
+        keysWithHtml: Set<String> = emptySet(),
+        onlyOther: Boolean = false,
+        keysWithOther: Set<String> = emptySet(),
     ): List<Item> {
         var newItems = items
         if (onlyNotes) {
@@ -27,6 +32,12 @@ object LibraryItemFilter {
         }
         if (onlyPdfs) {
             newItems = newItems.filter { it.itemKey in keysWithPdf }
+        }
+        if (onlyHtml) {
+            newItems = newItems.filter { it.itemKey in keysWithHtml }
+        }
+        if (onlyOther) {
+            newItems = newItems.filter { it.itemKey in keysWithOther }
         }
         return newItems
     }

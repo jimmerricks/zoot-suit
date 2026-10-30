@@ -36,6 +36,8 @@ class LibraryFilterDialog(
     fun show() {
         val view: View = LayoutInflater.from(context).inflate(R.layout.dialog_library_filter, null)
         val hasPdf = view.findViewById<CheckBox>(R.id.checkBox_filter_has_pdf)
+        val hasHtml = view.findViewById<CheckBox>(R.id.checkBox_filter_has_html)
+        val hasOther = view.findViewById<CheckBox>(R.id.checkBox_filter_has_other)
         val hasNotes = view.findViewById<CheckBox>(R.id.checkBox_filter_has_notes)
         val onDevice = view.findViewById<CheckBox>(R.id.checkBox_filter_on_device)
         val edited = view.findViewById<CheckBox>(R.id.checkBox_filter_edited)
@@ -48,6 +50,8 @@ class LibraryFilterDialog(
 
         fun render() {
             hasPdf.isChecked = filter.hasPdf
+            hasHtml.isChecked = filter.hasHtml
+            hasOther.isChecked = filter.hasOtherAttachment
             hasNotes.isChecked = filter.hasNotes
             onDevice.isChecked = filter.onDevice
             edited.isChecked = filter.editedHere
@@ -72,6 +76,8 @@ class LibraryFilterDialog(
         }
 
         hasPdf.setOnClickListener { update(filter.copy(hasPdf = hasPdf.isChecked)) }
+        hasHtml.setOnClickListener { update(filter.copy(hasHtml = hasHtml.isChecked)) }
+        hasOther.setOnClickListener { update(filter.copy(hasOtherAttachment = hasOther.isChecked)) }
         hasNotes.setOnClickListener { update(filter.copy(hasNotes = hasNotes.isChecked)) }
         onDevice.setOnClickListener { update(filter.copy(onDevice = onDevice.isChecked)) }
         edited.setOnClickListener { update(filter.copy(editedHere = edited.isChecked)) }

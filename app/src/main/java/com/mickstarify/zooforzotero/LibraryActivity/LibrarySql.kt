@@ -13,6 +13,20 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.SearchText
 object LibrarySql {
 
     private const val PDF = "'application/pdf'"
+    private const val HTML = "'text/html'"
+
+    // attachment [a] isn't a link to a web page (Item.isWebLink)
+    private fun notWebLink(a: String) = "NOT EXISTS (SELECT 1 FROM ItemData l WHERE l.parent = $a.itemKey " +
+            "AND l.name = 'linkMode' AND l.value = 'linked_url')"
+
+    /**
+     * Item i has an attachment meeting [condition] on attachment `a`: a child that isn't
+     * trashed counts for its parent, a standalone one for itself (Item.pdfOwnerKey and the like).
+     */
+    private fun hasAttachment(condition: (String) -> String) =
+        "(EXISTS (SELECT 1 FROM ItemInfo a WHERE a.parent = i.itemKey AND a.deleted = 0 " +
+                "AND a.itemType = 'attachment' AND ${condition("a")}) " +
+                "OR (i.parent IS NULL AND i.itemType = 'attachment' AND ${condition("i")}))"
 
     // a child note n that parses (Item.adoptChild: Note needs its key and text)
     private const val NOTE = "n.deleted = 0 AND n.itemType = 'note' " +
@@ -93,9 +107,11 @@ object LibrarySql {
             }
             // a PDF attachment that opens (Item.pdfOwnerKey): a child's counts for its parent,
             // a standalone one for itself
-            if (filter.hasPdf) where += "(EXISTS (SELECT 1 FROM ItemInfo a WHERE a.parent = i.itemKey " +
-                    "AND a.deleted = 0 AND a.itemType = 'attachment' AND a.contentType = $PDF) " +
-                    "OR (i.parent IS NULL AND i.itemType = 'attachment' AND i.contentType = $PDF))"
+            if (filter.hasPdf) where += hasAttachment { "$it.contentType = $PDF" }
+            if (filter.hasHtml) where += hasAttachment { "$it.contentType = $HTML AND ${notWebLink(it)}" }
+            if (filter.hasOtherAttachment) where += hasAttachment {
+                "($it.contentType IS NULL OR $it.contentType NOT IN ($PDF, $HTML)) AND ${notWebLink(it)}"
+            }
             // a child note that parses (Item.adoptChild: Note needs its key and text)
             if (filter.hasNotes) where += "EXISTS (SELECT 1 FROM ItemInfo n WHERE n.parent = i.itemKey AND $NOTE)"
             if (searchFields != null && query.search.isNotEmpty()) search(query.search, searchFields, where, args)

@@ -4,8 +4,9 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 /**
  * The library list's filter. Every condition that is set must hold (AND): an item must
- * carry all of [tags]; with [hasPdf] / [hasNotes], have a PDF attachment / notes (applied
- * by LibraryItemFilter.applyDisplayFilters); with [onDevice] / [editedHere], have an
+ * carry all of [tags]; with [hasPdf] / [hasHtml] / [hasOtherAttachment] / [hasNotes], have
+ * a PDF / an HTML snapshot / another attachment (not a web link) / notes (applied by
+ * LibraryItemFilter.applyDisplayFilters); with [onDevice] / [editedHere], have an
  * attachment whose PDF is on this device / has edits waiting to sync. An empty filter
  * lets everything through.
  */
@@ -15,8 +16,11 @@ data class LibraryFilter(
     val editedHere: Boolean = false,
     val hasPdf: Boolean = false,
     val hasNotes: Boolean = false,
+    val hasHtml: Boolean = false,
+    val hasOtherAttachment: Boolean = false,
 ) {
-    val isActive: Boolean get() = tags.isNotEmpty() || onDevice || editedHere || hasPdf || hasNotes
+    val isActive: Boolean
+        get() = tags.isNotEmpty() || onDevice || editedHere || hasPdf || hasNotes || hasHtml || hasOtherAttachment
 
     val needsDeviceState: Boolean get() = onDevice || editedHere
 
@@ -36,6 +40,8 @@ data class LibraryFilter(
     fun describe(): String = (tags.sortedWith(String.CASE_INSENSITIVE_ORDER) +
             listOfNotNull(
                 "has PDF".takeIf { hasPdf },
+                "has HTML".takeIf { hasHtml },
+                "has other attachment".takeIf { hasOtherAttachment },
                 "has notes".takeIf { hasNotes },
                 "on this device".takeIf { onDevice },
                 "edits to sync".takeIf { editedHere },

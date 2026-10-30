@@ -77,6 +77,8 @@ class PreferenceManager @Inject constructor(context: Context) {
             // the sort dialog's former "only show items with…" options, same keys
             hasPdf = flag("is_showing_only_with_pdfs"),
             hasNotes = flag("is_showing_only_with_notes"),
+            hasHtml = flag("library_filter_has_html"),
+            hasOtherAttachment = flag("library_filter_has_other_attachment"),
         )
     }
 
@@ -87,6 +89,8 @@ class PreferenceManager @Inject constructor(context: Context) {
             .putBoolean(libraryKey("library_filter_edited_here", groupId), filter.editedHere)
             .putBoolean(libraryKey("is_showing_only_with_pdfs", groupId), filter.hasPdf)
             .putBoolean(libraryKey("is_showing_only_with_notes", groupId), filter.hasNotes)
+            .putBoolean(libraryKey("library_filter_has_html", groupId), filter.hasHtml)
+            .putBoolean(libraryKey("library_filter_has_other_attachment", groupId), filter.hasOtherAttachment)
             .apply()
     }
 

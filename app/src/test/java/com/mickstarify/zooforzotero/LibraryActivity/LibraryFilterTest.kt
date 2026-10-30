@@ -52,6 +52,12 @@ class LibraryFilterTest {
     fun `has-PDF and has-notes make the filter active and are described`() {
         assertTrue(LibraryFilter(hasPdf = true).isActive)
         assertEquals("has PDF · has notes", LibraryFilter(hasPdf = true, hasNotes = true).describe())
+        assertTrue(LibraryFilter(hasHtml = true).isActive)
+        assertTrue(LibraryFilter(hasOtherAttachment = true).isActive)
+        assertEquals(
+            "has HTML · has other attachment",
+            LibraryFilter(hasHtml = true, hasOtherAttachment = true).describe()
+        )
     }
 
     @Test
