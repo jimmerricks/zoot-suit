@@ -47,10 +47,18 @@ data class SyncStatus(
         ?.let { minOf(it.done, it.total) to it.total }
 
     /**
-     * How far the item pass running now is, in percent: the toolbar's label, the counts
-     * being in the details. Rounded down, so 100 only once the pass is complete.
+     * How far the item download is, in percent: the toolbar's label, the counts being in
+     * the details. A first sync's two passes share the scale, top-level items 0-49 and
+     * attachments and notes 50-99, so it never runs backwards: the second pass's total
+     * isn't known before it starts, and it was shown from 0 again. Rounded down, so 100
+     * only once the download is complete.
      */
-    fun percent(): Int? = itemProgress()?.let { (done, total) -> (done.toLong() * 100 / total).toInt() }
+    fun percent(): Int? {
+        val (done, total) = itemProgress() ?: return null
+        val pass = (done.toLong() * 100 / total).toInt()
+        if (SyncStage.CHILDREN !in stages) return pass
+        return if (stages[SyncStage.CHILDREN]?.phase == StageState.Phase.RUNNING) 50 + pass / 2 else pass / 2
+    }
 
     /** Stages in the order they're listed. */
     fun ordered(): List<Pair<SyncStage, StageState>> =
