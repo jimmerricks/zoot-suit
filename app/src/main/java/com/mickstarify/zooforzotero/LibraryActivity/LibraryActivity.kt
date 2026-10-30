@@ -514,6 +514,11 @@ class LibraryActivity : AppCompatActivity(),
             isVisible = syncLabel != null
             syncLabel?.let { title = it }
         }
+        // Android caps the toolbar's buttons by its width, and the sync label takes a
+        // place: search and filter keep theirs beside it rather than move to the menu
+        val pinned = if (syncLabel != null) MenuItem.SHOW_AS_ACTION_ALWAYS else MenuItem.SHOW_AS_ACTION_IF_ROOM
+        menu.findItem(R.id.search)?.setShowAsAction(pinned)
+        menu.findItem(R.id.library_filter)?.setShowAsAction(pinned)
         menu.findItem(R.id.pending_edits)?.apply {
             // while a sync runs the edits are going up; its details list them
             isVisible = pendingEdits > 0 && syncLabel == null
