@@ -145,12 +145,19 @@ class SyncManager (
         )
     }
 
+    /**
+     * Fetches [db]'s changed items only. While a sync runs, a complete one is queued behind
+     * it instead: a second item download alongside the running one wrote the same progress
+     * and ended the sync twice.
+     */
     fun startItemsSync(db: ZoteroDB){
-        if (!isSyncing()) {
-            begin(SyncStatus(db.groupID, false, mapOf(
-                SyncStage.ITEMS to StageState(StageState.Phase.RUNNING), SyncStage.DELETIONS to StageState()
-            )))
+        if (isSyncing()) {
+            startCompleteSync(db)
+            return
         }
+        begin(SyncStatus(db.groupID, false, mapOf(
+            SyncStage.ITEMS to StageState(StageState.Phase.RUNNING), SyncStage.DELETIONS to StageState()
+        )))
         this.loadItems(db)
     }
 

@@ -227,4 +227,19 @@ class SyncManagerTest {
         assertEquals(StageState.Phase.FAILED, items?.phase)
         assertEquals("offline", items?.error)
     }
+
+    @Test
+    fun anItemsSyncDuringASyncWaitsForIt() {
+        itemsVersion = 500
+        whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.ALL))) doAnswer {
+            events += "fetch ALL"
+            Observable.never()
+        }
+        sync.startCompleteSync(db)
+
+        sync.startItemsSync(db) // a note was saved meanwhile
+
+        assertEquals(listOf("fetch ALL"), events) // not a second download alongside
+        assertEquals(GroupInfo.NO_GROUP_ID, statuses.last().queued)
+    }
 }
