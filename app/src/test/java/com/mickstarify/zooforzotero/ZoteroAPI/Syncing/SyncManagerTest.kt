@@ -18,6 +18,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -59,7 +60,9 @@ class SyncManagerTest {
             it.getArgument<() -> Unit>(1)()
         }
         on { showNewItems(any()) } doAnswer { events += "show"; Unit }
+        on { showSyncStatus(any()) } doAnswer { statuses += it.getArgument<SyncStatus>(0); Unit }
     }
+    private val statuses = mutableListOf<SyncStatus>()
     private var clock = 0L
     private lateinit var sync: SyncManager
 
@@ -175,5 +178,52 @@ class SyncManagerTest {
 
         assertEquals(listOf(false, true, false), seen)
         assertFalse(sync.isLoadingChildren(GroupInfo.NO_GROUP_ID))
+    }
+
+    @Test
+    fun aFirstSyncReportsBothItemPassesAndEnds() {
+        serve(ItemScope.TOP, page(100, 250), page(100, 250))
+        serve(ItemScope.CHILDREN, page(100, 0))
+
+        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+
+        val first = statuses.first()
+        assertTrue(first.firstSync)
+        assertEquals(StageState.Phase.WAITING, first.stages[SyncStage.CHILDREN]?.phase)
+        // the toolbar's count while top-level items arrive (pages are empty here: 0 each)
+        assertTrue(statuses.any { it.itemProgress() == (0 to 250) })
+        val last = statuses.last()
+        assertFalse(last.running)
+        assertEquals(StageState.Phase.DONE, last.stages[SyncStage.ITEMS]?.phase)
+        assertEquals(StageState.Phase.DONE, last.stages[SyncStage.CHILDREN]?.phase)
+        assertEquals(StageState.Phase.DONE, last.stages[SyncStage.DELETIONS]?.phase)
+        assertNull(last.itemProgress())
+    }
+
+    @Test
+    fun laterSyncsHaveOneItemPass() {
+        itemsVersion = 500
+        serve(ItemScope.ALL, page(510, 0))
+
+        sync.startCompleteSync(db, useSmallLoadingAnimation = true)
+
+        assertFalse(statuses.first().firstSync)
+        assertEquals(
+            listOf(SyncStage.ITEMS, SyncStage.COLLECTIONS, SyncStage.TRASH, SyncStage.DELETIONS),
+            statuses.first().ordered().map { it.first }
+        )
+    }
+
+    @Test
+    fun aStageCutOffOfflineSaysSo() {
+        itemsVersion = 500
+        whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.ALL))) doReturn
+                Observable.error(java.net.UnknownHostException("api.zotero.org"))
+
+        sync.startCompleteSync(db, useSmallLoadingAnimation = true)
+
+        val items = statuses.last().stages[SyncStage.ITEMS]
+        assertEquals(StageState.Phase.FAILED, items?.phase)
+        assertEquals("offline", items?.error)
     }
 }

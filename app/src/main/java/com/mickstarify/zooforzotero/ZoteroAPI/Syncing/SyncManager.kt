@@ -49,6 +49,26 @@ class SyncManager (
     /** Whether a first sync of library [groupID] is still fetching its attachments and notes. */
     fun isLoadingChildren(groupID: Int): Boolean = loadingItems && childrenGroup == groupID
 
+    /** The running sync's stages, or the last one's; null before the first. */
+    var status: SyncStatus? = null
+        private set
+
+    private fun report(stage: SyncStage, change: (StageState) -> StageState) {
+        val current = status ?: return
+        status = current.with(stage, change).also { syncChangeListener.showSyncStatus(it) }
+    }
+
+    private fun begin(next: SyncStatus) {
+        status = next
+        syncChangeListener.showSyncStatus(next)
+    }
+
+    private fun failure(e: Throwable): (StageState) -> StageState = {
+        it.copy(phase = StageState.Phase.FAILED, error = if (NetworkErrors.isOffline(e)) "offline" else e.message ?: e.toString())
+    }
+
+    private fun stageOf(scope: ItemScope) = if (scope == ItemScope.CHILDREN) SyncStage.CHILDREN else SyncStage.ITEMS
+
     /** Offline makes every request of a sync fail; say so once, as a toast. */
     private var reportedOffline = false
 
@@ -89,6 +109,7 @@ class SyncManager (
             // group refreshing), or have fetched before this request's edits went up
             Log.d("zotero", "sync of ${zoteroDB.groupID} queued behind the running one")
             queued = Pair(zoteroDB, useSmallLoadingAnimation)
+            status?.let { begin(it.copy(queued = zoteroDB.groupID)) }
             syncChangeListener.startSyncAnimation(useSmallLoadingAnimation)
             return
         }
@@ -99,12 +120,37 @@ class SyncManager (
         syncChangeListener.startSyncAnimation(useSmallLoadingAnimation)
 
         Log.d("zotero", "initializing sync for ${zoteroDB.groupID}")
+        begin(initialStatus(zoteroDB))
         loadItems(zoteroDB, useSmallLoadingAnimation)
         loadCollections(zoteroDB)
         loadTrashedItems(zoteroDB)
     }
 
+    /** The stages of a complete sync of [db] about to start; a first sync has two item passes. */
+    private fun initialStatus(db: ZoteroDB): SyncStatus {
+        val progress = db.getDownloadProgress()
+        val first = progress?.scope == ItemScope.TOP || progress?.scope == ItemScope.CHILDREN ||
+                (progress == null && db.getLibraryVersion() <= 0)
+        val running = StageState(StageState.Phase.RUNNING)
+        val items = if (!first) {
+            mapOf(SyncStage.ITEMS to running)
+        } else if (progress?.scope == ItemScope.CHILDREN) {
+            mapOf(SyncStage.ITEMS to StageState(StageState.Phase.DONE), SyncStage.CHILDREN to running)
+        } else {
+            mapOf(SyncStage.ITEMS to running, SyncStage.CHILDREN to StageState())
+        }
+        return SyncStatus(
+            db.groupID, first,
+            items + mapOf(SyncStage.COLLECTIONS to running, SyncStage.TRASH to running, SyncStage.DELETIONS to StageState())
+        )
+    }
+
     fun startItemsSync(db: ZoteroDB){
+        if (!isSyncing()) {
+            begin(SyncStatus(db.groupID, false, mapOf(
+                SyncStage.ITEMS to StageState(StageState.Phase.RUNNING), SyncStage.DELETIONS to StageState()
+            )))
+        }
         this.loadItems(db, true)
     }
 
@@ -127,6 +173,7 @@ class SyncManager (
                     // only now are they complete up to this version; on an error the
                     // stored version stays and the next sync asks again
                     if (version > 0) db.setCollectionsVersion(version)
+                    report(SyncStage.COLLECTIONS) { it.copy(phase = StageState.Phase.DONE) }
                     finishGetCollections(db)
                 }
 
@@ -136,20 +183,26 @@ class SyncManager (
                 override fun onError(e: Throwable) {
                     if (e is UpToDateException) {
                         Log.d("zotero", "local copy of collections is already up to date.")
+                        report(SyncStage.COLLECTIONS) { it.copy(phase = StageState.Phase.UP_TO_DATE) }
                     } else if (e is APIKeyRevokedException) {
+                        report(SyncStage.COLLECTIONS, failure(e))
                         syncChangeListener.createErrorAlert(
                             "API key no longer valid",
                             "Zotero rejected this app's API key (it may have been revoked). " +
                                     "To sign in again, choose Settings → Sign out."
                         ) {}
                     } else {
+                        report(SyncStage.COLLECTIONS, failure(e))
                         reportError("Couldn't sync collections", e)
                     }
                     finishGetCollections(db)
                 }
 
+                var received = 0
                 override fun onNext(response: ZoteroAPICollectionsResponse) {
                     if (version == -1) version = response.lastModifiedVersion
+                    received += response.collections.size
+                    report(SyncStage.COLLECTIONS) { it.copy(done = received, total = response.totalResults) }
                 }
 
             })
@@ -182,6 +235,7 @@ class SyncManager (
                 override fun onComplete() {
                     // finished syncing trash.
                     db.setTrashVersion(trashLibraryVersion)
+                    report(SyncStage.TRASH) { it.copy(phase = StageState.Phase.DONE) }
                     finishGetTrash(db)
                 }
 
@@ -192,14 +246,17 @@ class SyncManager (
                 override fun onNext(response: ZoteroAPIItemsResponse) {
                     received += response.items.size
                     trashLibraryVersion = response.LastModifiedVersion
+                    report(SyncStage.TRASH) { it.copy(done = received, total = response.totalResults) }
                     Log.d("zotero", "received ${received} of ${response.totalResults} trash items")
                 }
 
                 override fun onError(e: Throwable) {
                     if (e is UpToDateException) {
                         Log.d("zotero", "trashed items has not changed")
+                        report(SyncStage.TRASH) { it.copy(phase = StageState.Phase.UP_TO_DATE) }
                     } else {
                         Log.e("zotero", "got error from request to /trash $e")
+                        report(SyncStage.TRASH, failure(e))
                     }
                     finishGetTrash(db)
                 }
@@ -264,6 +321,8 @@ class SyncManager (
                     if (scope == ItemScope.TOP) {
                         // stored before the library opens, so a sync cut off now resumes here
                         db.setDownloadProgress(ItemsDownloadProgress(libraryVersion, 0, 0, ItemScope.CHILDREN))
+                        report(SyncStage.ITEMS) { it.copy(phase = StageState.Phase.DONE) }
+                        report(SyncStage.CHILDREN) { StageState(StageState.Phase.RUNNING) }
                         syncChangeListener.makeToastAlert("Library ready. Attachment details and notes are still downloading.")
                         downloadItems(db, ItemScope.CHILDREN, null, libraryVersion, true)
                         return
@@ -275,6 +334,7 @@ class SyncManager (
                             syncChangeListener.makeToastAlert(if (downloaded == 1) "Updated 1 item." else "Updated $downloaded items.")
                         }
                     }
+                    report(stageOf(scope)) { it.copy(phase = StageState.Phase.DONE) }
                     db.destroyDownloadProgress()
                     db.setItemsVersion(libraryVersion)
                     db.updateDatabaseLastSyncedTimestamp()
@@ -301,6 +361,9 @@ class SyncManager (
                                 scope
                             )
                         )
+                    report(stageOf(scope)) {
+                        it.copy(phase = StageState.Phase.RUNNING, done = downloaded, total = response.totalResults)
+                    }
                     if (!useSmallLoadingAnimation) {
                         syncChangeListener.setSyncProgress(
                             downloaded,
@@ -318,6 +381,7 @@ class SyncManager (
                     if (e is UpToDateException) {
                         Log.d("zotero", "our items are already up to date.")
                         syncChangeListener.makeToastAlert("Already up to date.")
+                        report(stageOf(scope)) { it.copy(phase = StageState.Phase.UP_TO_DATE) }
                         db.updateDatabaseLastSyncedTimestamp()
                     } else if (e is LibraryVersionMisMatchException && scope == ItemScope.CHILDREN) {
                         // the top-level items stay; the children again from the start. The
@@ -325,16 +389,19 @@ class SyncManager (
                         // next sync fetches whatever changed meanwhile.
                         Log.d("zotero", "library changed during the children pass, restarting it")
                         db.setDownloadProgress(ItemsDownloadProgress(libraryVersion, 0, 0, ItemScope.CHILDREN))
+                        report(SyncStage.CHILDREN) { StageState(StageState.Phase.RUNNING) }
                         downloadItems(db, ItemScope.CHILDREN, null, libraryVersion, true)
                         return
                     } else if (e is LibraryVersionMisMatchException) {
                         // we need to redownload items but without the progress.
                         Log.d("zotero", "mismatched, reloading items.")
                         db.destroyDownloadProgress()
+                        report(SyncStage.ITEMS) { StageState(StageState.Phase.RUNNING) }
                         syncChangeListener.makeToastAlert("The library changed in Zotero during the sync. Starting over.")
                         loadItems(db, useSmallLoadingAnimation = false)
                         return
                     } else {
+                        report(stageOf(scope), failure(e))
                         reportError("Couldn't sync items", e)
                         Log.e("zotero", "${e}")
                         Log.e("zotero", "${e.stackTrace}")
@@ -379,6 +446,7 @@ class SyncManager (
             throw Exception("Error cannot proceed to stage 2 if library still loading.")
         }
         finishing = true
+        report(SyncStage.DELETIONS) { it.copy(phase = StageState.Phase.RUNNING) }
 
         updateDeletedEntries(db)
             .subscribeOn(Schedulers.io())
@@ -390,11 +458,13 @@ class SyncManager (
                 }
 
                 override fun onComplete() {
+                    report(SyncStage.DELETIONS) { it.copy(phase = StageState.Phase.DONE) }
                     syncChangeListener.finishLibrarySync(db) { finishSync() }
                 }
 
                 override fun onError(e: Throwable) {
                 Log.e("zotero", "there was an error processing deleted Entries, ${e}")
+                report(SyncStage.DELETIONS, failure(e))
                 reportError("Couldn't sync deletions", e)
                 // finish anyway: it reloads what's stored and stops the sync animation
                 syncChangeListener.finishLibrarySync(db) { finishSync() }
@@ -407,6 +477,7 @@ class SyncManager (
     /** After the library is loaded and the animation stopped: runs a queued sync. */
     private fun finishSync() {
         finishing = false
+        status?.let { begin(it.copy(running = false, queued = null)) }
         queued?.let { (db, small) ->
             queued = null
             startCompleteSync(db, small)

@@ -11,4 +11,6 @@ interface OnSyncChangeListener {
     fun finishLibrarySync(db: ZoteroDB, onFinish: () -> Unit = {})
     /** Items of [db] were written while it's open (a first sync's attachments and notes). */
     fun showNewItems(db: ZoteroDB) {}
+    /** What the sync does now, after each change; once more with running false when it ends. */
+    fun showSyncStatus(status: SyncStatus) {}
 }
