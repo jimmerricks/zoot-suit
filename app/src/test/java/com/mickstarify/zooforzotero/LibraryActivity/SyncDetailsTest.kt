@@ -32,7 +32,7 @@ class SyncDetailsTest {
         assertEquals("Downloading My Library", d.title)
         assertEquals(
             listOf(
-                "Items: done, 500",
+                "Items: done, 500 received",
                 "Attachments and notes: 200 of 800",
                 "Collections: up to date",
                 "Trash: failed (offline)",

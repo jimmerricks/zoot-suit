@@ -63,7 +63,7 @@ class SyncDetails(
         }
         Phase.DONE -> when {
             stage == SyncStage.EDITS -> "sent"
-            state.done > 0 -> "done, %,d".format(state.done)
+            state.done > 0 -> "done, %,d received".format(state.done)
             else -> "done"
         }
         Phase.UP_TO_DATE -> "up to date"
