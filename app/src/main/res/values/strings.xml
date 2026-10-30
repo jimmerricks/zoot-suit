@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Zoot Suit</string>
-    <string name="upload_edited_attachments">Upload edited attachments</string>
     <string name="clear_search_and_filters">Clear search and filters</string>
     <string name="sync">Sync</string>
     <string name="syncing">Syncing…</string>

@@ -20,8 +20,6 @@ interface LibraryUi {
     )
     fun showLoadingAlertDialog(message: String)
     fun hideLoadingAlertDialog()
-    /** Edited attachments to upload, all ticked; [onUpload] gets the ticked indices. */
-    fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit)
     fun startActivity(intent: Intent)
 
     // attachment progress

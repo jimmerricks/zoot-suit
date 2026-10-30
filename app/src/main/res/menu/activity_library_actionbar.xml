@@ -41,11 +41,6 @@
         android:visible="false"
         app:showAsAction="never" />
 
-    <item
-        android:id="@+id/upload_edited_attachments"
-        android:title="@string/upload_edited_attachments"
-        app:showAsAction="never" />
-
     <!-- while a search or filter narrows the list -->
     <item
         android:id="@+id/clear_search_and_filters"

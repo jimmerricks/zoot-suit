@@ -356,10 +356,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         commands.send { it.showAttachmentStates(onDevice, edited) }
     }
 
-    override fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit) {
-        commands.send { it.chooseAttachmentsToUpload(labels, onUpload) }
-    }
-
     override fun showBasicSyncAnimation() {
         libraryListViewModel.setIsShowingLoadingAnimation(true)
     }
@@ -496,12 +492,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     fun uploadAttachment(item: Item) {
         parts.attachments.uploadAttachment(item)
-    }
-
-    fun uploadEditedAttachments() {
-        if (library.isLoaded()) {
-            parts.attachments.chooseEditedAttachmentsToUpload()
-        }
     }
 
     fun requestForceResync() {

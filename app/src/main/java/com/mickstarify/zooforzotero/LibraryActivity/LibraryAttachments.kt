@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Uri
-import android.text.format.Formatter
 import android.util.Log
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploadBatch
@@ -429,47 +428,6 @@ class LibraryAttachments(
     }
 
     private var isDownloading: Boolean = false
-
-    /** "Upload edited attachments": lists every edited attachment to pick which to upload. */
-    fun chooseEditedAttachmentsToUpload() {
-        if (state.isUsingGroup()) {
-            ui.makeToastAlert("Uploads work only in My Library, not in groups.")
-            return
-        }
-        if (!preferences.isAttachmentUploadingEnabled()) {
-            ui.makeToastAlert("Uploading is off. Turn on “Upload edited attachments” in Settings.")
-            return
-        }
-        Single.fromCallable {
-            findEditedAttachments().map { Pair(it, uploadChoiceLabel(it)) }
-        }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ changed ->
-                if (changed.isEmpty()) {
-                    ui.makeToastAlert("No edited attachments to upload.")
-                } else {
-                    askToUploadAttachments(changed)
-                }
-            }, { e ->
-                Log.e("zotero", "looking for edited attachments failed: $e")
-            })
-    }
-
-    private fun uploadChoiceLabel(attachment: Item): String {
-        val name = attachment.data["filename"] ?: attachment.itemKey
-        val size = runCatching {
-            attachmentStorageManager.getFileSize(attachmentStorageManager.getAttachmentUri(attachment))
-        }.getOrDefault(0L)
-        return "$name (${Formatter.formatShortFileSize(context, size)})"
-    }
-
-    /** Lists every edited attachment, all ticked; unticked ones stay edited for a later sync. */
-    private fun askToUploadAttachments(changed: List<Pair<Item, String>>) {
-        ui.chooseAttachmentsToUpload(changed.map { it.second }) { chosen ->
-            uploadAttachments(chosen.map { changed[it].first })
-        }
-    }
 
     fun uploadAttachment(attachment: Item) {
         uploadAttachments(listOf(attachment))

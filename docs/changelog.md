@@ -5,6 +5,10 @@
 New:
 - Clear search and filters in the library's menu, shown while a search or filter is set.
 
+Removed:
+- "Upload edited attachments" in the library's menu: the toolbar's "N edits to sync"
+  lists the edits and uploads them with Sync now.
+
 ## 0.3.1
 
 Updates 0.3.0 in place (same app id and signing key).

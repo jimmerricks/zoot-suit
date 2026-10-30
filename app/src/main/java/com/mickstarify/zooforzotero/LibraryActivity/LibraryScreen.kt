@@ -14,7 +14,6 @@ interface LibraryScreen {
     )
     fun showLoadingAlertDialog(message: String)
     fun hideLoadingAlertDialog()
-    fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit)
     fun updateAttachmentDownloadProgress(progress: Int, total: Int)
     fun hideAttachmentDownloadProgress()
     fun showAttachmentUploadProgress(attachment: Item, position: Int, total: Int)

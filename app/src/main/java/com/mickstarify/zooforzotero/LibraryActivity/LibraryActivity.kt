@@ -403,10 +403,6 @@ class LibraryActivity : AppCompatActivity(),
 
             R.id.pending_edits -> showPendingEditsDialog()
 
-            R.id.upload_edited_attachments -> {
-                viewModel.uploadEditedAttachments()
-            }
-
             R.id.clear_search_and_filters -> viewModel.clearSearchAndFilter()
 
             R.id.settings -> {
@@ -714,28 +710,6 @@ class LibraryActivity : AppCompatActivity(),
             alert.show()
         } catch (exception: WindowManager.BadTokenException) {
             Log.e("zotero", "error creating window bro")
-        }
-    }
-
-    /** Edited attachments to upload, all ticked; [onUpload] gets the ticked indices. */
-    override fun chooseAttachmentsToUpload(labels: List<String>, onUpload: (List<Int>) -> Unit) {
-        val checked = BooleanArray(labels.size) { true }
-        val alert = AlertDialog.Builder(this)
-        alert.setTitle(
-            if (labels.size == 1) "Upload your edited attachment?"
-            else "Upload ${labels.size} edited attachments?"
-        )
-        alert.setMultiChoiceItems(labels.toTypedArray(), checked) { _, which, isChecked ->
-            checked[which] = isChecked
-        }
-        alert.setPositiveButton("Upload") { _, _ ->
-            onUpload(checked.indices.filter { checked[it] })
-        }
-        alert.setNegativeButton("Later") { _, _ -> }
-        try {
-            alert.show()
-        } catch (exception: WindowManager.BadTokenException) {
-            Log.e("zotero", "cannot show upload dialog")
         }
     }
 
