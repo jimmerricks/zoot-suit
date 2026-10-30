@@ -28,6 +28,32 @@ Changed:
   time: tagging 250 items syncs in seconds. An addition to a collection deleted in
   Zotero meanwhile is dropped with a message; the item's other changes still go up.
 
+Security:
+- The Zotero API key is no longer sent to Zotero's storage host. A file download is
+  redirected there, and the key went along with every download; it now goes in a header
+  that is dropped when a redirect leaves api.zotero.org.
+- Debug builds no longer write the API key to the device log.
+- An attachment's filename can't place its file outside the attachment folder. Zotero
+  refuses such names today; the app no longer relies on that.
+- Signing out also forgets the Zotero sign-in page's cookies, so the next sign-in asks
+  for an account, and any queued bulk downloads.
+
+Fixed:
+- Downloading Zotero's newer version of a file keeps the copy on the device until the
+  new one is complete. A dropped connection used to leave no copy at all.
+- Saving a note during a sync no longer starts a second download of the library beside
+  the running one.
+- A server error while fetching collections shows as a failed sync instead of a
+  finished one that fetched nothing.
+- WebDAV: the authentication setting (Automatic, Basic, Digest) is saved when chosen and
+  shown when the screen opens again. Before, a choice wasn't saved and the field always
+  read Automatic.
+- WebDAV: an address ending in "/" no longer breaks downloads.
+- "Delete files from this device" counts the files it deleted, not the ones it tried, and
+  removes their emptied folders.
+- A downloaded file is recorded only once it matches Zotero's checksum.
+- An upload whose file Zotero already has is recognised however Zotero spaces its answer.
+
 ## 0.2.3
 
 Updates 0.2.2 in place (same app id and signing key).
