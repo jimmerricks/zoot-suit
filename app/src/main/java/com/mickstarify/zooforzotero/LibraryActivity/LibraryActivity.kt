@@ -149,6 +149,13 @@ class LibraryActivity : AppCompatActivity(),
         viewModel.pendingEdits.observe(this) { showPendingEdits(it) }
         viewModel.syncStatus.observe(this) { showSyncStatus(it) }
         viewModel.downloadsActive.observe(this) { invalidateOptionsMenu() }
+        libraryListViewModel.getItems().observe(this) { pages ->
+            val none = pages.size == 0 && !viewModel.isListNarrowed()
+            if (none != nothingToNarrow) {
+                nothingToNarrow = none
+                invalidateOptionsMenu()
+            }
+        }
         viewModel.screen.observe(this) {
             showScreen(
                 when (it!!) {
@@ -158,6 +165,10 @@ class LibraryActivity : AppCompatActivity(),
             )
         }
     }
+
+    // the place on screen holds nothing and no search or filter narrows it (an empty trash,
+    // say): search, filter and sort have nothing to work on, so they're hidden
+    private var nothingToNarrow = false
 
     private var selecting = false
     // selecting with nothing chosen: the bulk actions are hidden
@@ -527,6 +538,9 @@ class LibraryActivity : AppCompatActivity(),
         val pinned = if (syncLabel != null) MenuItem.SHOW_AS_ACTION_ALWAYS else MenuItem.SHOW_AS_ACTION_IF_ROOM
         menu.findItem(R.id.search)?.setShowAsAction(pinned)
         menu.findItem(R.id.library_filter)?.setShowAsAction(pinned)
+        for (id in listOf(R.id.search, R.id.library_filter, R.id.filter_menu)) {
+            menu.findItem(id)?.isVisible = !nothingToNarrow
+        }
         menu.findItem(R.id.pending_edits)?.apply {
             // while a sync runs the edits are going up; its details list them
             isVisible = pendingEdits > 0 && syncLabel == null

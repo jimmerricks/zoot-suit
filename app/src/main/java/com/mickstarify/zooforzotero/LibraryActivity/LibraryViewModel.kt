@@ -403,6 +403,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     fun canEditItems() = !library.state.isUsingGroup()
 
+    /** Whether a search or filter narrows the list on screen. */
+    fun isListNarrowed() = parts.lists.librarySearch.isNotEmpty() || parts.lists.libraryFilter.isActive
+
     /** Whether edited attachments of the open library can be uploaded: My Library, uploading on. */
     fun canUploadAttachments() = canEditItems() && parts.preferences.isAttachmentUploadingEnabled()
 
