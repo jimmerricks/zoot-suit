@@ -637,11 +637,11 @@ class LibraryAttachments(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ deleted ->
                 onFilesChanged()
-                ui.makeToastAlert(if (deleted == 1) "Deleted 1 file from this device." else "Deleted $deleted files from this device.")
+                ui.makeToastAlert(if (deleted == 1) "Removed 1 file from this device." else "Removed $deleted files from this device.")
             }, { e ->
                 onFilesChanged()
                 Log.e("zotero", "deleting ${files.size} files failed: $e")
-                ui.createErrorAlert("Couldn't delete the files", "Details: ${e.message ?: e}") {}
+                ui.createErrorAlert("Couldn't remove the files", "Details: ${e.message ?: e}") {}
             })
     }
 
@@ -649,7 +649,7 @@ class LibraryAttachments(
         val delete = {
             attachmentStorageManager.deleteAttachment(attachment)
             onFilesChanged()
-            ui.makeToastAlert("Deleted from this device: ${attachment.getTitle()}")
+            ui.makeToastAlert("Removed from this device: ${attachment.getTitle()}")
         }
         Single.fromCallable {
             editedAttachments.isEdited(attachment)
@@ -659,9 +659,9 @@ class LibraryAttachments(
             .subscribe({ edited ->
                 if (edited) {
                     ui.createYesNoPrompt(
-                        "Delete your edits?",
-                        "This copy has edits that haven't been uploaded. Deleting it loses them.",
-                        "Delete", "Keep", delete, {}
+                        "Remove your edits?",
+                        "This copy has edits that haven't been uploaded. Removing it loses them.",
+                        "Remove", "Keep", delete, {}
                     )
                 } else {
                     delete()

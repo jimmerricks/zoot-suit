@@ -163,26 +163,26 @@ class SelectionDialogs(private val context: Context) {
     }
 
     /**
-     * Asks before deleting [files] from this device. If some have edits not uploaded yet
-     * ([edited]), says so: those can be kept, or deleted with their edits.
+     * Asks before removing [files] from this device. If some have edits not uploaded yet
+     * ([edited]), says so: those can be kept, or removed with their edits.
      */
     fun confirmDelete(files: List<Item>, edited: List<Item>, onDelete: (List<Item>) -> Unit) {
         fun files(n: Int) = if (n == 1) "1 file" else "$n files"
         val dialog = AlertDialog.Builder(context)
-            .setTitle("Delete ${files(files.size)} from this device?")
+            .setTitle("Remove ${files(files.size)} from this device?")
             .setNegativeButton("Cancel", null)
         if (edited.isEmpty()) {
             dialog.setMessage("They stay in Zotero and can be downloaded again.")
-                .setPositiveButton("Delete") { _, _ -> onDelete(files) }
+                .setPositiveButton("Remove") { _, _ -> onDelete(files) }
         } else {
             val keys = edited.map { it.itemKey }.toSet()
             val names = edited.take(5).joinToString("\n") { "• " + (it.data["filename"] ?: it.getTitle()) } +
                     if (edited.size > 5) "\n…" else ""
             dialog.setMessage(
                 "${files(edited.size).replaceFirstChar { it.uppercase() }} ${if (edited.size == 1) "has" else "have"} " +
-                        "edits that haven't been uploaded. Deleting loses them.\n\n$names"
+                        "edits that haven't been uploaded. Removing loses them.\n\n$names"
             )
-                .setPositiveButton("Delete all") { _, _ -> onDelete(files) }
+                .setPositiveButton("Remove all") { _, _ -> onDelete(files) }
             if (edited.size < files.size) {
                 dialog.setNeutralButton("Keep edited") { _, _ -> onDelete(files.filter { it.itemKey !in keys }) }
             }

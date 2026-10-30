@@ -17,7 +17,7 @@ object AttachmentMenu {
         /** In a conflict: replaces the edits here, after asking (downloadAttachmentOnly). */
         DOWNLOAD_ZOTEROS("Download Zotero's version"),
         UPLOAD("Upload changes"),
-        DELETE("Delete from this device"),
+        DELETE("Remove from this device"),
     }
 
     /**
