@@ -55,7 +55,7 @@ class LibraryComponents(
     }
 
     private val uploader by lazy {
-        AttachmentUploader(context, { zoteroAPI }, attachmentStorageManager, preferences, editedAttachments) { library.db }
+        AttachmentUploader({ zoteroAPI }, attachmentStorageManager, preferences, editedAttachments) { library.db }
     }
 
     val attachments: LibraryAttachments by lazy {

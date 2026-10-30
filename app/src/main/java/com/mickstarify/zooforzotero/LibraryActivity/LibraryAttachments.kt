@@ -336,7 +336,7 @@ class LibraryAttachments(
 
     /** [latestMd5]: Zotero's md5 for the file now, or null if it couldn't be asked. */
     private fun startDownload(item: Item, openWhenDone: Boolean, latestMd5: String?) {
-        api().downloadItemRx(item, state.currentGroup.id, context)
+        api().downloadItemRx(item, state.currentGroup.id)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : Observer<DownloadProgress> {

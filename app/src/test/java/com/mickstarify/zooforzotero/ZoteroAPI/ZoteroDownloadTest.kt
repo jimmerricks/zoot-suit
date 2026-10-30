@@ -1,6 +1,5 @@
 package com.mickstarify.zooforzotero.ZoteroAPI
 
-import android.content.Context
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -60,7 +59,7 @@ class ZoteroDownloadTest {
     fun `a whole download replaces the copy`() {
         server.enqueue(MockResponse().setBody("%PDF-new"))
 
-        api.downloadItemRx(attachment, context = mock<Context>()).test().awaitDone(5, TimeUnit.SECONDS)
+        api.downloadItemRx(attachment).test().awaitDone(5, TimeUnit.SECONDS)
             .assertComplete()
 
         assertEquals("%PDF-new", written)
@@ -74,7 +73,7 @@ class ZoteroDownloadTest {
                 .setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY)
         )
 
-        api.downloadItemRx(attachment, context = mock<Context>()).test().awaitDone(5, TimeUnit.SECONDS)
+        api.downloadItemRx(attachment).test().awaitDone(5, TimeUnit.SECONDS)
             .assertError { true }
 
         verify(storage, never()).writeAttachmentFromFile(any(), any())

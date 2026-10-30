@@ -1,6 +1,5 @@
 package com.mickstarify.zooforzotero.ZoteroAPI
 
-import android.content.Context
 import android.util.Log
 import com.burgstaller.okhttp.AuthenticationCacheInterceptor
 import com.burgstaller.okhttp.CachingAuthenticatorDecorator
@@ -72,12 +71,11 @@ class Webdav(
 
     /**
      * Downloads KEY.zip, extracts the attachment from it and writes it to storage. The
-     * zip holds one file, Zotero's; only that entry is extracted, under a fixed name,
-     * so an entry name can't point outside the temporary folder.
+     * zip holds one file, Zotero's; only that entry is extracted, under a name of the
+     * app's own, so an entry name can't point outside the temporary folder.
      */
     fun downloadFileRx(
         attachment: Item,
-        context: Context,
         attachmentStorageManager: AttachmentStorageManager
     ): Observable<DownloadProgress> {
         val key = attachment.itemKey.uppercase()
@@ -175,7 +173,7 @@ class Webdav(
     /** The attachment's .prop on the server (with its ETag), or null if none. */
     fun getRemoteProp(attachment: Item): RemoteProp? = uploader.readProp(attachment.itemKey)
 
-    val authCach: MutableMap<String, CachingAuthenticator> = HashMap()
+    private val authCach: MutableMap<String, CachingAuthenticator> = HashMap()
 
     init {
         val username = preferenceManager.getWebDAVUsername()

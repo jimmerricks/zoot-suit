@@ -1,6 +1,5 @@
 package com.mickstarify.zooforzotero.ZoteroAPI
 
-import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.google.gson.Gson
@@ -12,7 +11,6 @@ import com.mickstarify.zooforzotero.ZoteroAPI.Model.CollectionPOJO
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.DeletedEntriesPojo
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemJSONConverter
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemPOJO
-import com.mickstarify.zooforzotero.ZoteroAPI.Model.KeyInfo
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ZoteroUploadAuthorizationPojo
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
@@ -30,7 +28,6 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
 import retrofit2.Call
@@ -192,7 +189,6 @@ class ZoteroAPI(
     fun downloadItemRx(
         item: Item,
         groupID: Int = GroupInfo.NO_GROUP_ID,
-        context: Context
     ): Observable<DownloadProgress> {
 
         val useGroup = groupID != GroupInfo.NO_GROUP_ID
@@ -203,7 +199,7 @@ class ZoteroAPI(
         // we will delegate to a webdav download if the user has webdav enabled.
         // When the user has webdav enabled on personal account or for groups are the only two conditions.
         if (!useGroup && preferencesManager.isWebDAVEnabled()) {
-            return webdav().downloadFileRx(item, context, attachmentStorageManager)
+            return webdav().downloadFileRx(item, attachmentStorageManager)
             //stops here.
         }
 
@@ -291,30 +287,7 @@ class ZoteroAPI(
         return observable
     }
 
-    fun testConnection(callback: (success: Boolean, message: String) -> (Unit)) {
-        val call: Call<KeyInfo> = service.getKeyInfo(this.API_KEY)
-
-        call.enqueue(object : Callback<KeyInfo> {
-            override fun onResponse(call: Call<KeyInfo>, response: Response<KeyInfo>) {
-                if (response.code() == 200) {
-                    Log.d("zotero", "Successfully tested connection.")
-                    callback(true, "")
-                } else {
-                    callback(
-                        false,
-                        "error got back response code ${response.code()} body: ${response.body()}"
-                    )
-                }
-            }
-
-            override fun onFailure(call: Call<KeyInfo>, t: Throwable) {
-                Log.d("zotero", "failure on item")
-                callback(false, "Failure.")
-            }
-        })
-    }
-
-    fun modifyNote(note: Note, libraryVersion: Int): Completable {
+    fun modifyNote(note: Note): Completable {
         val observable =
             service.patchItem(userID, note.key, note.getJsonNotePatch(), note.version)
                 .map { response ->
@@ -389,7 +362,7 @@ class ZoteroAPI(
     }
 
     /** The attachment's .prop on the WebDAV server (with ETag), null if there is none. */
-    fun getWebdavRemoteProp(attachment: Item, context: Context): RemoteProp? {
+    fun getWebdavRemoteProp(attachment: Item): RemoteProp? {
         return webdav().getRemoteProp(attachment)
     }
 
@@ -764,7 +737,6 @@ class ZoteroAPI(
 
     fun uploadAttachmentWithWebdav(
         attachment: Item,
-        context: Context,
         expected: RemoteProp?,
         md5: String,
         mtime: Long

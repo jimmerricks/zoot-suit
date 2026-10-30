@@ -248,19 +248,11 @@ class WebDAVSetup : AppCompatActivity() {
         return mAddress
     }
 
-    fun allowInsecureSSL(): Boolean {
-        return !findViewById<CheckBox>(R.id.checkBox_Verify_ssl).isChecked
-    }
-
     fun makeConnection(address: String, username: String, password: String) {
         val webDav = Webdav(preferenceManager)
         startProgressDialog()
         Completable.fromAction {
-            var status = false // default to false incase we get an exception
-            var hadAuthenticationError = false
-            var errorMessage = "unset"
-            status = webDav.testConnection()
-            if (status == false) {
+            if (!webDav.testConnection()) {
                 // testConnection's false is a 404
                 throw Exception("There is no folder at $address. Create it on the server " +
                         "(Zotero desktop does this when you set up WebDAV), or check the address.")
@@ -312,7 +304,7 @@ class WebDAVSetup : AppCompatActivity() {
         } else {
             alertDialog.setMessage(message)
         }
-        alertDialog.setPositiveButton("OK") { _, _ -> {} }
+        alertDialog.setPositiveButton("OK", null)
         alertDialog.show()
     }
 

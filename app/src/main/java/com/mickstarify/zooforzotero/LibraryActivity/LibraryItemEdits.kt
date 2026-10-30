@@ -272,7 +272,7 @@ class LibraryItemEdits(
     }
 
     private fun uploadNoteEdit(note: Note) {
-        api().modifyNote(note, zoteroDB.getLibraryVersion())
+        api().modifyNote(note)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : CompletableObserver {

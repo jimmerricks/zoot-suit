@@ -121,13 +121,6 @@ interface ZoteroAPIService {
         @Query("start") index: Int
     ): Observable<Response<List<CollectionPOJO>>>
 
-    @Streaming
-    @GET("groups/{groupID}/items/{itemKey}/file")
-    fun getAttachmentFileFromGroup(
-        @Path("groupID") user: Int,
-        @Path("itemKey") itemKey: String
-    ): Call<ResponseBody>
-
     @GET("keys/{key}")
     fun getKeyInfo(
         @Path("key") key: String
@@ -252,12 +245,6 @@ interface ZoteroAPIService {
         @Field("upload") uploadKey: String,
         @Header("If-Match") ifMatch: String?,
         @Header("If-None-Match") ifNoneMatch: String?
-    ): Observable<Response<ResponseBody>>
-
-    @POST
-    fun uploadAttachmentToAmazon(
-        @Url url: String,
-        @Body data: RequestBody
     ): Observable<Response<ResponseBody>>
 
     @Multipart

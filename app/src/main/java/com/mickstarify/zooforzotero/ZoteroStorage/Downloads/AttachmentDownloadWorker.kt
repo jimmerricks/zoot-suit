@@ -97,7 +97,7 @@ class AttachmentDownloadWorker(context: Context, params: WorkerParameters) : Cor
         val latest = if (entry.group == GroupInfo.NO_GROUP_ID) latestMd5Of(api, entry.key) else null
         val expected = latest ?: item.data["md5"] ?: ""
         try {
-            api.downloadItemRx(item, entry.group, applicationContext).ignoreElements().blockingAwait()
+            api.downloadItemRx(item, entry.group).ignoreElements().blockingAwait()
         } catch (e: Exception) {
             // a failed download never reaches storage (it goes through a temporary file)
             if (generateSequence<Throwable>(e) { it.cause }.any { it is ZoteroNotFoundException }) {

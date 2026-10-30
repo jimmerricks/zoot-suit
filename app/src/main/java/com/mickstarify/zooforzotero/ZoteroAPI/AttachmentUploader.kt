@@ -1,6 +1,5 @@
 package com.mickstarify.zooforzotero.ZoteroAPI
 
-import android.content.Context
 import android.util.Log
 import com.google.gson.JsonObject
 import com.mickstarify.zooforzotero.PreferenceManager
@@ -22,7 +21,6 @@ import io.reactivex.rxjava3.core.Single
  * @param db the open library's ZoteroDB, read at each upload
  */
 class AttachmentUploader(
-    private val context: Context,
     private val api: () -> ZoteroAPI,
     private val storage: AttachmentStorageManager,
     private val preferences: PreferenceManager,
@@ -66,7 +64,7 @@ class AttachmentUploader(
         Single.fromCallable {
             val (serverVersion, serverMd5) =
                 api().getAttachmentFileState(attachment.itemKey).blockingGet()
-            val remoteProp = api().getWebdavRemoteProp(attachment, context)
+            val remoteProp = api().getWebdavRemoteProp(attachment)
             // the version this device's edits are based on; for copies downloaded
             // before bases were recorded, the md5 as of the last sync (weaker)
             val baseMd5 = edited.base(attachment) ?: attachment.getMd5Key()
@@ -77,7 +75,7 @@ class AttachmentUploader(
         }.flatMapCompletable { (serverVersion, remoteProp) ->
             // the .prop's ETag makes the WebDAV replace conditional; see WebdavUploader
             api().uploadAttachmentWithWebdav(
-                attachment, context, remoteProp, md5Key, mtime
+                attachment, remoteProp, md5Key, mtime
             ).andThen(
                 Completable.fromAction {
                     val modificationJsonObject = JsonObject()
