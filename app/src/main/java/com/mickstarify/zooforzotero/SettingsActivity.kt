@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
+import android.text.format.Formatter
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.SystemBarStyle
@@ -19,14 +20,20 @@ import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
+import com.mickstarify.zooforzotero.LibraryActivity.SelectionDialogs
 import com.mickstarify.zooforzotero.LibraryActivity.WebDAV.WebDAVSetup
 import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorage
 import com.mickstarify.zooforzotero.SyncSetup.domain.SignOut
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentDownloads
+import com.mickstarify.zooforzotero.ZoteroStorage.FilesOnDevice
 import com.mickstarify.zooforzotero.ZoteroStorage.STORAGE_ACCESS_REQUEST
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+
+private fun fileCount(n: Int) = if (n == 1) "1 file" else "$n files"
 
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
@@ -115,6 +122,29 @@ class SettingsActivity : AppCompatActivity() {
             // back from the server screen: show what it saved
             val address = (requireActivity() as SettingsActivity).myPreferenceManager.getWebDAVAddress()
             findPreference<Preference>("configure_webdav")?.summary = address.ifEmpty { "Not set up" }
+            showFilesOnDevice()
+        }
+
+        /** "Remove all files"'s summary: how many there are and their size. */
+        fun showFilesOnDevice() {
+            val settings = requireActivity() as SettingsActivity
+            val row = findPreference<Preference>("remove_all_files") ?: return
+            row.summary = "Counting…"
+            Thread {
+                val files = runCatching { settings.filesOnDevice.list() }
+                    .onFailure { Log.e("zotero", "listing files on the device failed: $it") }
+                    .getOrNull()
+                settings.runOnUiThread {
+                    if (!isAdded) return@runOnUiThread
+                    row.summary = when {
+                        files == null -> "Removes every downloaded attachment. They stay in Zotero."
+                        files.attachments.isEmpty() -> "No files on this device."
+                        else -> "${fileCount(files.attachments.size)}, " +
+                                "${Formatter.formatShortFileSize(settings, files.bytes)}. They stay in Zotero."
+                    }
+                    row.isEnabled = files == null || files.attachments.isNotEmpty()
+                }
+            }.start()
         }
 
         override fun onPause() {
@@ -126,6 +156,9 @@ class SettingsActivity : AppCompatActivity() {
             if (preference.key == "configure_webdav") {
                 val intent = Intent(requireContext(), WebDAVSetup::class.java)
                 startActivity(intent)
+                return true
+            } else if (preference.key == "remove_all_files") {
+                (requireActivity() as SettingsActivity).confirmRemoveAllFiles()
                 return true
             } else if (preference.key == "sign_out") {
                 (requireActivity() as SettingsActivity).confirmSignOut()
@@ -160,6 +193,43 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    val filesOnDevice by lazy { FilesOnDevice(zoteroDatabase, myStorageManager) }
+
+    /**
+     * Asks before removing every attachment file from the device, as the bulk action does
+     * for a selection: names the edited ones, which can be kept. Listing and finding the
+     * edited ones hashes changed files, so that runs in the background first.
+     */
+    fun confirmRemoveAllFiles() {
+        Thread {
+            val found = runCatching {
+                val files = filesOnDevice.list().attachments
+                files to filesOnDevice.edited(files)
+            }.onFailure { Log.e("zotero", "listing files on the device failed: $it") }.getOrNull()
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                when {
+                    found == null -> Toast.makeText(this, "Couldn't list the files on this device.", Toast.LENGTH_SHORT).show()
+                    found.first.isEmpty() -> Toast.makeText(this, "No files on this device.", Toast.LENGTH_SHORT).show()
+                    else -> SelectionDialogs(this).confirmDelete(found.first, found.second, ::removeFiles)
+                }
+            }
+        }.start()
+    }
+
+    private fun removeFiles(files: List<Item>) {
+        // a bulk download still running would bring them back
+        AttachmentDownloads.stop(this)
+        Thread {
+            val removed = filesOnDevice.remove(files)
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                Toast.makeText(this, "Removed ${fileCount(removed)} from this device.", Toast.LENGTH_SHORT).show()
+                (supportFragmentManager.findFragmentById(R.id.settings) as? SettingsFragment)?.showFilesOnDevice()
+            }
+        }.start()
     }
 
     /**

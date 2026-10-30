@@ -14,56 +14,10 @@
   ~ limitations under the License.
   -->
 
+<!-- Order: what's used most (the library list, its attachments) first, then where files
+     sync to and how, appearance, and signing out last. -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-
-    <PreferenceCategory app:iconSpaceReserved="false" android:title="Account">
-        <Preference app:iconSpaceReserved="false"
-            android:key="sign_out"
-            android:title="Sign out" />
-    </PreferenceCategory>
-
-    <PreferenceCategory app:iconSpaceReserved="false" android:title="Appearance">
-        <ListPreference app:iconSpaceReserved="false"
-            app:defaultValue="auto"
-            app:entries="@array/theme_entries"
-            app:entryValues="@array/theme_values"
-            app:key="theme"
-            app:title="Theme"
-            app:useSimpleSummaryProvider="true" />
-    </PreferenceCategory>
-
-    <PreferenceCategory app:iconSpaceReserved="false" app:title="@string/syncing_header">
-
-        <ListPreference app:iconSpaceReserved="false"
-            app:defaultValue="zoteroapi"
-            app:entries="@array/sync_options_entries"
-            app:entryValues="@array/sync_options_values"
-            app:key="sync_method"
-            app:title="@string/sync_method"
-            app:useSimpleSummaryProvider="true" />
-
-        <ListPreference app:iconSpaceReserved="false"
-            app:defaultValue="EXTERNAL_CACHE"
-            app:entries="@array/attachment_storage_location_entries"
-            app:entryValues="@array/attachment_storage_location_values"
-            app:key="attachment_sync_location"
-            app:title="@string/setting_sync_attachments_location"
-            app:useSimpleSummaryProvider="true" />
-
-        <SwitchPreference app:iconSpaceReserved="false"
-            android:defaultValue="true"
-            android:key="attachments_uploading_enabled"
-            android:summary="PDFs you annotate on this device are uploaded to Zotero when you sync (My Library only)."
-            android:title="Upload edited attachments" />
-
-        <SwitchPreference app:iconSpaceReserved="false"
-            android:defaultValue="false"
-            android:key="group_library_sync_enabled"
-            android:summary="Show and sync group libraries. Your API key needs read access to groups."
-            android:title="Group libraries" />
-
-    </PreferenceCategory>
 
     <PreferenceCategory app:iconSpaceReserved="false" app:title="@string/library_header">
         <SwitchPreference app:iconSpaceReserved="false"
@@ -83,6 +37,22 @@
             android:key="keep_filter"
             android:summary="Off: the filter clears when you open another collection. On: it stays, for each library separately, until you clear it."
             android:title="Keep the filter across collections" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:iconSpaceReserved="false" android:title="Attachments">
+        <ListPreference app:iconSpaceReserved="false"
+            app:defaultValue="EXTERNAL_CACHE"
+            app:entries="@array/attachment_storage_location_entries"
+            app:entryValues="@array/attachment_storage_location_values"
+            app:key="attachment_sync_location"
+            app:title="@string/setting_sync_attachments_location"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreference app:iconSpaceReserved="false"
+            android:defaultValue="true"
+            android:key="attachments_uploading_enabled"
+            android:summary="PDFs you annotate on this device are uploaded to Zotero when you sync (My Library only)."
+            android:title="Upload edited attachments" />
 
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="false"
@@ -90,24 +60,25 @@
             android:summary="Compare a file with Zotero's checksum before opening it. Slower for large files."
             android:title="Check files before opening" />
 
+        <!-- summary: how many files and how much space (SettingsFragment) -->
+        <Preference app:iconSpaceReserved="false"
+            android:key="remove_all_files"
+            android:title="Remove all files from this device" />
     </PreferenceCategory>
 
     <PreferenceCategory app:iconSpaceReserved="false" android:title="WebDAV">
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="false"
-            android:enabled="true"
-            app:enabled="true"
             android:key="use_webdav"
             android:summary="Download and upload My Library's attachment files through your own server instead of Zotero's storage."
             android:title="Use WebDAV for attachments" />
 
         <!-- summary: the address, or that none is set up (SettingsFragment) -->
         <Preference app:iconSpaceReserved="false"
-            android:enabled="true"
             android:key="configure_webdav"
             android:title="WebDAV server" />
 
-        <!-- here rather than under Syncing: it applies to WebDAV only, and only while it's on -->
+        <!-- here rather than under Attachments: it applies to WebDAV only, and only while it's on -->
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="true"
             android:dependency="use_webdav"
@@ -116,20 +87,35 @@
             android:title="Back up files before uploading" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:iconSpaceReserved="false" android:title="Advanced">
+    <!-- "Sync method" was here: a list with one entry (Zotero), the default either way -->
+    <PreferenceCategory app:iconSpaceReserved="false" app:title="@string/syncing_header">
+        <SwitchPreference app:iconSpaceReserved="false"
+            android:defaultValue="false"
+            android:key="group_library_sync_enabled"
+            android:summary="Show and sync group libraries. Your API key needs read access to groups."
+            android:title="Group libraries" />
+
         <EditTextPreference app:iconSpaceReserved="false"
-            android:enabled="true"
             android:key="http_write_timeout"
             android:title="Upload timeout (ms)"
             android:defaultValue="60000"
             android:summary="How long an upload may take before it is given up. 0 waits forever."
             android:inputType="number" />
-<!--        <Preference-->
-<!--            android:enabled="true"-->
-<!--            android:key="http_read_timeout"-->
-<!--            android:title="HTTP Download timeout (ms)"-->
-<!--            android:defaultValue="60000"-->
-<!--            android:summary="This is the amount of time to wait for a download to complete before timing out. Use 0 for indefinite."-->
-<!--            android:inputType="number" />-->
+    </PreferenceCategory>
+
+    <PreferenceCategory app:iconSpaceReserved="false" android:title="Appearance">
+        <ListPreference app:iconSpaceReserved="false"
+            app:defaultValue="auto"
+            app:entries="@array/theme_entries"
+            app:entryValues="@array/theme_values"
+            app:key="theme"
+            app:title="Theme"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:iconSpaceReserved="false" android:title="Account">
+        <Preference app:iconSpaceReserved="false"
+            android:key="sign_out"
+            android:title="Sign out" />
     </PreferenceCategory>
 </PreferenceScreen>

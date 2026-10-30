@@ -1,10 +1,4 @@
 <resources>
-    <string-array name="sync_options_entries">
-        <item>Zotero Account Sync</item>
-    </string-array>
-    <string-array name="sync_options_values">
-        <item>zoteroapi</item>
-    </string-array>
 
     <string-array name="attachment_storage_location_entries">
         <item>External Cache</item>
