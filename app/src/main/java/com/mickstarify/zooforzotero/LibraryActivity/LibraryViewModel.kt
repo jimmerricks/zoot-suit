@@ -181,6 +181,12 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     fun getLibraryFilter(): LibraryFilter = parts.lists.libraryFilter
 
+    /** Ends the search and the filter, and redraws the list. */
+    fun clearSearchAndFilter() {
+        parts.lists.librarySearch = ""
+        setLibraryFilter(LibraryFilter())
+    }
+
     /** Sets the list's filter and redraws the list. */
     fun setLibraryFilter(filter: LibraryFilter) {
         parts.lists.libraryFilter = filter
@@ -636,10 +642,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         }
         followDownloads()
         // the empty list's button: clears whatever it named, search and filter alike
-        observe(libraryListViewModel.getOnClearFilterRequested()) {
-            parts.lists.librarySearch = ""
-            setLibraryFilter(LibraryFilter())
-        }
+        observe(libraryListViewModel.getOnClearFilterRequested()) { clearSearchAndFilter() }
     }
 
     private val observers = mutableListOf<() -> Unit>()

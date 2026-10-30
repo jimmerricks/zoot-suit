@@ -153,9 +153,11 @@ class LibraryActivity : AppCompatActivity(),
             val none = pages.size == 0 && !viewModel.isListNarrowed()
             // set with the place, before its list arrives
             val canSelect = pages.size > 0 && libraryListViewModel.selectable
-            if (none != nothingToNarrow || canSelect != listSelectable) {
+            val narrowedNow = viewModel.isListNarrowed()
+            if (none != nothingToNarrow || canSelect != listSelectable || narrowedNow != narrowed) {
                 nothingToNarrow = none
                 listSelectable = canSelect
+                narrowed = narrowedNow
                 invalidateOptionsMenu()
             }
         }
@@ -175,6 +177,9 @@ class LibraryActivity : AppCompatActivity(),
 
     // the list on screen has items and isn't the trash: Select items is offered
     private var listSelectable = false
+
+    // a search or filter is set: Clear search and filters is offered
+    private var narrowed = false
 
     private var selecting = false
     // selecting with nothing chosen: the bulk actions are hidden
@@ -402,6 +407,8 @@ class LibraryActivity : AppCompatActivity(),
                 viewModel.uploadEditedAttachments()
             }
 
+            R.id.clear_search_and_filters -> viewModel.clearSearchAndFilter()
+
             R.id.settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)
@@ -549,6 +556,7 @@ class LibraryActivity : AppCompatActivity(),
             menu.findItem(id)?.isVisible = !nothingToNarrow
         }
         menu.findItem(R.id.start_selection)?.isVisible = listSelectable
+        menu.findItem(R.id.clear_search_and_filters)?.isVisible = narrowed
         menu.findItem(R.id.pending_edits)?.apply {
             // while a sync runs the edits are going up; its details list them
             isVisible = pendingEdits > 0 && syncLabel == null

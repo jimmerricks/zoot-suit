@@ -46,6 +46,13 @@
         android:title="@string/upload_edited_attachments"
         app:showAsAction="never" />
 
+    <!-- while a search or filter narrows the list -->
+    <item
+        android:id="@+id/clear_search_and_filters"
+        android:title="@string/clear_search_and_filters"
+        android:visible="false"
+        app:showAsAction="never" />
+
     <!-- the same as a long press on an item, with nothing chosen yet -->
     <item
         android:id="@+id/start_selection"

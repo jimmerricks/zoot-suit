@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+New:
+- Clear search and filters in the library's menu, shown while a search or filter is set.
+
 ## 0.3.1
 
 Updates 0.3.0 in place (same app id and signing key).
