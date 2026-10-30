@@ -170,6 +170,18 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         return items
     }
 
+    /**
+     * The attachments among the items [keys] and their children (not trashed), with all
+     * their fields: what bulk downloads and deletions act on. Blocking.
+     */
+    fun loadAttachmentsOf(keys: List<String>): List<Item> {
+        val dao = db.itemDao()
+        val own = keys.chunked(KEY_CHUNK).flatMap { dao.getItemInfos(it) }
+            .filter { it.itemType == "attachment" && !it.deleted }.map { it.itemKey }
+        val children = keys.chunked(KEY_CHUNK).flatMap { dao.getChildKeys(it) }
+        return loadByKeys(own + children, listFieldsOnly = false).filter { it.itemType == "attachment" }
+    }
+
     private fun loadByKeys(keys: List<String>, listFieldsOnly: Boolean): List<Item> {
         if (keys.isEmpty()) return emptyList()
         val dao = db.itemDao()

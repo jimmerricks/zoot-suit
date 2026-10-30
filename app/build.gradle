@@ -176,6 +176,9 @@ dependencies {
     implementation "com.google.dagger:hilt-android:2.57"
     ksp "com.google.dagger:hilt-compiler:2.57"
 
+    // Bulk attachment downloads in the background, carried on after the app is stopped
+    implementation 'androidx.work:work-runtime-ktx:2.10.1'
+
     // Other utilities
     implementation 'net.lingala.zip4j:zip4j:2.11.5'
 

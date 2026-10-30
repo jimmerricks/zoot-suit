@@ -27,6 +27,13 @@
         app:showAsAction="ifRoom" />
 
 
+    <!-- while bulk downloads are at work -->
+    <item
+        android:id="@+id/stop_downloads"
+        android:title="@string/stop_downloads"
+        android:visible="false"
+        app:showAsAction="never" />
+
     <item
         android:id="@+id/upload_edited_attachments"
         android:title="@string/upload_edited_attachments"

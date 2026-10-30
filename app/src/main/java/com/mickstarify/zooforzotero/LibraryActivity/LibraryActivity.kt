@@ -143,6 +143,7 @@ class LibraryActivity : AppCompatActivity(),
         libraryListViewModel.getSelection().observe(this) { showSelectionMode(!it.isEmpty()) }
         viewModel.sidebar.observe(this) { showSidebar(it) }
         viewModel.pendingEdits.observe(this) { showPendingEdits(it) }
+        viewModel.downloadsActive.observe(this) { invalidateOptionsMenu() }
         viewModel.screen.observe(this) {
             showScreen(
                 when (it!!) {
@@ -325,6 +326,14 @@ class LibraryActivity : AppCompatActivity(),
                     viewModel.editSelectedCollection(key, name, add = false)
                 }
             }
+            R.id.selection_download -> viewModel.countSelectedAttachments { counts ->
+                if (isFinishing || isDestroyed) return@countSelectedAttachments
+                SelectionDialogs(this).download(counts) { missing ->
+                    if (missing.isEmpty()) makeToastAlert("They're all on this device already.")
+                    else viewModel.downloadAttachments(missing)
+                }
+            }
+            R.id.stop_downloads -> viewModel.stopDownloads()
             R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
             R.id.invert_selection -> libraryListViewModel.changeSelection { invert(it) }
             R.id.clear_selection -> libraryListViewModel.changeSelection { clear() }
@@ -408,6 +417,7 @@ class LibraryActivity : AppCompatActivity(),
     // here rather than in onCreateOptionsMenu: LibraryListFragment re-inflates the menu after it
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         menu.setGroupVisible(R.id.selection_edits, viewModel.canEditItems())
+        menu.findItem(R.id.stop_downloads)?.isVisible = viewModel.downloadsActive.value == true
         menu.findItem(R.id.selection_remove_from_collection)?.isVisible =
             viewModel.canEditItems() && viewModel.currentCollection() != null
         menu.findItem(R.id.pending_edits)?.apply {

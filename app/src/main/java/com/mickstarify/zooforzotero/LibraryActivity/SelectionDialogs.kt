@@ -9,6 +9,9 @@ import android.widget.AutoCompleteTextView
 import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentCounts
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 
 /** The dialogs of the list's bulk actions, which act on the selected items. */
@@ -100,6 +103,35 @@ class SelectionDialogs(private val context: Context) {
             .setTitle("Remove ${items(count)} from “$name”?")
             .setMessage("They stay in the library and in any other collections.")
             .setPositiveButton("Remove") { _, _ -> onRemove() }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * Which of the selection's attachments to download: each kind with how many of its
+     * files aren't on this device yet ([counts]); [onDownload] gets those of the one tapped.
+     */
+    fun download(counts: Map<AttachmentKind, AttachmentCounts>, onDownload: (List<Item>) -> Unit) {
+        if (counts.isEmpty()) {
+            AlertDialog.Builder(context)
+                .setTitle("No attachments")
+                .setMessage("The selected items have no files stored in Zotero (links aren't downloaded).")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+        val kinds = counts.keys.toList()
+        val labels = kinds.map { kind ->
+            val c = counts.getValue(kind)
+            when {
+                c.missing.isEmpty() -> "${kind.label}: all ${c.total} on this device"
+                c.onDevice.isEmpty() -> "${kind.label}: ${c.missing.size} to download"
+                else -> "${kind.label}: ${c.missing.size} to download, ${c.onDevice.size} on this device"
+            }
+        }
+        AlertDialog.Builder(context)
+            .setTitle("Download attachments")
+            .setItems(labels.toTypedArray()) { _, which -> onDownload(counts.getValue(kinds[which]).missing) }
             .setNegativeButton("Cancel", null)
             .show()
     }

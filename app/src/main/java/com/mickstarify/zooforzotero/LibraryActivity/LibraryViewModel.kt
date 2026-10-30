@@ -18,6 +18,11 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentCounts
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentDownloadWorker
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentDownloads
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
+import androidx.work.WorkInfo
 
 /**
  * The library screen's logic and what it shows. As a ViewModel it outlives the activity:
@@ -199,6 +204,68 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         redisplayItems()
     }
 
+    private var filterSummary: String? = null
+    private var downloadStatus: String? = null
+
+    /** Bulk downloads at work, for the menu's "Stop downloads". */
+    val downloadsActive = MutableLiveData(false)
+
+    private fun showSubtitle() {
+        subtitle.value = listOfNotNull(downloadStatus, filterSummary).joinToString(" · ").ifEmpty { null }
+    }
+
+    /**
+     * Follows the bulk downloads' workers: "Downloading 3 of 12" in the subtitle while they
+     * work, the list's PDF badges as files arrive, and what was done when they stop.
+     */
+    private fun followDownloads() {
+        var lastDone = -1
+        observe(AttachmentDownloads.workInfos(context)) { infos ->
+            val active = infos.any { !it.state.isFinished }
+            val running = infos.firstOrNull { it.state == WorkInfo.State.RUNNING }
+            val done = running?.progress?.getInt(AttachmentDownloadWorker.DONE, -1) ?: -1
+            val total = running?.progress?.getInt(AttachmentDownloadWorker.TOTAL, 0) ?: 0
+            downloadStatus = when {
+                !active -> null
+                total > 0 && done >= 0 -> "Downloading ${minOf(done + 1, total)} of $total"
+                running == null -> "Downloads waiting for a network"
+                else -> "Downloading…"
+            }
+            showSubtitle()
+            if (done != lastDone && library.isLoaded()) parts.deviceState.refresh()
+            lastDone = done
+            // also a round that ended while the app was away (or killed) is told at start
+            if (!active) reportDownloads()
+            if (downloadsActive.value != active) downloadsActive.value = active
+        }
+    }
+
+    private fun reportDownloads() {
+        val state = AttachmentDownloads.queue(context).takeReport() ?: return
+        fun files(n: Int) = if (n == 1) "1 file" else "$n files"
+        if (state.stopped) {
+            makeToastAlert("Downloads stopped. ${files(state.downloaded)} downloaded.")
+        } else if (state.failed == 0) {
+            makeToastAlert(
+                if (state.downloaded == 0) "No files were downloaded." else "Downloaded ${files(state.downloaded)}."
+            )
+        } else {
+            createErrorAlert(
+                "Some files weren't downloaded",
+                (if (state.downloaded == 0) "${files(state.failed)} couldn't be downloaded."
+                else "Downloaded ${files(state.downloaded)}; ${files(state.failed)} couldn't be.") +
+                        state.firstError?.let { "\n\n$it" }.orEmpty()
+            ) {}
+        }
+    }
+
+    fun stopDownloads() = AttachmentDownloads.stop(context)
+
+    fun countSelectedAttachments(onResult: (Map<AttachmentKind, AttachmentCounts>) -> Unit) =
+        parts.attachments.countAttachments(selectedKeys(), onResult)
+
+    fun downloadAttachments(attachments: List<Item>) = parts.attachments.downloadAttachments(attachments)
+
     /**
      * Toolbar subtitle naming the active search and filter with the count, if the list goes
      * through them; and what the list says if it is empty.
@@ -207,13 +274,14 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         val search = parts.lists.librarySearch
         val filter = parts.lists.libraryFilter
         val shown = parts.lists.lastFilteredCount
-        subtitle.value =
+        filterSummary =
             if ((search.isEmpty() && !filter.isActive) || shown == null) null
             else listOfNotNull(
                 "Search: “$search”".takeIf { search.isNotEmpty() },
                 "Filter: ${filter.describe()}".takeIf { filter.isActive },
                 "$shown " + if (shown == 1) "item" else "items",
             ).joinToString(" · ")
+        showSubtitle()
         libraryListViewModel.setEmptyMessage(
             EmptyListMessage.forList(search, filter, shown != null, navigator.currentCollection())
         )
@@ -552,6 +620,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         observe(libraryListViewModel.getOnLibraryRefreshRequested()) {
             this.requestLibraryRefresh()
         }
+        followDownloads()
         // the empty list's button: clears whatever it named, search and filter alike
         observe(libraryListViewModel.getOnClearFilterRequested()) {
             parts.lists.librarySearch = ""

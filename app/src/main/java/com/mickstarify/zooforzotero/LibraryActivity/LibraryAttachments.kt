@@ -18,6 +18,11 @@ import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentOpenCheck
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.AttachmentInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentCounts
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentDownloadQueue
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentDownloads
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
 import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachments
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Completable
@@ -36,6 +41,8 @@ import java.util.concurrent.TimeUnit
  * batch, and deleting a copy from the device. Acts on the open library ([library]).
  *
  * @param api the API client, built on first use (see LibraryComponents)
+ * @param onDevice keys of the open library's attachments whose file is on this device, as
+ *   last worked out (LibraryDeviceState)
  * @param onFilesChanged called when files on the device may have changed (downloaded,
  *   uploaded, deleted), so the screen's attachment states are worked out again
  */
@@ -48,6 +55,8 @@ class LibraryAttachments(
     private val preferences: PreferenceManager,
     private val editedAttachments: EditedAttachments,
     private val uploader: AttachmentUploader,
+    private val zoteroDatabase: ZoteroDatabase,
+    private val onDevice: () -> Set<String>,
     private val onFilesChanged: () -> Unit,
 ) {
     private val state get() = library.state
@@ -576,6 +585,42 @@ class LibraryAttachments(
     private fun attachmentBase(item: Item): String? = editedAttachments.base(item)
 
     private fun recordBase(item: Item, md5: String) = editedAttachments.recordBase(item, md5)
+
+    /**
+     * The attachments of the items [keys] (and any of them that are attachments), by kind,
+     * split into those on this device and those not; [onResult] on the main thread.
+     */
+    fun countAttachments(keys: List<String>, onResult: (Map<AttachmentKind, AttachmentCounts>) -> Unit) {
+        ui.showLoadingAlertDialog("Looking at the attachments…")
+        val here = onDevice()
+        Single.fromCallable { AttachmentCounts.of(zoteroDatabase.loadAttachmentsOf(keys)) { it.itemKey in here } }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ counts ->
+                ui.hideLoadingAlertDialog()
+                onResult(counts)
+            }, { e ->
+                ui.hideLoadingAlertDialog()
+                Log.e("zotero", "reading the attachments of ${keys.size} items failed: $e")
+                ui.createErrorAlert("Couldn't read the attachments", "Details: ${e.message ?: e}") {}
+            })
+    }
+
+    /**
+     * Downloads [attachments] in the background (AttachmentDownloads), one after another;
+     * the app can be left meanwhile. Progress shows in the toolbar.
+     */
+    fun downloadAttachments(attachments: List<Item>) {
+        val group = state.currentGroup.id
+        val added = AttachmentDownloads.enqueue(context, attachments.map { AttachmentDownloadQueue.Entry(group, it.itemKey) })
+        ui.makeToastAlert(
+            when (added) {
+                0 -> "They're being downloaded already."
+                1 -> "Downloading 1 file in the background."
+                else -> "Downloading $added files in the background."
+            }
+        )
+    }
 
     fun deleteLocalAttachment(attachment: Item) {
         val delete = {

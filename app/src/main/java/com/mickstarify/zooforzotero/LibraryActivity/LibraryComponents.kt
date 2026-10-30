@@ -61,7 +61,9 @@ class LibraryComponents(
     val attachments: LibraryAttachments by lazy {
         LibraryAttachments(
             context, ui, library, { zoteroAPI }, attachmentStorageManager, preferences,
-            editedAttachments, uploader, onFilesChanged = { deviceState.refresh() }
+            editedAttachments, uploader, zoteroDatabase,
+            onDevice = { deviceState.current.onDevice },
+            onFilesChanged = { deviceState.refresh() },
         )
     }
 

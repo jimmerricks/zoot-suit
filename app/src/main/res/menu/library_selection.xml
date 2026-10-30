@@ -24,6 +24,14 @@
             app:showAsAction="never" />
     </group>
 
+    <!-- the files on this device: in groups too -->
+    <group android:id="@+id/selection_files">
+        <item
+            android:id="@+id/selection_download"
+            android:title="@string/download_attachments"
+            app:showAsAction="never" />
+    </group>
+
     <group android:id="@+id/selection_choose">
         <item
             android:id="@+id/select_all"
