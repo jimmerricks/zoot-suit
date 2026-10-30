@@ -46,6 +46,7 @@ import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.AttachmentStates
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryLoadingScreenViewModel
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncStatus
 import com.mickstarify.zooforzotero.SettingsActivity
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
@@ -143,6 +144,7 @@ class LibraryActivity : AppCompatActivity(),
         libraryListViewModel.getSelection().observe(this) { showSelectionMode(!it.isEmpty()) }
         viewModel.sidebar.observe(this) { showSidebar(it) }
         viewModel.pendingEdits.observe(this) { showPendingEdits(it) }
+        viewModel.syncStatus.observe(this) { showSyncStatus(it) }
         viewModel.downloadsActive.observe(this) { invalidateOptionsMenu() }
         viewModel.screen.observe(this) {
             showScreen(
@@ -410,6 +412,32 @@ class LibraryActivity : AppCompatActivity(),
         invalidateOptionsMenu()
     }
 
+    // the toolbar's "Syncing n/m" while a sync runs, else null; in place of the edit count
+    private var syncLabel: String? = null
+    private var syncMenuItem: MenuItem? = null
+
+    private fun showSyncStatus(status: SyncStatus?) {
+        val label = status?.takeIf { it.running }?.let { running ->
+            running.itemProgress()?.let { (done, total) -> getString(R.string.syncing_progress, done, total) }
+                ?: getString(R.string.syncing)
+        }
+        if ((label == null) != (syncLabel == null)) {
+            // The display stays on while a sync runs: once it sleeps, Doze cuts the
+            // network off within minutes and a first sync of a large library stops.
+            if (label != null) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            } else {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+            syncLabel = label
+            invalidateOptionsMenu()
+        } else if (label != syncLabel) {
+            // only the count: rebuilding the menu for each page would close it while open
+            syncLabel = label
+            syncMenuItem?.title = label
+        }
+    }
+
     /** Attachment keys whose file is on this device / has edits to sync, for the list's PDF icons. */
     override fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>) {
         libraryListViewModel.setAttachmentStates(AttachmentStates(onDevice, edited))
@@ -429,8 +457,13 @@ class LibraryActivity : AppCompatActivity(),
         menu.findItem(R.id.stop_downloads)?.isVisible = viewModel.downloadsActive.value == true
         menu.findItem(R.id.selection_remove_from_collection)?.isVisible =
             viewModel.canEditItems() && viewModel.currentCollection() != null
+        syncMenuItem = menu.findItem(R.id.sync_status)?.apply {
+            isVisible = syncLabel != null
+            syncLabel?.let { title = it }
+        }
         menu.findItem(R.id.pending_edits)?.apply {
-            isVisible = pendingEdits > 0
+            // while a sync runs the edits are going up; its details list them
+            isVisible = pendingEdits > 0 && syncLabel == null
             title = resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)
         }
         return super.onPrepareOptionsMenu(menu)

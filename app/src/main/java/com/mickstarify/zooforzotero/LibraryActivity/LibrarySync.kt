@@ -3,7 +3,10 @@ package com.mickstarify.zooforzotero.LibraryActivity
 import android.util.Log
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.OnSyncChangeListener
+import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.StageState
 import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncManager
+import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncStage
+import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncStatus
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -67,7 +70,9 @@ class LibrarySync(
      */
     fun refreshLibrary(useSmallLoadingAnimation: Boolean = false) {
         if (!state.isUsingGroup()) {
+            showEditsStage(StageState(StageState.Phase.RUNNING))
             val pull = {
+                editsStage = StageState(StageState.Phase.DONE)
                 downloadLibrary(doRefresh = true, useSmallLoadingAnimation = useSmallLoadingAnimation)
             }
             val attachmentsThenPull: () -> Unit = {
@@ -89,6 +94,26 @@ class LibrarySync(
         } else {
             startGroupSync(state.currentGroup, refresh = true)
         }
+    }
+
+    // My Library's edits going up before its download, for the sync's details
+    private var editsStage: StageState? = null
+
+    private fun showEditsStage(stage: StageState) {
+        editsStage = stage
+        val running = syncManager.status?.takeIf { it.running }
+            ?: SyncStatus(GroupInfo.NO_GROUP_ID, isFirstSync(), emptyMap())
+        showSyncStatus(running)
+    }
+
+    /** The sync's stages, with My Library's edits sent before it. */
+    override fun showSyncStatus(status: SyncStatus) {
+        val edits = editsStage
+        ui.showSyncStatus(
+            if (edits != null && status.groupID == GroupInfo.NO_GROUP_ID) status.with(SyncStage.EDITS) { edits }
+            else status
+        )
+        if (!status.running) editsStage = null
     }
 
     /** Whether [db] (by default the open library) was last synced a day or more ago. */

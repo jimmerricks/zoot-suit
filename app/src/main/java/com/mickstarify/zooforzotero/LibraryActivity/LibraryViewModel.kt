@@ -14,6 +14,7 @@ import androidx.lifecycle.Observer
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryLoadingScreenViewModel
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
+import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncStatus
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
@@ -42,6 +43,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     val subtitle = MutableLiveData<String?>()
     val sidebar = MutableLiveData<List<SidebarRow>>()
     val pendingEdits = MutableLiveData(0)
+    /** The running sync, or the last one (running false); null before any. */
+    val syncStatus = MutableLiveData<SyncStatus?>()
     val screen = MutableLiveData<AvailableScreens>()
 
     private fun showScreen(next: AvailableScreens) {
@@ -325,6 +328,10 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         onNoClick: () -> Unit
     ) {
         commands.send { it.createYesNoPrompt(title, message, yesText, noText, onYesClick, onNoClick) }
+    }
+
+    override fun showSyncStatus(status: SyncStatus) {
+        syncStatus.value = status
     }
 
     override fun showPendingEdits(count: Int) {

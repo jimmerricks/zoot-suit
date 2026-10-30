@@ -1,6 +1,7 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
 import android.content.Intent
+import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncStatus
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
@@ -36,6 +37,8 @@ interface LibraryUi {
     fun showBasicSyncAnimation()
     fun hideBasicSyncAnimation()
     fun updateLibraryRefreshProgress(progress: Int, total: Int, message: String)
+    /** What a sync does now (SyncStatus); also its last state, once it ended. */
+    fun showSyncStatus(status: SyncStatus)
 
     // what the screen shows
     fun receiveCollections(collections: List<Collection>)

@@ -2,6 +2,13 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- while a sync runs: its progress; tapping it shows the details -->
+    <item
+        android:id="@+id/sync_status"
+        android:title="@string/syncing"
+        android:visible="false"
+        app:showAsAction="always|withText" />
+
     <item
         android:id="@+id/pending_edits"
         android:title="@string/sync"
