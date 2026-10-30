@@ -774,20 +774,20 @@ class ZoteroAPI(
     }
 
     /**
-     * Uploads to Zotero File Storage. [baseMd5]: the file this device's edit started from
+     * Uploads to Zotero File Storage. [newMd5]: the file's md5, hashed by the caller (a large
+     * PDF was read twice). [baseMd5]: the file this device's edit started from
      * (last downloaded or uploaded here; "" if there was none). Zotero replaces the file only
      * if it still has that one, so a newer file from another device is never overwritten.
      * Not the md5 from the last sync: after an upload from here that is stale until the next
      * sync, and the next upload got 412.
      */
-    fun updateAttachment(attachment: Item, baseMd5: String): Completable {
+    fun updateAttachment(attachment: Item, baseMd5: String, newMd5: String): Completable {
         val attachmentUri: Uri = attachmentStorageManager.getAttachmentUri(attachment)
         // Zotero's precondition: the md5 of the file being replaced, or "no file yet"
         val oldMd5 = baseMd5
         val ifMatch = oldMd5.ifEmpty { null }
         val ifNoneMatch = if (oldMd5.isEmpty()) "*" else null
 
-        val newMd5 = attachmentStorageManager.calculateMd5(attachment)
         if (oldMd5 == newMd5) {
 
             return Completable.error(AlreadyUploadedException("Local attachment version is the same as Zotero's."))

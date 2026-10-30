@@ -44,7 +44,7 @@ class AttachmentUploader(
             uploadWithWebdav(attachment, md5Key, mtime)
         } else {
             val baseMd5 = edited.base(attachment) ?: attachment.getMd5Key()
-            api().updateAttachment(attachment, baseMd5).onErrorResumeNext { e ->
+            api().updateAttachment(attachment, baseMd5, md5Key).onErrorResumeNext { e ->
                 if (e is AlreadyUploadedException) Completable.complete() else Completable.error(e)
             }
         }

@@ -30,7 +30,6 @@ class ZoteroUploadExistsTest {
 
     private val storage = mock<AttachmentStorageManager> {
         on { getAttachmentUri(any()) } doReturn mock<Uri>()
-        on { calculateMd5(any<Item>()) } doReturn "new-md5"
         on { getMtime(any()) } doReturn 1L
         on { getFilenameForItem(any()) } doReturn "a.pdf"
         on { getFileSize(any<Uri>()) } doReturn 4L
@@ -51,7 +50,7 @@ class ZoteroUploadExistsTest {
     fun `a spaced exists answer is already uploaded`() {
         server.enqueue(MockResponse().setBody("{ \"exists\": 1 }\n"))
 
-        api.updateAttachment(attachment, "old-md5").test().awaitDone(5, TimeUnit.SECONDS)
+        api.updateAttachment(attachment, "old-md5", "new-md5").test().awaitDone(5, TimeUnit.SECONDS)
             .assertError(AlreadyUploadedException::class.java)
     }
 }
