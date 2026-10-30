@@ -909,13 +909,13 @@ class ZoteroAPI(
         return observable.map { response ->
             if (response.code() == 200) {
                 val jsonString = response.body()!!.string()
-                if (jsonString == "{\"exists\":1}") {
+                // read as JSON, not compared as a string: spacing or a newline made the
+                // answer a broken authorization
+                val root = Gson().fromJson(jsonString, JsonObject::class.java)
+                if (root?.get("exists")?.takeUnless { it.isJsonNull }?.asInt == 1) {
                     throw AlreadyUploadedException("File already uploaded")
                 } else {
-                    Gson().fromJson(
-                        jsonString,
-                        ZoteroUploadAuthorizationPojo::class.java
-                    )
+                    Gson().fromJson(root, ZoteroUploadAuthorizationPojo::class.java)
                 }
             } else if (response.code() == 412) {
                 throw RemoteAttachmentChangedException(
