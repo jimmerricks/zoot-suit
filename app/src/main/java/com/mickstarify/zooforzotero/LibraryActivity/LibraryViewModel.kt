@@ -334,11 +334,23 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     override fun showEditedItem(item: Item) {
         libraryListViewModel.onItemChanged(item)
+        showEditedItems()
+    }
+
+    override fun showEditedItems() {
         // only a list that can depend on tags is redrawn; a large one is slow to redraw
         if (parts.lists.libraryFilter.tags.isNotEmpty() ||
             parts.lists.librarySearch.isNotEmpty()
         ) redisplayItems()
     }
+
+    /** The items selected in the list, in the order chosen. */
+    private fun selectedKeys() = libraryListViewModel.getSelection().value!!.keys()
+
+    fun editSelectedTags(tag: String, add: Boolean) = parts.edits.editTags(selectedKeys(), tag, add)
+
+    fun loadSelectedTags(onResult: (List<Pair<String, Int>>) -> Unit) =
+        parts.edits.tagsOf(selectedKeys(), onResult)
 
     override fun refreshItemView() {
         val item = selectedItem

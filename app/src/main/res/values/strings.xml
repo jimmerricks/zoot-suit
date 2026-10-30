@@ -11,6 +11,8 @@
         <item quantity="one">%d selected</item>
         <item quantity="other">%d selected</item>
     </plurals>
+    <string name="add_tag">Add tag…</string>
+    <string name="remove_tag">Remove tag…</string>
     <string name="select_all">Select all</string>
     <string name="invert_selection">Invert selection</string>
     <string name="clear_selection">Clear selection</string>

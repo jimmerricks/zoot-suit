@@ -52,6 +52,33 @@ class ItemEditStore(private val database: ZoteroDatabase) {
     }
 
     /**
+     * Records [edit] (a tag edit) for each of the items [keys] of library [group] and
+     * applies it, all in one transaction: a bulk edit is either made whole or not at all.
+     * Items gone meanwhile are skipped. Returns the keys it changed (an item that had the
+     * tag already isn't). The items' in-memory copies are left alone; reload them.
+     */
+    fun recordAll(group: Int, keys: Collection<String>, edit: ItemEdit): List<String> =
+        database.db.runInTransaction<List<String>> {
+            require(edit.kind == ItemEditKind.ADD_TAG || edit.kind == ItemEditKind.REMOVE_TAG) {
+                "only tag edits are made in bulk"
+            }
+            val changed = ArrayList<String>()
+            for (key in keys) {
+                if (!dao.hasItem(key)) continue
+                val pending = dao.forItem(group, key).mapNotNull { it.toEdit() }
+                val recording = ItemEdits.record(pending, edit, dao.tagsOf(key), emptyMap(), fold = key !in uploading)
+                if (recording == ItemEdits.Recording.NONE) continue
+                if (recording.delete.isNotEmpty()) dao.delete(recording.delete)
+                recording.insert?.let { dao.insert(PendingItemEdit.of(it, key, group)) }
+                if (edit.kind == ItemEditKind.ADD_TAG) dao.putTag(ItemTag(key, edit.name))
+                else dao.deleteTag(key, edit.name)
+                changed += key
+            }
+            database.fillKeys(changed) // searched by their tags
+            changed
+        }
+
+    /**
      * Adds a note with [html] to [parent] (of library [group]): stored as an item at once,
      * so it shows like any other note, and uploaded with the other edits. Returns it, also
      * added to [parent]'s notes.

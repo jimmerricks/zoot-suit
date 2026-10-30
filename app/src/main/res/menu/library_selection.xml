@@ -3,6 +3,18 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- My Library only: edits in groups aren't uploaded -->
+    <group android:id="@+id/selection_edits">
+        <item
+            android:id="@+id/selection_add_tag"
+            android:title="@string/add_tag"
+            app:showAsAction="never" />
+        <item
+            android:id="@+id/selection_remove_tag"
+            android:title="@string/remove_tag"
+            app:showAsAction="never" />
+    </group>
+
     <group android:id="@+id/selection_choose">
         <item
             android:id="@+id/select_all"

@@ -44,6 +44,8 @@ interface LibraryUi {
     fun refreshItemView()
     /** [item] changed on this device (a tag edit): redraws its dialog and lists that depend on it. */
     fun showEditedItem(item: Item)
+    /** Items changed on this device in bulk (a tag on the selection): redraws lists that depend on them. */
+    fun showEditedItems()
     fun showGroups()
     fun showPendingEdits(count: Int)
     fun showAttachmentStates(onDevice: Set<String>, edited: Set<String>)

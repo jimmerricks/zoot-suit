@@ -291,6 +291,16 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         db.itemDao().getTagCounts(groupID).map { it.tag to it.count }
             .sortedWith(compareBy<Pair<String, Int>, String>(String.CASE_INSENSITIVE_ORDER) { it.first }.thenBy { it.first })
 
+    /** The tags on the items [keys], each with how many of them carry it; by name, as [tagCounts]. Blocking. */
+    fun tagCountsOf(keys: List<String>): List<Pair<String, Int>> {
+        val counts = HashMap<String, Int>()
+        for (chunk in keys.chunked(900)) {
+            for (c in db.itemDao().getTagCountsOf(chunk)) counts[c.tag] = (counts[c.tag] ?: 0) + c.count
+        }
+        return counts.toList()
+            .sortedWith(compareBy<Pair<String, Int>, String>(String.CASE_INSENSITIVE_ORDER) { it.first }.thenBy { it.first })
+    }
+
     /** The fields [loadItems] left out with listFieldsOnly, by item key. Blocking. */
     fun loadRestOfFields(groupID: Int): Map<String, List<ItemData>> =
         db.itemDao().getRestOfItemDataForGroup(groupID, LIST_FIELDS).groupBy { it.parent }

@@ -303,6 +303,16 @@ class LibraryActivity : AppCompatActivity(),
         }
 
         when (item.itemId) {
+            R.id.selection_add_tag -> {
+                val count = libraryListViewModel.getSelection().value!!.size
+                val suggest = SelectionDialogs(this).addTag(count) { viewModel.editSelectedTags(it, add = true) }
+                viewModel.loadTags { tags -> suggest(tags.map { it.first }) }
+            }
+            R.id.selection_remove_tag -> viewModel.loadSelectedTags { tags ->
+                if (isFinishing || isDestroyed) return@loadSelectedTags
+                val count = libraryListViewModel.getSelection().value!!.size
+                SelectionDialogs(this).removeTag(count, tags) { viewModel.editSelectedTags(it, add = false) }
+            }
             R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
             R.id.invert_selection -> libraryListViewModel.changeSelection { invert(it) }
             R.id.clear_selection -> libraryListViewModel.changeSelection { clear() }
@@ -385,6 +395,7 @@ class LibraryActivity : AppCompatActivity(),
 
     // here rather than in onCreateOptionsMenu: LibraryListFragment re-inflates the menu after it
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.setGroupVisible(R.id.selection_edits, viewModel.canEditItems())
         menu.findItem(R.id.pending_edits)?.apply {
             isVisible = pendingEdits > 0
             title = resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)

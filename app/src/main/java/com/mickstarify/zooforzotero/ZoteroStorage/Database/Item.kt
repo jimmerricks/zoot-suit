@@ -477,6 +477,10 @@ interface ItemDao {
     )
     fun getTagCounts(groupID: Int): List<TagCount>
 
+    /** The tags on [keys] (at most 999 of them, SQLite's limit on API 24), each with how many carry it. */
+    @Query("SELECT tag, COUNT(DISTINCT parent) AS count FROM ItemTags WHERE parent IN (:keys) GROUP BY tag")
+    fun getTagCountsOf(keys: List<String>): List<TagCount>
+
     @Query("SELECT parent from ItemTags where `tag`=:tag")
     fun getItemKeysWithTag(tag: String): Maybe<List<String>>
 

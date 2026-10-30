@@ -73,6 +73,54 @@ class LibraryItemEdits(
     }
 
     /**
+     * Adds ([add]) or removes [tag] on each of the items [keys] (the list's selection), on
+     * this device at once, in one go; Zotero gets it with the next sync, like one item's.
+     */
+    fun editTags(keys: List<String>, tag: String, add: Boolean) {
+        if (state.isUsingGroup()) {
+            ui.makeToastAlert("Tags can be edited only in My Library, not in groups.")
+            return
+        }
+        val edit = ItemEdit(if (add) ItemEditKind.ADD_TAG else ItemEditKind.REMOVE_TAG, tag)
+        ui.showLoadingAlertDialog(if (add) "Adding the tag…" else "Removing the tag…")
+        Single.fromCallable { itemEdits.recordAll(GroupInfo.NO_GROUP_ID, keys, edit) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ changed ->
+                ui.hideLoadingAlertDialog()
+                ui.makeToastAlert(bulkTagMessage(tag, add, changed.size, keys.size))
+                if (changed.isEmpty()) return@subscribe
+                invalidateList()
+                refreshPendingEdits { ui.showEditedItems() }
+            }, { e ->
+                ui.hideLoadingAlertDialog()
+                Log.e("zotero", "editing a tag of ${keys.size} items failed: $e")
+                ui.createErrorAlert("Couldn't change the tag", "Nothing was changed.\n\nDetails: ${e.message ?: e}") {}
+            })
+    }
+
+    private fun bulkTagMessage(tag: String, add: Boolean, changed: Int, selected: Int): String {
+        val items = if (changed == 1) "1 item" else "$changed items"
+        return when {
+            changed == 0 && add -> "All of them have “$tag” already."
+            changed == 0 -> "None of them has “$tag”."
+            add -> "Added “$tag” to $items." + if (changed < selected) " The others had it already." else ""
+            else -> "Removed “$tag” from $items."
+        }
+    }
+
+    /** The tags on the items [keys], each with how many of them carry it, on the main thread. */
+    fun tagsOf(keys: List<String>, onResult: (List<Pair<String, Int>>) -> Unit) {
+        Single.fromCallable { zoteroDatabase.tagCountsOf(keys) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(onResult) { e ->
+                Log.e("zotero", "reading the tags of ${keys.size} items failed: $e")
+                onResult(emptyList())
+            }
+    }
+
+    /**
      * Adds a note with [text] (plain text, as typed) to [item], on this device at once;
      * Zotero gets it with the next sync, like a tag. My Library only.
      */
