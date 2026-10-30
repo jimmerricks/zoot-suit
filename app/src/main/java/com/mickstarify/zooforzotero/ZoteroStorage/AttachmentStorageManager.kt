@@ -32,6 +32,17 @@ private const val EXTERNAL_STORAGE_PROVIDER = "com.android.externalstorage.docum
 
 /* This classes handles the data storage for all attachments. */
 
+/**
+ * [name] (an attachment's filename, as Zotero has it) as a name inside one folder. Zotero
+ * refuses stored-file names with a directory path, so this changes nothing in practice;
+ * but the name comes from the server and goes into a path, and "../" in it would reach
+ * outside the attachment folder (and createTempFile deletes what's there).
+ */
+fun safeFileName(name: String?): String {
+    val base = name?.substringAfterLast('/')?.replace("\u0000", "")
+    return if (base.isNullOrBlank() || base == "." || base == "..") "unknown.pdf" else base
+}
+
 
 @Singleton
 class AttachmentStorageManager @Inject constructor(
@@ -61,9 +72,7 @@ class AttachmentStorageManager @Inject constructor(
         }
     }
 
-    fun getFilenameForItem(item: Item): String {
-        return item.data.get("filename") ?: "unknown.pdf"
-    }
+    fun getFilenameForItem(item: Item): String = safeFileName(item.data["filename"])
 
     fun checkIfAttachmentExists(item: Item, checkMd5: Boolean = true): Boolean {
         if (storageMode == StorageMode.EXTERNAL_CACHE) {
@@ -269,7 +278,7 @@ class AttachmentStorageManager @Inject constructor(
     }
 
     fun createTempFile(filename: String): File {
-        val zipFile = File(context.cacheDir, filename)
+        val zipFile = File(context.cacheDir, safeFileName(filename))
         if (zipFile.exists()) {
             zipFile.delete()
         }
