@@ -20,8 +20,9 @@ larger work behind them.
 - Edits to attachments in group libraries are not uploaded (as in Zoo for Zotero).
   Group libraries are requested read-only.
 - No adding items; use Zotero itself.
-- Of an item's metadata, only tags can be edited, and only in My Library. Edits are
-  kept as operations and replayed onto Zotero's copy at sync, so editing other fields
+- Of an item's metadata, only tags (one item or many) and, in bulk, collection
+  membership can be edited, and only in My Library. Edits are kept as operations and
+  replayed onto Zotero's copy at sync, 50 items to a request, so editing other fields
   can reuse the same path; it needs an editor and a way to settle a field changed both
   here and elsewhere (detected, not yet shown).
 - The Zotero File Storage upload path has had less testing than WebDAV. Known gaps:
@@ -47,6 +48,9 @@ logic and outlives the activity, and `LibraryComponents` wires the parts that do
 work, each on its own: `OpenLibrary` (which library is open, the Back stack),
 `LibraryLists`, `LibrarySync`, `LibraryAttachments` (with `AttachmentUploader` and
 `EditedAttachments`), `LibraryItemEdits`, `LibraryDeviceState` and `LibraryGroups`.
+The list's selection is an `ItemSelection` of keys in `LibraryListViewModel`; bulk
+downloads run in a WorkManager worker (`ZoteroStorage/Downloads/`) from a queue kept in
+a file, so they outlive the screen and the process.
 
 Planned, one small, behaviour-preserving step at a time, each checked on a device:
 

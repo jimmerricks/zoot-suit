@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+New:
+- Select items in the library list: a long press starts, a tap adds or removes, and
+  the toolbar shows how many are selected. Select all, Invert selection and Clear
+  selection are in its menu; ✕ or Back ends it. Only items in the list on screen can
+  be selected, so an action never reaches one you can't see.
+- Bulk actions on the selection, all in the toolbar's menu:
+  - Add tag… and Remove tag…, offline like a tag added in the item dialog.
+  - Add to collection… (the collections as a tree) and, while a collection is open,
+    Remove from this collection. Offline too: the collection shows the change at once
+    and the next sync uploads it. Attachments and notes are left out; only top-level
+    items can be in collections.
+  - Download attachments…: PDFs, web snapshots (HTML) or all attachments, each with
+    how many are still to download. Files are downloaded in the background, one after
+    another, and the toolbar shows how far it got; the app can be left meanwhile, and
+    a download cut off (no network, or Android stopping the app) carries on later.
+    Stop downloads is in the menu while it runs. This is the bulk download that 0.2.3
+    removed with the Attachment Manager, now for whatever you select.
+  - Delete files from this device…, by the same kinds. Files with edits that haven't
+    been uploaded are named first; you can keep those and delete the rest.
+  Edits are My Library only, as before; downloads and deletions work in groups too.
+
+Changed:
+- Tag and collection changes go up 50 items to a request instead of one item at a
+  time: tagging 250 items syncs in seconds. An addition to a collection deleted in
+  Zotero meanwhile is dropped with a message; the item's other changes still go up.
+
 ## 0.2.3
 
 Updates 0.2.2 in place (same app id and signing key).
