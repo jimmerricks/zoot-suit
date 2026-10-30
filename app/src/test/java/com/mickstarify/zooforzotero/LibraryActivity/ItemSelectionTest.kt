@@ -91,13 +91,23 @@ class ItemSelectionTest {
     }
 
     @Test
-    fun `a range keeps what was selected in it and starts from the item pressed last`() {
-        val s = selection("A", "C")
-        s.toggle("A") // pressed last, now unticked
+    fun `a range from a ticked item keeps what was selected in it and chains on`() {
+        val s = selection("C", "A") // A pressed last, ticked
         s.selectRange("B", list)
         assertEquals(setOf("A", "B", "C"), s.keys().toSet())
-        s.selectRange("D", list) // from B, the end of the last range
-        assertEquals(setOf("A", "B", "C", "D"), s.keys().toSet())
+        s.selectRange("E", list) // from B, the end of the last range
+        assertEquals(setOf("A", "B", "C", "D", "E"), s.keys().toSet())
+    }
+
+    @Test
+    fun `a range from an unticked item unselects, both ends included, and chains on`() {
+        val s = ItemSelection()
+        s.selectAll(list)
+        s.toggle("E") // unticked: the ranges from here unselect
+        s.selectRange("C", list)
+        assertEquals(setOf("A", "B", "F"), s.keys().toSet())
+        s.selectRange("B", list) // from C, unselected
+        assertEquals(setOf("A", "F"), s.keys().toSet())
     }
 
     @Test

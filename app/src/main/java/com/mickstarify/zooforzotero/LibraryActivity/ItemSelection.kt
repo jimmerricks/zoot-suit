@@ -34,19 +34,22 @@ class ItemSelection {
     }
 
     /**
-     * Selects [key] and every item between it and the one pressed before, both included,
-     * in the order of [listed], the list's keys: Shift-click on a computer. Items in the
-     * range stay selected if they were; with no item pressed before (or it left the list),
-     * just [key]. The range's end is where the next one starts.
+     * Gives [key] and every item between it and the one pressed before, both included, in
+     * the order of [listed] (the list's keys), the state that item has now: Shift-click on
+     * a computer. After ticking an item the range is selected, after unticking one it's
+     * unselected. With no item pressed before (or it left the list), just [key] is
+     * selected. The range's end is where the next one starts, in the same state.
      */
     fun selectRange(key: String, listed: List<String>) {
         active = true
-        val from = anchor?.let { listed.indexOf(it) } ?: -1
+        val start = anchor
+        val from = start?.let { listed.indexOf(it) } ?: -1
         val to = listed.indexOf(key)
-        if (from < 0 || to < 0) {
+        if (start == null || from < 0 || to < 0) {
             keys.add(key)
         } else {
-            keys.addAll(listed.subList(minOf(from, to), maxOf(from, to) + 1))
+            val range = listed.subList(minOf(from, to), maxOf(from, to) + 1)
+            if (start in keys) keys.addAll(range) else keys.removeAll(range.toSet())
         }
         anchor = key
     }
