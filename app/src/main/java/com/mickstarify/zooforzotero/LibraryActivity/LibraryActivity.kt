@@ -421,7 +421,7 @@ class LibraryActivity : AppCompatActivity(),
 
     private fun showSyncStatus(status: SyncStatus?) {
         val label = status?.takeIf { it.running }?.let { running ->
-            running.itemProgress()?.let { (done, total) -> getString(R.string.syncing_progress, done, total) }
+            running.percent()?.let { getString(R.string.syncing_progress, it) }
                 ?: getString(R.string.syncing)
         }
         if ((label == null) != (syncLabel == null)) {

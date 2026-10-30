@@ -46,6 +46,12 @@ data class SyncStatus(
         .firstOrNull { it.phase == StageState.Phase.RUNNING && it.total > 0 }
         ?.let { minOf(it.done, it.total) to it.total }
 
+    /**
+     * How far the item pass running now is, in percent: the toolbar's label, the counts
+     * being in the details. Rounded down, so 100 only once the pass is complete.
+     */
+    fun percent(): Int? = itemProgress()?.let { (done, total) -> (done.toLong() * 100 / total).toInt() }
+
     /** Stages in the order they're listed. */
     fun ordered(): List<Pair<SyncStage, StageState>> =
         SyncStage.entries.mapNotNull { stage -> stages[stage]?.let { stage to it } }
