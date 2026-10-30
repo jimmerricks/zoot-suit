@@ -403,6 +403,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     fun canEditItems() = !library.state.isUsingGroup()
 
+    /** Whether edited attachments of the open library can be uploaded: My Library, uploading on. */
+    fun canUploadAttachments() = canEditItems() && parts.preferences.isAttachmentUploadingEnabled()
+
     override fun showEditedItem(item: Item) {
         libraryListViewModel.onItemChanged(item)
         showEditedItems()

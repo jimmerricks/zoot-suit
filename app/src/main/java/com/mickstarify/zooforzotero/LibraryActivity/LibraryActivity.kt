@@ -723,21 +723,31 @@ class LibraryActivity : AppCompatActivity(),
      * Long-press menu for an attachment, from the library list's PDF icon and from the
      * item view. A plain tap opens it (fetching Zotero's latest version first).
      */
+    /** The actions that apply to [item]'s file as it stands (AttachmentMenu), worked out first. */
     override fun showAttachmentMenu(item: Item) {
-        val actions = listOf<Pair<String, () -> Unit>>(
-            "Open" to { viewModel.openAttachment(item) },
-            "Download" to { viewModel.downloadAttachmentOnly(item) },
-            "Upload changes" to { viewModel.uploadChanges(item) },
-            "Delete from this device" to { viewModel.deleteLocalAttachment(item) },
-        )
-        try {
-            AlertDialog.Builder(this)
-                .setTitle(item.data["filename"] ?: item.getTitle())
-                .setItems(actions.map { it.first }.toTypedArray()) { _, which ->
-                    actions[which].second()
-                }.show()
-        } catch (exception: WindowManager.BadTokenException) {
-            Log.e("zotero", "cannot show attachment menu")
+        viewModel.describeAttachment(item) { state ->
+            if (isFinishing || isDestroyed) return@describeAttachment
+            val actions = AttachmentMenu.actions(
+                state, item.data["linkMode"],
+                canUpload = viewModel.canUploadAttachments(), canCheck = viewModel.canEditItems(),
+            )
+            try {
+                AlertDialog.Builder(this)
+                    .setTitle(item.data["filename"] ?: item.getTitle())
+                    .setItems(actions.map { it.label }.toTypedArray()) { _, which ->
+                        when (actions[which]) {
+                            AttachmentMenu.Action.OPEN -> viewModel.openAttachment(item)
+                            // each checks Zotero's version first and acts on what it finds
+                            AttachmentMenu.Action.DOWNLOAD, AttachmentMenu.Action.CHECK_NEWER,
+                            AttachmentMenu.Action.DOWNLOAD_NEWER, AttachmentMenu.Action.DOWNLOAD_ZOTEROS ->
+                                viewModel.downloadAttachmentOnly(item)
+                            AttachmentMenu.Action.UPLOAD -> viewModel.uploadChanges(item)
+                            AttachmentMenu.Action.DELETE -> viewModel.deleteLocalAttachment(item)
+                        }
+                    }.show()
+            } catch (exception: WindowManager.BadTokenException) {
+                Log.e("zotero", "cannot show attachment menu")
+            }
         }
     }
 
