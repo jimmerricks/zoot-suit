@@ -120,6 +120,10 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         (requireActivity() as LibraryActivity).showAttachmentMenu(item)
     }
 
+    override fun onItemSelectRange(item: Item) {
+        viewModel.selectRange(item)
+    }
+
     override fun onItemSelect(item: Item) {
         viewModel.toggleSelected(item)
     }

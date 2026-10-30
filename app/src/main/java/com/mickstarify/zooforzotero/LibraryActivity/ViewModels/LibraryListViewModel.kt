@@ -56,6 +56,11 @@ class LibraryListViewModel : ViewModel() {
         if (selectable) changeSelection { toggle(item.itemKey) }
     }
 
+    /** Selects [item] and the items between it and the one pressed before (ItemSelection.selectRange). */
+    fun selectRange(item: Item) {
+        if (selectable) changeSelection { selectRange(item.itemKey, it) }
+    }
+
     private val itemClicked = MutableLiveData<Item>()
     fun getOnItemClicked(): LiveData<Item> = itemClicked
     fun onItemClicked(item: Item) {

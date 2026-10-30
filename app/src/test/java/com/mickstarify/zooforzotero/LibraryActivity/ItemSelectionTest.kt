@@ -77,4 +77,38 @@ class ItemSelectionTest {
         assertFalse(s.active)
         assertFalse(ItemSelection().active)
     }
+
+    private val list = listOf("A", "B", "C", "D", "E", "F")
+
+    @Test
+    fun `a range selects both ends and what is between, either way round`() {
+        val down = selection("B")
+        down.selectRange("E", list)
+        assertEquals(setOf("B", "C", "D", "E"), down.keys().toSet())
+        val up = selection("E")
+        up.selectRange("B", list)
+        assertEquals(setOf("B", "C", "D", "E"), up.keys().toSet())
+    }
+
+    @Test
+    fun `a range keeps what was selected in it and starts from the item pressed last`() {
+        val s = selection("A", "C")
+        s.toggle("A") // pressed last, now unticked
+        s.selectRange("B", list)
+        assertEquals(setOf("A", "B", "C"), s.keys().toSet())
+        s.selectRange("D", list) // from B, the end of the last range
+        assertEquals(setOf("A", "B", "C", "D"), s.keys().toSet())
+    }
+
+    @Test
+    fun `without an item pressed before a range is just the item`() {
+        val s = selection("A")
+        s.clear()
+        s.selectRange("D", list)
+        assertEquals(listOf("D"), s.keys())
+        val gone = selection("A")
+        gone.retainIn(listOf("C", "D", "E"))
+        gone.selectRange("E", listOf("C", "D", "E"))
+        assertEquals(listOf("E"), gone.keys())
+    }
 }

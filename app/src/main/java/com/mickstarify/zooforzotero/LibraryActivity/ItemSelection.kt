@@ -17,6 +17,9 @@ class ItemSelection {
     var active = false
         private set
 
+    // the item last tapped or long-pressed in selection mode: where a range starts
+    private var anchor: String? = null
+
     val size: Int get() = keys.size
     fun isEmpty() = keys.isEmpty()
     operator fun contains(key: String) = key in keys
@@ -26,7 +29,26 @@ class ItemSelection {
 
     fun toggle(key: String) {
         active = true
+        anchor = key
         if (!keys.remove(key)) keys.add(key)
+    }
+
+    /**
+     * Selects [key] and every item between it and the one pressed before, both included,
+     * in the order of [listed], the list's keys: Shift-click on a computer. Items in the
+     * range stay selected if they were; with no item pressed before (or it left the list),
+     * just [key]. The range's end is where the next one starts.
+     */
+    fun selectRange(key: String, listed: List<String>) {
+        active = true
+        val from = anchor?.let { listed.indexOf(it) } ?: -1
+        val to = listed.indexOf(key)
+        if (from < 0 || to < 0) {
+            keys.add(key)
+        } else {
+            keys.addAll(listed.subList(minOf(from, to), maxOf(from, to) + 1))
+        }
+        anchor = key
     }
 
     /** Selects all of [listed], the list's keys; what was selected stays first. */
@@ -44,17 +66,22 @@ class ItemSelection {
     }
 
     /** Unselects everything; selection mode stays. */
-    fun clear() = keys.clear()
+    fun clear() {
+        keys.clear()
+        anchor = null
+    }
 
     /** Leaves selection mode, unselecting everything. */
     fun end() {
-        keys.clear()
+        clear()
         active = false
     }
 
     /** Drops keys not in [listed]: the list changed (another place, search, filter, a sync). */
     fun retainIn(listed: List<String>) {
-        if (keys.isEmpty()) return
-        keys.retainAll(listed.toHashSet())
+        if (keys.isEmpty() && anchor == null) return
+        val shown = listed.toHashSet()
+        keys.retainAll(shown)
+        if (anchor !in shown) anchor = null
     }
 }

@@ -77,7 +77,7 @@ class LibraryListRecyclerViewAdapter(
                 listener.onItemAttachmentOpen(pdfAttachment)
             }
             holder.pdfImage.setOnLongClickListener {
-                if (selection.active) listener.onItemSelect(item)
+                if (selection.active) listener.onItemSelectRange(item)
                 else listener.onItemAttachmentMenu(pdfAttachment)
                 true
             }
@@ -90,7 +90,8 @@ class LibraryListRecyclerViewAdapter(
             listener.onItemOpen(item)
         }
         holder.layout.setOnLongClickListener {
-            listener.onItemSelect(item)
+            // in selection mode a long press selects from the item pressed before, like Shift-click
+            if (selection.active) listener.onItemSelectRange(item) else listener.onItemSelect(item)
             true
         }
         val selected = item.itemKey in selection
@@ -255,4 +256,6 @@ interface LibraryListInteractionListener {
 
     /** A long press, or a tap while items are selected: selects or unselects [item]. */
     fun onItemSelect(item: Item)
+    /** Selects [item] and every item between it and the one pressed before. */
+    fun onItemSelectRange(item: Item)
 }
