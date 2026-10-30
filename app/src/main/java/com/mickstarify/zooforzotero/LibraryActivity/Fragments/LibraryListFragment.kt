@@ -102,7 +102,7 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
             swipeRefresh.isRefreshing = it
         }
         // a sync while selecting would change the list under the selection
-        viewModel.getSelection().observe(viewLifecycleOwner) { swipeRefresh.isEnabled = it.isEmpty() }
+        viewModel.getSelection().observe(viewLifecycleOwner) { swipeRefresh.isEnabled = !it.active }
 
         // keep the list above the navigation bar
         setupWindowInsets()

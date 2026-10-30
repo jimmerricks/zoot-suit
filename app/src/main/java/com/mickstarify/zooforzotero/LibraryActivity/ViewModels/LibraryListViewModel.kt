@@ -30,18 +30,19 @@ class LibraryListViewModel : ViewModel() {
     }
 
     /**
-     * The items chosen for a bulk action. Non-empty: the list is in selection mode, where a
-     * tap selects instead of opening. Each change is posted (the same object) to observers.
+     * The items chosen for a bulk action. While it's active (ItemSelection.active) the list
+     * is in selection mode, where a tap selects instead of opening. Each change is posted
+     * (the same object) to observers.
      */
     private val selection = MutableLiveData(ItemSelection())
     fun getSelection(): LiveData<ItemSelection> = selection
-    fun isSelecting() = !selection.value!!.isEmpty()
+    fun isSelecting() = selection.value!!.active
 
     /** Whether the list on screen may be selected from: not the trash. */
     var selectable = true
         set(value) {
             field = value
-            if (!value) changeSelection { clear() }
+            if (!value) changeSelection { end() }
         }
 
     /** Changes the selection; [listed] in [change] is the list's keys, in order. */

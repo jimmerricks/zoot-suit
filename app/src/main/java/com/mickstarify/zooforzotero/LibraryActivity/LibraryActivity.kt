@@ -100,7 +100,7 @@ class LibraryActivity : AppCompatActivity(),
                 if (drawer.isDrawerOpen(GravityCompat.START)) {
                     drawer.closeDrawer(GravityCompat.START)
                 } else if (libraryListViewModel.isSelecting()) {
-                    libraryListViewModel.changeSelection { clear() }
+                    libraryListViewModel.changeSelection { end() }
                 } else {
                     viewModel.backButtonPressed()
                 }
@@ -144,7 +144,7 @@ class LibraryActivity : AppCompatActivity(),
         // LibraryViewModel's state outlives this activity; a recreated one just renders it
         viewModel.title.observe(this) { showTitle() }
         viewModel.subtitle.observe(this) { showTitle() }
-        libraryListViewModel.getSelection().observe(this) { showSelectionMode(!it.isEmpty()) }
+        libraryListViewModel.getSelection().observe(this) { showSelectionMode(it.active, it.isEmpty()) }
         viewModel.sidebar.observe(this) { showSidebar(it) }
         viewModel.pendingEdits.observe(this) { showPendingEdits(it) }
         viewModel.syncStatus.observe(this) { showSyncStatus(it) }
@@ -160,13 +160,19 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     private var selecting = false
+    // selecting with nothing chosen: the bulk actions are hidden
+    private var selectedNone = true
 
     /**
-     * The toolbar while items are selected: their count for a title, ✕ to clear them in
-     * place of the drawer's button, and the bulk actions in the menu. The drawer is locked
-     * shut, so the list (and the selection) stay where they are.
+     * The toolbar in selection mode: the count chosen for a title, ✕ to end it in place of
+     * the drawer's button, and the bulk actions in the menu. The drawer is locked shut, so
+     * the list (and the selection) stay where they are.
      */
-    private fun showSelectionMode(on: Boolean) {
+    private fun showSelectionMode(on: Boolean, none: Boolean) {
+        if (none != selectedNone) {
+            selectedNone = none
+            if (on == selecting) invalidateOptionsMenu()
+        }
         if (on != selecting) {
             selecting = on
             findViewById<DrawerLayout>(R.id.drawerlayout_library).setDrawerLockMode(
@@ -174,7 +180,7 @@ class LibraryActivity : AppCompatActivity(),
             )
             mDrawerToggle.isDrawerIndicatorEnabled = !on
             // the drawer's button names itself again when it comes back
-            if (on) supportActionBar?.setHomeActionContentDescription(R.string.clear_selection)
+            if (on) supportActionBar?.setHomeActionContentDescription(R.string.end_selection)
             invalidateOptionsMenu()
         }
         showTitle()
@@ -350,7 +356,7 @@ class LibraryActivity : AppCompatActivity(),
             R.id.stop_downloads -> viewModel.stopDownloads()
             R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
             R.id.invert_selection -> libraryListViewModel.changeSelection { invert(it) }
-            R.id.clear_selection -> libraryListViewModel.changeSelection { clear() }
+            R.id.clear_selection -> libraryListViewModel.changeSelection { clear() } // ✕ ends selecting
 
             R.id.filter_menu -> {
                 showFilterMenu()
@@ -506,10 +512,12 @@ class LibraryActivity : AppCompatActivity(),
 
     // here rather than in onCreateOptionsMenu: LibraryListFragment re-inflates the menu after it
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        menu.setGroupVisible(R.id.selection_edits, viewModel.canEditItems())
+        // the actions need something selected; choosing (select all, invert) stays
+        menu.setGroupVisible(R.id.selection_edits, viewModel.canEditItems() && !selectedNone)
+        menu.setGroupVisible(R.id.selection_files, !selectedNone)
         menu.findItem(R.id.stop_downloads)?.isVisible = viewModel.downloadsActive.value == true
         menu.findItem(R.id.selection_remove_from_collection)?.isVisible =
-            viewModel.canEditItems() && viewModel.currentCollection() != null
+            viewModel.canEditItems() && !selectedNone && viewModel.currentCollection() != null
         syncMenuItem = menu.findItem(R.id.sync_status)?.apply {
             isVisible = syncLabel != null
             syncLabel?.let { title = it }

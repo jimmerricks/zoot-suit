@@ -72,12 +72,12 @@ class LibraryListRecyclerViewAdapter(
                 }
             }
             holder.pdfImage.setOnClickListener {
-                if (!selection.isEmpty()) return@setOnClickListener listener.onItemSelect(item)
+                if (selection.active) return@setOnClickListener listener.onItemSelect(item)
                 Log.d("zotero", "Open Attachment ${item.getTitle()}")
                 listener.onItemAttachmentOpen(pdfAttachment)
             }
             holder.pdfImage.setOnLongClickListener {
-                if (!selection.isEmpty()) listener.onItemSelect(item)
+                if (selection.active) listener.onItemSelect(item)
                 else listener.onItemAttachmentMenu(pdfAttachment)
                 true
             }
@@ -85,7 +85,7 @@ class LibraryListRecyclerViewAdapter(
             holder.pdfImage.visibility = View.GONE
         }
         holder.layout.setOnClickListener {
-            if (!selection.isEmpty()) return@setOnClickListener listener.onItemSelect(item)
+            if (selection.active) return@setOnClickListener listener.onItemSelect(item)
             Log.d("zotero", "Open Item")
             listener.onItemOpen(item)
         }

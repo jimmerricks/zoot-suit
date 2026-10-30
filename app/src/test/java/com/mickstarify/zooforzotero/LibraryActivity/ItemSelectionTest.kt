@@ -54,9 +54,27 @@ class ItemSelectionTest {
     }
 
     @Test
-    fun `clear empties it`() {
+    fun `clear empties it and stays in selection mode`() {
         val s = selection("A", "B")
         s.clear()
         assertTrue(s.isEmpty())
+        assertTrue(s.active)
+    }
+
+    @Test
+    fun `unticking the last item stays in selection mode`() {
+        val s = selection("A")
+        s.toggle("A")
+        assertTrue(s.isEmpty())
+        assertTrue(s.active)
+    }
+
+    @Test
+    fun `end leaves selection mode`() {
+        val s = selection("A", "B")
+        s.end()
+        assertTrue(s.isEmpty())
+        assertFalse(s.active)
+        assertFalse(ItemSelection().active)
     }
 }
