@@ -325,6 +325,22 @@ class AttachmentStorageManager @Inject constructor(
         }
     }
 
+    /**
+     * The name of the folder the user chose for attachments, or null while they're in the
+     * app's own storage. Removing a file there deletes the user's copy, so dialogs name it.
+     */
+    fun chosenFolderName(): String? {
+        if (storageMode != StorageMode.CUSTOM) return null
+        // the path, as a file manager shows it: the folder's own name for the top of
+        // internal storage is "0". Tree ids look like "primary:Download/Zotero".
+        val id = runCatching { DocumentsContract.getTreeDocumentId(getCustomStorageTreeURI()) }.getOrNull()
+            ?: return "the folder you chose"
+        val volume = id.substringBefore(':')
+        val path = id.substringAfter(':', "").trim('/')
+        val root = if (volume == "primary") "Internal storage" else "SD card"
+        return if (path.isEmpty()) root else if (volume == "primary") path else "$root/$path"
+    }
+
     fun getCustomStorageTreeURI(): Uri {
         return Uri.parse(preferenceManager.getCustomAttachmentStorageLocation())
     }
@@ -398,9 +414,9 @@ class AttachmentStorageManager @Inject constructor(
     }
 
     /**
-     * Deletes [attachment]'s file from the device; true if there was one and it's gone. In
-     * the app's cache its folder goes too once empty: an empty folder still counted as
-     * downloaded (listDownloadedItemKeys).
+     * Deletes [attachment]'s file from the device; true if there was one and it's gone. Its
+     * folder goes too once empty: an empty folder still counted as downloaded
+     * (listDownloadedItemKeys).
      */
     fun deleteAttachment(attachment: Item): Boolean {
         return when (storageMode) {
@@ -412,16 +428,40 @@ class AttachmentStorageManager @Inject constructor(
             }
 
             StorageMode.CUSTOM -> {
-                try {
+                val deleted = try {
                     DocumentFile.fromSingleUri(context, getAttachmentUri(attachment))?.delete() == true
                 } catch (e: java.io.FileNotFoundException) {
                     Log.d("zotero", "cannot delete file. Not found.")
                     false
                 }
+                // its KEY folder too once empty, as in the app's storage
+                runCatching { deleteCustomFolderIfEmpty(attachment.itemKey.uppercase()) }
+                    .onFailure { Log.d("zotero", "couldn't remove the empty folder of ${attachment.itemKey}: $it") }
+                deleted
             }
 
             else -> throw Exception("not implemented")
         }
+    }
+
+    /**
+     * Deletes the folder [key] in the Custom Path folder if it holds nothing. Its document
+     * is addressed directly, as in findCustomAttachment, rather than by listing the whole
+     * folder for every file a bulk removal deletes.
+     */
+    private fun deleteCustomFolderIfEmpty(key: String) {
+        val tree = getCustomStorageTreeURI()
+        val resolver = context.contentResolver
+        val folderId = if (tree.authority == EXTERNAL_STORAGE_PROVIDER) {
+            "${DocumentsContract.getTreeDocumentId(tree)}/$key"
+        } else {
+            val folder = DocumentFile.fromTreeUri(context, tree)?.findFile(key) ?: return
+            DocumentsContract.getDocumentId(folder.uri)
+        }
+        val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, folderId)
+        val empty = resolver.query(children, arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID), null, null, null)
+            ?.use { it.count == 0 } ?: return
+        if (empty) DocumentsContract.deleteDocument(resolver, DocumentsContract.buildDocumentUriUsingTree(tree, folderId))
     }
 
     fun openLinkedAttachment(item: Item): Intent? {

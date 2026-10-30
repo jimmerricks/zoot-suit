@@ -366,7 +366,7 @@ class LibraryActivity : AppCompatActivity(),
                 SelectionDialogs(this).removeAttachments(counts) { files ->
                     viewModel.findEditedFiles(files) { edited ->
                         if (isFinishing || isDestroyed) return@findEditedFiles
-                        SelectionDialogs(this).confirmDelete(files, edited) { viewModel.deleteLocalFiles(it) }
+                        SelectionDialogs(this).confirmDelete(files, edited, viewModel.chosenAttachmentFolder()) { viewModel.deleteLocalFiles(it) }
                     }
                 }
             }

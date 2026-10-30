@@ -45,8 +45,8 @@
             app:entries="@array/attachment_storage_location_entries"
             app:entryValues="@array/attachment_storage_location_values"
             app:key="attachment_sync_location"
-            app:title="@string/setting_sync_attachments_location"
-            app:useSimpleSummaryProvider="true" />
+            app:title="@string/setting_sync_attachments_location" />
+        <!-- summary: where, and whose the files are (SettingsFragment.showAttachmentFolder) -->
 
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="true"

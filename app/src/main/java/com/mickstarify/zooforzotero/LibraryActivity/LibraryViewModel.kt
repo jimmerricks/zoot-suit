@@ -253,6 +253,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     fun deleteLocalFiles(files: List<Item>) = parts.attachments.deleteLocalAttachments(files)
 
+    /** The folder the user chose for attachments, or null for the app's own storage. */
+    fun chosenAttachmentFolder() = parts.attachmentStorageManager.chosenFolderName()
+
     /**
      * Toolbar subtitle naming the active search and filter with the count, if the list goes
      * through them; and what the list says if it is empty.

@@ -164,22 +164,25 @@ class SelectionDialogs(private val context: Context) {
 
     /**
      * Asks before removing [files] from this device. If some have edits not uploaded yet
-     * ([edited]), says so: those can be kept, or removed with their edits.
+     * ([edited]), says so: those can be kept, or removed with their edits. [chosenFolder]:
+     * the folder the user chose for attachments (AttachmentStorageManager.chosenFolderName),
+     * whose files are theirs, so the dialog says they are deleted there.
      */
-    fun confirmDelete(files: List<Item>, edited: List<Item>, onDelete: (List<Item>) -> Unit) {
+    fun confirmDelete(files: List<Item>, edited: List<Item>, chosenFolder: String?, onDelete: (List<Item>) -> Unit) {
         fun files(n: Int) = if (n == 1) "1 file" else "$n files"
         val dialog = AlertDialog.Builder(context)
             .setTitle("Remove ${files(files.size)} from this device?")
             .setNegativeButton("Cancel", null)
+        val where = chosenFolder?.let { deletedFromFolder(it, files.size) + "\n\n" } ?: ""
         if (edited.isEmpty()) {
-            dialog.setMessage("They stay in Zotero and can be downloaded again.")
+            dialog.setMessage(where + "They stay in Zotero and can be downloaded again.")
                 .setPositiveButton("Remove") { _, _ -> onDelete(files) }
         } else {
             val keys = edited.map { it.itemKey }.toSet()
             val names = edited.take(5).joinToString("\n") { "• " + (it.data["filename"] ?: it.getTitle()) } +
                     if (edited.size > 5) "\n…" else ""
             dialog.setMessage(
-                "${files(edited.size).replaceFirstChar { it.uppercase() }} ${if (edited.size == 1) "has" else "have"} " +
+                where + "${files(edited.size).replaceFirstChar { it.uppercase() }} ${if (edited.size == 1) "has" else "have"} " +
                         "edits that haven't been uploaded. Removing loses them.\n\n$names"
             )
                 .setPositiveButton("Remove all") { _, _ -> onDelete(files) }
@@ -188,5 +191,12 @@ class SelectionDialogs(private val context: Context) {
             }
         }
         dialog.show()
+    }
+
+    companion object {
+        /** What removing [count] files does in the folder the user chose, named [folder]. */
+        fun deletedFromFolder(folder: String, count: Int) =
+            (if (count == 1) "It is" else "They are") + " deleted from \u201c$folder\u201d, the " +
+                    "folder you chose in Settings, and gone for any other app that uses it."
     }
 }

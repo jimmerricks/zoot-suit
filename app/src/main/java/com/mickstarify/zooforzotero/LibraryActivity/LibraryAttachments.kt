@@ -92,7 +92,7 @@ class LibraryAttachments(
             } catch (e: IllegalArgumentException) {
                 ui.createErrorAlert("Couldn't open the file",
                     "Android refused access to the file. This is a known problem on Huawei " +
-                            "devices: in Settings, set Attachment folder to Custom Path.",
+                            "devices: in Settings, set Attachment folder to A folder you choose.",
                     {})
             } catch (e: FileNotFoundException) {
                 ui.createErrorAlert("File not found",
@@ -651,20 +651,28 @@ class LibraryAttachments(
             onFilesChanged()
             ui.makeToastAlert("Removed from this device: ${attachment.getTitle()}")
         }
+        // in a folder the user chose the file is theirs: always ask, naming the folder
         Single.fromCallable {
-            editedAttachments.isEdited(attachment)
+            Pair(editedAttachments.isEdited(attachment), Optional.ofNullable(attachmentStorageManager.chosenFolderName()))
         }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ edited ->
-                if (edited) {
-                    ui.createYesNoPrompt(
+            .subscribe({ (edited, folder) ->
+                val inFolder = folder.orElse(null)
+                    ?.let { SelectionDialogs.deletedFromFolder(it, 1) }
+                when {
+                    edited -> ui.createYesNoPrompt(
                         "Remove your edits?",
-                        "This copy has edits that haven't been uploaded. Removing it loses them.",
+                        "This copy has edits that haven't been uploaded. Removing it loses them." +
+                                (inFolder?.let { "\n\n$it" } ?: ""),
                         "Remove", "Keep", delete, {}
                     )
-                } else {
-                    delete()
+                    inFolder != null -> ui.createYesNoPrompt(
+                        "Remove from this device?",
+                        "$inFolder\n\nIt stays in Zotero and can be downloaded again.",
+                        "Remove", "Keep", delete, {}
+                    )
+                    else -> delete()
                 }
             }, { e -> Log.e("zotero", "checking ${attachment.itemKey} for edits failed: $e") })
     }

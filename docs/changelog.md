@@ -17,6 +17,13 @@ Changed:
 - The WebDAV server screen looks like Settings: no card, a Server header, switches
   instead of checkboxes, and Advanced as a row that opens below it. The keyboard no
   longer opens with the screen; the password can be shown; shorter help texts.
+- Settings → Attachment folder: the choices are now "App storage" and "A folder you
+  choose" (were "External Cache" and "Custom Path"). The setting names the folder and
+  says what signing out does to its files. Changing it asks first when files are there,
+  as they aren't moved; cancelling the folder picker goes back to app storage.
+- Removing files from a folder you chose (one file, a selection or all of them) says
+  that they are deleted there, and gone for other apps that use it. A single file there
+  always asks first.
 - Select items, in the toolbar's menu, starts selecting without a long press; Stop
   selecting, in the menu while selecting, ends it like ✕ and Back.
 - Removing attachments from the device says "Remove" throughout, as its menu entry
@@ -24,6 +31,8 @@ Changed:
   menu of a single file ("Remove from this device").
 
 Fixed:
+- Removing a file from a folder you chose left its empty item folder behind, and the
+  app still counted the file as downloaded.
 - On a large library the sync could end "incomplete" with "Trash: failed (offline)"
   although the device was online: the trash request gave up after 10 seconds, and a
   slow answer was reported as being offline. It now waits as long as the item pages

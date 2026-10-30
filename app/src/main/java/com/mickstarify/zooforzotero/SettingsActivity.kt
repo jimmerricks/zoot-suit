@@ -17,6 +17,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.preference.EditTextPreference
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
@@ -79,7 +80,15 @@ class SettingsActivity : AppCompatActivity() {
         Log.d("zotero", "got back result request=$requestCode result=$resultCode data=$data")
         when (requestCode) {
             STORAGE_ACCESS_REQUEST -> {
-                myStorageManager.setStorage(data?.dataString)
+                val fragment = supportFragmentManager.findFragmentById(R.id.settings) as? SettingsFragment
+                if (resultCode == RESULT_OK && data?.data != null) {
+                    myStorageManager.setStorage(data.dataString)
+                } else {
+                    // no folder chosen: back to app storage, rather than a folder that isn't there
+                    fragment?.findPreference<ListPreference>("attachment_sync_location")?.value = "EXTERNAL_CACHE"
+                }
+                fragment?.showAttachmentFolder()
+                fragment?.showFilesOnDevice()
             }
         }
     }
@@ -92,6 +101,12 @@ class SettingsActivity : AppCompatActivity() {
             val settings = requireActivity() as SettingsActivity
             findPreference<Preference>("sign_out")?.summary =
                 "Signed in as ${settings.authenticationStorage.getUsername()}"
+
+            findPreference<ListPreference>("attachment_sync_location")
+                ?.setOnPreferenceChangeListener { pref, newValue ->
+                    if (newValue != (pref as ListPreference).value) confirmFolderChange(pref, newValue as String)
+                    false // confirmFolderChange sets it
+                }
 
             val httpTimeoutPreference: EditTextPreference? = findPreference("http_write_timeout")
 
@@ -122,7 +137,53 @@ class SettingsActivity : AppCompatActivity() {
             // back from the server screen: show what it saved
             val address = (requireActivity() as SettingsActivity).myPreferenceManager.getWebDAVAddress()
             findPreference<Preference>("configure_webdav")?.summary = address.ifEmpty { "Not set up" }
+            showAttachmentFolder()
             showFilesOnDevice()
+        }
+
+        /** Attachment folder's summary: where files go, and what happens to them on sign-out. */
+        fun showAttachmentFolder() {
+            val settings = requireActivity() as SettingsActivity
+            findPreference<ListPreference>("attachment_sync_location")?.summary =
+                settings.myStorageManager.chosenFolderName()?.let {
+                    "\u201c$it\u201d, a folder you chose. The files there are yours: removing one " +
+                            "deletes it, signing out leaves them."
+                } ?: "App storage. Emptied when you sign out or uninstall the app."
+        }
+
+        /**
+         * Switching the attachment folder doesn't move the files already downloaded; if
+         * there are any, says what becomes of them and asks first.
+         */
+        private fun confirmFolderChange(pref: ListPreference, newValue: String) {
+            val settings = requireActivity() as SettingsActivity
+            Thread {
+                // attachments only: a folder the user chose can hold other folders too
+                val count = runCatching { settings.filesOnDevice.list().attachments.size }.getOrDefault(0)
+                val folder = settings.myStorageManager.chosenFolderName()
+                settings.runOnUiThread {
+                    if (!isAdded) return@runOnUiThread
+                    if (count == 0) {
+                        pref.value = newValue
+                        return@runOnUiThread
+                    }
+                    val files = fileCount(count)
+                    val message = if (folder == null) {
+                        "The $files in app storage aren't moved. The app won't see them any more; " +
+                                "they keep taking space until you switch back or sign out. To free " +
+                                "the space, cancel and use Remove all files from this device first."
+                    } else {
+                        "The $files in \u201c$folder\u201d aren't moved or deleted. The app won't " +
+                                "see them any more; switch back to use them again."
+                    }
+                    AlertDialog.Builder(settings)
+                        .setTitle("Change the attachment folder?")
+                        .setMessage(message)
+                        .setPositiveButton("Change") { _, _ -> pref.value = newValue }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+            }.start()
         }
 
         /** "Remove all files"'s summary: how many there are and their size. */
@@ -134,13 +195,16 @@ class SettingsActivity : AppCompatActivity() {
                 val files = runCatching { settings.filesOnDevice.list() }
                     .onFailure { Log.e("zotero", "listing files on the device failed: $it") }
                     .getOrNull()
+                val inFolder = settings.myStorageManager.chosenFolderName()?.let { " in \u201c$it\u201d" } ?: ""
                 settings.runOnUiThread {
                     if (!isAdded) return@runOnUiThread
                     row.summary = when {
                         files == null -> "Removes every downloaded attachment. They stay in Zotero."
                         files.attachments.isEmpty() -> "No files on this device."
                         else -> "${fileCount(files.attachments.size)}, " +
-                                "${Formatter.formatShortFileSize(settings, files.bytes)}. They stay in Zotero."
+                                "${Formatter.formatShortFileSize(settings, files.bytes)}" +
+                                inFolder +
+                                ". They stay in Zotero."
                     }
                     row.isEnabled = files == null || files.attachments.isNotEmpty()
                 }
@@ -182,6 +246,9 @@ class SettingsActivity : AppCompatActivity() {
                         ) == "CUSTOM"
                     ) {
                         (this.activity as SettingsActivity).openStoragePicker()
+                    } else {
+                        showAttachmentFolder()
+                        showFilesOnDevice()
                     }
                 }
                 "use_webdav" -> {
@@ -213,7 +280,7 @@ class SettingsActivity : AppCompatActivity() {
                 when {
                     found == null -> Toast.makeText(this, "Couldn't list the files on this device.", Toast.LENGTH_SHORT).show()
                     found.first.isEmpty() -> Toast.makeText(this, "No files on this device.", Toast.LENGTH_SHORT).show()
-                    else -> SelectionDialogs(this).confirmDelete(found.first, found.second, ::removeFiles)
+                    else -> SelectionDialogs(this).confirmDelete(found.first, found.second, myStorageManager.chosenFolderName(), ::removeFiles)
                 }
             }
         }.start()
