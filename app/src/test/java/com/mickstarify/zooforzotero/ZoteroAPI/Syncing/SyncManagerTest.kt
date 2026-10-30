@@ -232,6 +232,19 @@ class SyncManagerTest {
     }
 
     @Test
+    fun aStageTimingOutSaysSoRatherThanOffline() {
+        itemsVersion = 500
+        whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.ALL))) doReturn
+                Observable.error(java.net.SocketTimeoutException("timeout"))
+
+        sync.startCompleteSync(db)
+
+        val items = statuses.last().stages[SyncStage.ITEMS]
+        assertEquals(StageState.Phase.FAILED, items?.phase)
+        assertEquals("Zotero didn't answer in time", items?.error)
+    }
+
+    @Test
     fun anItemsSyncDuringASyncWaitsForIt() {
         itemsVersion = 500
         whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.ALL))) doAnswer {

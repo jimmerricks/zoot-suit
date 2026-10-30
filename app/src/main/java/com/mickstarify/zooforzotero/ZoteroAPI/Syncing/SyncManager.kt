@@ -64,7 +64,14 @@ class SyncManager (
     }
 
     private fun failure(e: Throwable): (StageState) -> StageState = {
-        it.copy(phase = StageState.Phase.FAILED, error = if (NetworkErrors.isOffline(e)) "offline" else e.message ?: e.toString())
+        // a timeout is the server being slow (a cold query on a large library), not the
+        // device being offline: the other stages of the same sync may well have gone through
+        val error = when {
+            NetworkErrors.isTimeout(e) -> "Zotero didn't answer in time"
+            NetworkErrors.isOffline(e) -> "offline"
+            else -> e.message ?: e.toString()
+        }
+        it.copy(phase = StageState.Phase.FAILED, error = error)
     }
 
     private fun stageOf(scope: ItemScope) = if (scope == ItemScope.CHILDREN) SyncStage.CHILDREN else SyncStage.ITEMS
