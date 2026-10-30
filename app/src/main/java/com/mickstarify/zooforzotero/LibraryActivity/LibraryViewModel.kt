@@ -161,27 +161,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         commands.send { it.hideAttachmentDownloadProgress() }
     }
 
-    override fun updateLibraryRefreshProgress(
-        progress: Int,
-        total: Int,
-        message: String
-    ) {
-        Log.d("zotero", "Updating library loading progress.")
-
-        if (total > 25 && screen.value != AvailableScreens.LIBRARY_LOADING_SCREEN) {
-            showScreen(AvailableScreens.LIBRARY_LOADING_SCREEN)
-        }
-
-        // total before progress: each observer rewrites the "Downloading X of Y" label,
-        // so the last one set wins. An empty message must not blank that label.
-        libraryLoadingViewModel.setTotalAmountOfEntries(total)
-        libraryLoadingViewModel.setAmountOfDownloadedEntries(progress)
-        if (message.isNotEmpty()) {
-            libraryLoadingViewModel.setLoadingMessage(message)
-        }
-
-    }
-
     fun warmSearchIndex() = parts.lists.warmSearchIndex()
 
     /** The open library's search, or "" for none. */
@@ -388,22 +367,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     }
 
 
-    override fun showLibraryLoadingAnimation() {
-        title.value = "Loading"
-
-        if (screen.value != AvailableScreens.LIBRARY_LOADING_SCREEN) {
-            showScreen(AvailableScreens.LIBRARY_LOADING_SCREEN)
-        }
-    }
-
-    override fun hideLibraryLoadingAnimation() {
-        Log.d("zotero", "loading library list fragment")
-        showScreen(AvailableScreens.LIBRARY_LISTVIEW_SCREEN)
-    }
-
     fun requestLibraryRefresh() {
         libraryListViewModel.setIsShowingLoadingAnimation(true)
-        parts.sync.refreshLibrary(useSmallLoadingAnimation = true)
+        parts.sync.refreshLibrary()
     }
 
     fun selectItem(

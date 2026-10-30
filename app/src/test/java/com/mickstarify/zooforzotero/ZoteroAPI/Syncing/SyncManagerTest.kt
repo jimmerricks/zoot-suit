@@ -94,7 +94,7 @@ class SyncManagerTest {
         serve(ItemScope.TOP, page(100, 0))
         serve(ItemScope.CHILDREN, page(101, 0)) // changed meanwhile
 
-        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+        sync.startCompleteSync(db)
 
         // the library opens before the children come, and again once all is in;
         // the list shows the first page of top-level items as soon as it's in
@@ -110,7 +110,7 @@ class SyncManagerTest {
         whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.CHILDREN))) doReturn
                 Observable.error(java.io.IOException("offline"))
 
-        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+        sync.startCompleteSync(db)
 
         assertEquals(-1, itemsVersion) // not set: a later sync mustn't skip the children
         assertEquals(ItemsDownloadProgress(100, 0, 0, ItemScope.CHILDREN), progress)
@@ -118,7 +118,7 @@ class SyncManagerTest {
         events.clear()
         serve(ItemScope.CHILDREN, page(100, 0))
         sync = SyncManager(api, mock<PreferenceManager>(), database, listener, now = { clock }) // the app restarted
-        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+        sync.startCompleteSync(db)
         assertEquals(listOf("open", "fetch CHILDREN", "version 100", "open"), events)
     }
 
@@ -132,7 +132,7 @@ class SyncManagerTest {
             else Observable.just(page(105, 0))
         }
 
-        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+        sync.startCompleteSync(db)
 
         assertEquals(
             listOf("open", "fetch CHILDREN from 300", "open", "fetch CHILDREN from 0", "version 100", "open"),
@@ -145,7 +145,7 @@ class SyncManagerTest {
         itemsVersion = 500
         serve(ItemScope.ALL, page(510, 0))
 
-        sync.startCompleteSync(db, useSmallLoadingAnimation = true)
+        sync.startCompleteSync(db)
 
         assertEquals(listOf("fetch ALL", "version 510", "open"), events)
     }
@@ -158,7 +158,7 @@ class SyncManagerTest {
                 Observable.fromArray(page(100, 400), page(100, 400), page(100, 400), page(100, 400))
                     .doOnNext { clock += 6_000 }
 
-        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+        sync.startCompleteSync(db)
 
         // at 12 s and 24 s
         assertEquals(listOf("open", "show", "show", "version 100", "open"), events)
@@ -175,7 +175,7 @@ class SyncManagerTest {
                     seen += sync.isLoadingChildren(1234) // another library
                 }
 
-        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+        sync.startCompleteSync(db)
 
         assertEquals(listOf(false, true, false), seen)
         assertFalse(sync.isLoadingChildren(GroupInfo.NO_GROUP_ID))
@@ -186,7 +186,7 @@ class SyncManagerTest {
         serve(ItemScope.TOP, page(100, 250), page(100, 250))
         serve(ItemScope.CHILDREN, page(100, 0))
 
-        sync.startCompleteSync(db, useSmallLoadingAnimation = false)
+        sync.startCompleteSync(db)
 
         val first = statuses.first()
         assertTrue(first.firstSync)
@@ -206,7 +206,7 @@ class SyncManagerTest {
         itemsVersion = 500
         serve(ItemScope.ALL, page(510, 0))
 
-        sync.startCompleteSync(db, useSmallLoadingAnimation = true)
+        sync.startCompleteSync(db)
 
         assertFalse(statuses.first().firstSync)
         assertEquals(
@@ -221,7 +221,7 @@ class SyncManagerTest {
         whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.ALL))) doReturn
                 Observable.error(java.net.UnknownHostException("api.zotero.org"))
 
-        sync.startCompleteSync(db, useSmallLoadingAnimation = true)
+        sync.startCompleteSync(db)
 
         val items = statuses.last().stages[SyncStage.ITEMS]
         assertEquals(StageState.Phase.FAILED, items?.phase)

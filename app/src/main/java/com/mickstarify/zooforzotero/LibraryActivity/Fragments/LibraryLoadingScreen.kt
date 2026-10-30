@@ -1,6 +1,5 @@
 package com.mickstarify.zooforzotero.LibraryActivity.Fragments
 
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -48,19 +47,6 @@ class LibraryLoadingScreen : Fragment() {
 
         viewModel.getLoadingMessage().observe(viewLifecycleOwner) {
             textView_message.text = it
-        }
-        viewModel.gettotalAmountOfEntries().observe(viewLifecycleOwner) {
-            progressBar.max = it
-            progressBar.isIndeterminate = false
-            viewModel.setLoadingMessage("Downloading 0 of ${viewModel.gettotalAmountOfEntries().value ?: "?"}")
-        }
-        viewModel.getAmountOfDownloadedEntries().observe(viewLifecycleOwner) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                progressBar.setProgress(it, true)
-            } else {
-                progressBar.progress = it
-            }
-            viewModel.setLoadingMessage("Downloading ${it} of ${viewModel.gettotalAmountOfEntries().value ?: "?"}")
         }
     }
 

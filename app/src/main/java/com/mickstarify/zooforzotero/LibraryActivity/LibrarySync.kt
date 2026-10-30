@@ -70,14 +70,14 @@ class LibrarySync(
      * that can't go up (offline, refused) stay on the device and are tried again at the
      * next sync; the download half runs either way.
      */
-    fun refreshLibrary(useSmallLoadingAnimation: Boolean = false) {
+    fun refreshLibrary() {
         if (!state.isUsingGroup()) {
             // listed only when there are some: "sent" for nothing would mislead
             val sending = hasPendingEdits()
             if (sending) showEditsStage(StageState(StageState.Phase.RUNNING))
             val pull = {
                 if (sending) editsStage = StageState(StageState.Phase.DONE)
-                downloadLibrary(doRefresh = true, useSmallLoadingAnimation = useSmallLoadingAnimation)
+                downloadLibrary(doRefresh = true)
             }
             val attachmentsThenPull: () -> Unit = {
                 if (attachments.isUploading()) {
@@ -132,12 +132,12 @@ class LibrarySync(
         return false
     }
 
-    fun downloadLibrary(doRefresh: Boolean = false, useSmallLoadingAnimation: Boolean = false) {
+    fun downloadLibrary(doRefresh: Boolean = false) {
         if (!doRefresh && zoteroDB.isOpen()) {
             Log.d("zotero", "not resyncing library, already have a copy.")
             return
         }
-        syncManager.startCompleteSync(zoteroDB, useSmallLoadingAnimation)
+        syncManager.startCompleteSync(zoteroDB)
     }
 
     // the group the user asked to open; its load switches the list to it (see finishLibrarySync)
@@ -157,7 +157,7 @@ class LibrarySync(
         if (!refresh && (db.isOpen() || db.getLastSyncedTimestamp() != 0L)) {
             finishLibrarySync(db) {
                 if (shouldIUpdateLibrary(db) && !syncManager.isSyncing()) {
-                    syncManager.startCompleteSync(db, true)
+                    syncManager.startCompleteSync(db)
                 }
             }
             return
@@ -169,7 +169,7 @@ class LibrarySync(
             openingGroup = null
             return
         }
-        syncManager.startCompleteSync(db, refresh)
+        syncManager.startCompleteSync(db)
     }
 
     fun isSyncing(): Boolean = syncManager.isSyncing()
@@ -183,7 +183,7 @@ class LibrarySync(
     fun resumeInterruptedSync(): Boolean {
         if (!library.isLoaded() || syncManager.isSyncing() || zoteroDB.getDownloadProgress() == null) return false
         Log.d(TAG, "resuming the interrupted item download for ${zoteroDB.groupID}")
-        downloadLibrary(doRefresh = true, useSmallLoadingAnimation = false)
+        downloadLibrary(doRefresh = true)
         return true
     }
 
@@ -367,25 +367,14 @@ class LibrarySync(
         SidebarView.entries.any { it.collectionId == collection } ||
                 library.collection(collection) != null
 
-    override fun startSyncAnimation(useSmallAnimation: Boolean) {
-        if (useSmallAnimation) {
-            ui.showBasicSyncAnimation()
-        } else {
-            ui.showLibraryLoadingAnimation()
-        }
-    }
-
-    override fun stopSyncAnimation() {
-        ui.hideLibraryLoadingAnimation()
+    override fun startSyncAnimation() {
+        ui.showBasicSyncAnimation()
     }
 
     override fun createErrorAlert(title: String, message: String, onClick: () -> Unit) {
         ui.createErrorAlert(title, message, onClick)
     }
 
-    override fun setSyncProgress(progress: Int, total: Int) {
-        ui.updateLibraryRefreshProgress(progress, total, "")
-    }
 
     override fun makeToastAlert(message: String) {
         ui.makeToastAlert(message)

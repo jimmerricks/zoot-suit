@@ -38,7 +38,7 @@ class SyncManager (
     // past the downloads: deletions, then loading the library from the database
     private var finishing = false
     // a sync asked for while one runs (see startCompleteSync)
-    private var queued: Pair<ZoteroDB, Boolean>? = null
+    private var queued: ZoteroDB? = null
     fun isSyncing() : Boolean {
         return (loadingItems || loadingCollections || loadingTrash || finishing)
     }
@@ -85,7 +85,7 @@ class SyncManager (
         }
     }
 
-    fun startCompleteSync(zoteroDB: ZoteroDB, useSmallLoadingAnimation: Boolean) {
+    fun startCompleteSync(zoteroDB: ZoteroDB) {
         /*LIbrary loading will load in 3 stages,
         *
         * Stage 1, Downloading stage
@@ -108,20 +108,20 @@ class SyncManager (
             // runs once this one is done: the running sync may be another library's (a
             // group refreshing), or have fetched before this request's edits went up
             Log.d("zotero", "sync of ${zoteroDB.groupID} queued behind the running one")
-            queued = Pair(zoteroDB, useSmallLoadingAnimation)
+            queued = zoteroDB
             status?.let { begin(it.copy(queued = zoteroDB.groupID)) }
-            syncChangeListener.startSyncAnimation(useSmallLoadingAnimation)
+            syncChangeListener.startSyncAnimation()
             return
         }
 
 
         reportedOffline = false
         // show our loading animation.
-        syncChangeListener.startSyncAnimation(useSmallLoadingAnimation)
+        syncChangeListener.startSyncAnimation()
 
         Log.d("zotero", "initializing sync for ${zoteroDB.groupID}")
         begin(initialStatus(zoteroDB))
-        loadItems(zoteroDB, useSmallLoadingAnimation)
+        loadItems(zoteroDB)
         loadCollections(zoteroDB)
         loadTrashedItems(zoteroDB)
     }
@@ -151,7 +151,7 @@ class SyncManager (
                 SyncStage.ITEMS to StageState(StageState.Phase.RUNNING), SyncStage.DELETIONS to StageState()
             )))
         }
-        this.loadItems(db, true)
+        this.loadItems(db)
     }
 
     private fun loadCollections(db: ZoteroDB) {
@@ -266,17 +266,16 @@ class SyncManager (
 
     private fun loadItems(
         db: ZoteroDB,
-        useSmallLoadingAnimation: Boolean = false
     ) {
         loadingItems = true
         val progress = db.getDownloadProgress()
         when {
             progress?.scope == ItemScope.CHILDREN ->
-                downloadItems(db, ItemScope.CHILDREN, progress, progress.libraryVersion, true)
-            progress != null -> downloadItems(db, progress.scope, progress, -1, useSmallLoadingAnimation)
+                downloadItems(db, ItemScope.CHILDREN, progress, progress.libraryVersion)
+            progress != null -> downloadItems(db, progress.scope, progress, -1)
             // a first sync, or one starting over: top-level items first (see ItemScope)
-            db.getLibraryVersion() <= 0 -> downloadItems(db, ItemScope.TOP, null, -1, useSmallLoadingAnimation)
-            else -> downloadItems(db, ItemScope.ALL, null, -1, useSmallLoadingAnimation)
+            db.getLibraryVersion() <= 0 -> downloadItems(db, ItemScope.TOP, null, -1)
+            else -> downloadItems(db, ItemScope.ALL, null, -1)
         }
     }
 
@@ -293,7 +292,6 @@ class SyncManager (
         scope: ItemScope,
         progress: ItemsDownloadProgress?,
         startVersion: Int,
-        useSmallLoadingAnimation: Boolean
     ) {
         childrenGroup = if (scope == ItemScope.CHILDREN) db.groupID else null
         if (scope == ItemScope.CHILDREN) openBeforeChildren(db)
@@ -325,7 +323,7 @@ class SyncManager (
                         report(SyncStage.ITEMS) { it.copy(phase = StageState.Phase.DONE) }
                         report(SyncStage.CHILDREN) { StageState(StageState.Phase.RUNNING) }
                         syncChangeListener.makeToastAlert("Library ready. Attachment details and notes are still downloading.")
-                        downloadItems(db, ItemScope.CHILDREN, null, libraryVersion, true)
+                        downloadItems(db, ItemScope.CHILDREN, null, libraryVersion)
                         return
                     }
                     if (scope == ItemScope.ALL && db.getLibraryVersion() > -1) {
@@ -365,11 +363,6 @@ class SyncManager (
                     report(stageOf(scope)) {
                         it.copy(phase = StageState.Phase.RUNNING, done = downloaded, total = response.totalResults)
                     }
-                    if (!useSmallLoadingAnimation) {
-                        syncChangeListener.setSyncProgress(
-                            downloaded,
-                            response.totalResults)
-                    }
                     Log.d("zotero", "got ${this.downloaded} of ${response.totalResults} items ($scope)")
                     // a first sync's list fills as the items come: the top-level items from
                     // the first page on, then the PDF icons, filters and note search
@@ -394,7 +387,7 @@ class SyncManager (
                         Log.d("zotero", "library changed during the children pass, restarting it")
                         db.setDownloadProgress(ItemsDownloadProgress(libraryVersion, 0, 0, ItemScope.CHILDREN))
                         report(SyncStage.CHILDREN) { StageState(StageState.Phase.RUNNING) }
-                        downloadItems(db, ItemScope.CHILDREN, null, libraryVersion, true)
+                        downloadItems(db, ItemScope.CHILDREN, null, libraryVersion)
                         return
                     } else if (e is LibraryVersionMisMatchException) {
                         // we need to redownload items but without the progress.
@@ -402,7 +395,7 @@ class SyncManager (
                         db.destroyDownloadProgress()
                         report(SyncStage.ITEMS) { StageState(StageState.Phase.RUNNING) }
                         syncChangeListener.makeToastAlert("The library changed in Zotero during the sync. Starting over.")
-                        loadItems(db, useSmallLoadingAnimation = false)
+                        loadItems(db)
                         return
                     } else {
                         report(stageOf(scope), failure(e))
@@ -419,7 +412,7 @@ class SyncManager (
     private fun openBeforeChildren(db: ZoteroDB) {
         syncChangeListener.finishLibrarySync(db) {
             // opening hides the animation; the download may have ended meanwhile
-            if (loadingItems) syncChangeListener.startSyncAnimation(true)
+            if (loadingItems) syncChangeListener.startSyncAnimation()
         }
     }
 
@@ -482,9 +475,9 @@ class SyncManager (
     private fun finishSync() {
         finishing = false
         status?.let { begin(it.copy(running = false, queued = null)) }
-        queued?.let { (db, small) ->
+        queued?.let { db ->
             queued = null
-            startCompleteSync(db, small)
+            startCompleteSync(db)
         }
     }
 
