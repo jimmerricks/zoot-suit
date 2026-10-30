@@ -61,7 +61,7 @@ class LibraryFilterDialog(
                 compareBy<String> { it !in filter.tags }.thenBy(String.CASE_INSENSITIVE_ORDER) { it }
             )
             adapter.clear()
-            adapter.addAll(shownTags.map { "$it  (${counts[it] ?: 0})" })
+            adapter.addAll(shownTags.map { "$it (${counts[it] ?: 0})" })
             shownTags.forEachIndexed { i, tag -> list.setItemChecked(i, tag in filter.tags) }
             noTags.visibility = if (shownTags.isEmpty()) View.VISIBLE else View.GONE
             // as tall as its rows (36dp each, dialog_filter_tag_item), up to 300dp, then it scrolls
