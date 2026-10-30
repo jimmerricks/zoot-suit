@@ -176,7 +176,7 @@ class LibraryActivity : AppCompatActivity(),
 
     /**
      * The toolbar in selection mode: the count chosen for a title, ✕ to end it in place of
-     * the drawer's button, and the bulk actions in the menu. The drawer is locked shut, so
+     * the drawer's button, Select all and Invert as buttons, and the bulk actions in the menu. The drawer is locked shut, so
      * the list (and the selection) stay where they are.
      */
     private fun showSelectionMode(on: Boolean, none: Boolean) {
@@ -355,9 +355,9 @@ class LibraryActivity : AppCompatActivity(),
                     else viewModel.downloadAttachments(missing)
                 }
             }
-            R.id.selection_delete_files -> viewModel.countSelectedAttachments { counts ->
+            R.id.selection_remove_attachments -> viewModel.countSelectedAttachments { counts ->
                 if (isFinishing || isDestroyed) return@countSelectedAttachments
-                SelectionDialogs(this).deleteFiles(counts) { files ->
+                SelectionDialogs(this).removeAttachments(counts) { files ->
                     viewModel.findEditedFiles(files) { edited ->
                         if (isFinishing || isDestroyed) return@findEditedFiles
                         SelectionDialogs(this).confirmDelete(files, edited) { viewModel.deleteLocalFiles(it) }
@@ -367,7 +367,6 @@ class LibraryActivity : AppCompatActivity(),
             R.id.stop_downloads -> viewModel.stopDownloads()
             R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
             R.id.invert_selection -> libraryListViewModel.changeSelection { invert(it) }
-            R.id.clear_selection -> libraryListViewModel.changeSelection { clear() } // ✕ ends selecting
 
             R.id.filter_menu -> {
                 showFilterMenu()

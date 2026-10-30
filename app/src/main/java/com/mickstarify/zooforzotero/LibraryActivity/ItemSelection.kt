@@ -11,8 +11,8 @@ class ItemSelection {
 
     /**
      * Whether the list is in selection mode: from the first item chosen until [end] (✕,
-     * Back). Emptied by [clear] or by unticking each item, it stays, so choosing can
-     * start over without long-pressing again.
+     * Back). Emptied by unticking each item, it stays, so choosing can start over without
+     * long-pressing again.
      */
     var active = false
         private set
@@ -68,15 +68,10 @@ class ItemSelection {
         listed.filterTo(keys) { it !in before }
     }
 
-    /** Unselects everything; selection mode stays. */
-    fun clear() {
-        keys.clear()
-        anchor = null
-    }
-
     /** Leaves selection mode, unselecting everything. */
     fun end() {
-        clear()
+        keys.clear()
+        anchor = null
         active = false
     }
 

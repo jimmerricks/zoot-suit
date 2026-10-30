@@ -18,12 +18,11 @@
     <string name="remove_tag">Remove tag…</string>
     <string name="add_to_collection">Add to collection…</string>
     <string name="remove_from_collection">Remove from this collection</string>
-    <string name="download_attachments">Download attachments…</string>
+    <string name="download_attachments">Download attachments</string>
     <string name="stop_downloads">Stop downloads</string>
-    <string name="delete_files">Delete files from this device…</string>
+    <string name="remove_attachments">Remove attachments from device</string>
     <string name="select_all">Select all</string>
     <string name="invert_selection">Invert selection</string>
-    <string name="clear_selection">Clear selection</string>
     <string name="end_selection">Done selecting</string>
     <string name="title_activity_sync_setup">Sign in</string>
     <string name="title_activity_library">Loading</string>

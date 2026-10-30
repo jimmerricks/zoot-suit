@@ -137,14 +137,14 @@ class SelectionDialogs(private val context: Context) {
     }
 
     /**
-     * Which of the selection's files to delete from this device: each kind with how many
+     * Which of the selection's files to remove from this device: each kind with how many
      * of its files are here ([counts]); [onChoose] gets those of the one tapped.
      */
-    fun deleteFiles(counts: Map<AttachmentKind, AttachmentCounts>, onChoose: (List<Item>) -> Unit) {
+    fun removeAttachments(counts: Map<AttachmentKind, AttachmentCounts>, onChoose: (List<Item>) -> Unit) {
         val here = counts.filterValues { it.onDevice.isNotEmpty() }
         if (here.isEmpty()) {
             AlertDialog.Builder(context)
-                .setTitle("Nothing to delete")
+                .setTitle("Nothing to remove")
                 .setMessage("None of the selected items' files are on this device.")
                 .setPositiveButton("OK", null)
                 .show()
@@ -156,7 +156,7 @@ class SelectionDialogs(private val context: Context) {
             "${kind.label}: $n on this device"
         }
         AlertDialog.Builder(context)
-            .setTitle("Delete files from this device")
+            .setTitle("Remove attachments from device")
             .setItems(labels.toTypedArray()) { _, which -> onChoose(here.getValue(kinds[which]).onDevice) }
             .setNegativeButton("Cancel", null)
             .show()

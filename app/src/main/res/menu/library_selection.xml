@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The toolbar while items are selected in the list: every action in the overflow. -->
+<!-- The toolbar while items are selected in the list: choosing as buttons, every action
+     in the overflow. -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/select_all"
+        android:icon="@drawable/baseline_select_all_white_24"
+        android:title="@string/select_all"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/invert_selection"
+        android:icon="@drawable/baseline_flip_white_24"
+        android:title="@string/invert_selection"
+        app:showAsAction="always" />
 
     <!-- My Library only: edits in groups aren't uploaded -->
     <group android:id="@+id/selection_edits">
@@ -31,23 +43,8 @@
             android:title="@string/download_attachments"
             app:showAsAction="never" />
         <item
-            android:id="@+id/selection_delete_files"
-            android:title="@string/delete_files"
-            app:showAsAction="never" />
-    </group>
-
-    <group android:id="@+id/selection_choose">
-        <item
-            android:id="@+id/select_all"
-            android:title="@string/select_all"
-            app:showAsAction="never" />
-        <item
-            android:id="@+id/invert_selection"
-            android:title="@string/invert_selection"
-            app:showAsAction="never" />
-        <item
-            android:id="@+id/clear_selection"
-            android:title="@string/clear_selection"
+            android:id="@+id/selection_remove_attachments"
+            android:title="@string/remove_attachments"
             app:showAsAction="never" />
     </group>
 </menu>

@@ -54,14 +54,6 @@ class ItemSelectionTest {
     }
 
     @Test
-    fun `clear empties it and stays in selection mode`() {
-        val s = selection("A", "B")
-        s.clear()
-        assertTrue(s.isEmpty())
-        assertTrue(s.active)
-    }
-
-    @Test
     fun `unticking the last item stays in selection mode`() {
         val s = selection("A")
         s.toggle("A")
@@ -112,8 +104,7 @@ class ItemSelectionTest {
 
     @Test
     fun `without an item pressed before a range is just the item`() {
-        val s = selection("A")
-        s.clear()
+        val s = ItemSelection()
         s.selectRange("D", list)
         assertEquals(listOf("D"), s.keys())
         val gone = selection("A")
