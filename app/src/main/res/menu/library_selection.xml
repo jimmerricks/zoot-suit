@@ -47,4 +47,10 @@
             android:title="@string/remove_attachments"
             app:showAsAction="never" />
     </group>
+
+    <!-- always there, like ✕ and Back -->
+    <item
+        android:id="@+id/end_selection"
+        android:title="@string/end_selection"
+        app:showAsAction="never" />
 </menu>

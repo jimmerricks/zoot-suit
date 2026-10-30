@@ -52,6 +52,10 @@ class LibraryListViewModel : ViewModel() {
         selection.value = current
     }
 
+    fun startSelecting() {
+        if (selectable) changeSelection { start() }
+    }
+
     fun toggleSelected(item: Item) {
         if (selectable) changeSelection { toggle(item.itemKey) }
     }

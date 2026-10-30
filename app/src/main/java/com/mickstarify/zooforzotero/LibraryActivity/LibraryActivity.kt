@@ -151,8 +151,11 @@ class LibraryActivity : AppCompatActivity(),
         viewModel.downloadsActive.observe(this) { invalidateOptionsMenu() }
         libraryListViewModel.getItems().observe(this) { pages ->
             val none = pages.size == 0 && !viewModel.isListNarrowed()
-            if (none != nothingToNarrow) {
+            // set with the place, before its list arrives
+            val canSelect = pages.size > 0 && libraryListViewModel.selectable
+            if (none != nothingToNarrow || canSelect != listSelectable) {
                 nothingToNarrow = none
+                listSelectable = canSelect
                 invalidateOptionsMenu()
             }
         }
@@ -169,6 +172,9 @@ class LibraryActivity : AppCompatActivity(),
     // the place on screen holds nothing and no search or filter narrows it (an empty trash,
     // say): search, filter and sort have nothing to work on, so they're hidden
     private var nothingToNarrow = false
+
+    // the list on screen has items and isn't the trash: Select items is offered
+    private var listSelectable = false
 
     private var selecting = false
     // selecting with nothing chosen: the bulk actions are hidden
@@ -367,6 +373,8 @@ class LibraryActivity : AppCompatActivity(),
             R.id.stop_downloads -> viewModel.stopDownloads()
             R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
             R.id.invert_selection -> libraryListViewModel.changeSelection { invert(it) }
+            R.id.end_selection -> libraryListViewModel.changeSelection { end() }
+            R.id.start_selection -> libraryListViewModel.startSelecting()
 
             R.id.filter_menu -> {
                 showFilterMenu()
@@ -540,6 +548,7 @@ class LibraryActivity : AppCompatActivity(),
         for (id in listOf(R.id.search, R.id.library_filter, R.id.filter_menu)) {
             menu.findItem(id)?.isVisible = !nothingToNarrow
         }
+        menu.findItem(R.id.start_selection)?.isVisible = listSelectable
         menu.findItem(R.id.pending_edits)?.apply {
             // while a sync runs the edits are going up; its details list them
             isVisible = pendingEdits > 0 && syncLabel == null

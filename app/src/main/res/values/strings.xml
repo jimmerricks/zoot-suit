@@ -23,7 +23,8 @@
     <string name="remove_attachments">Remove attachments from device</string>
     <string name="select_all">Select all</string>
     <string name="invert_selection">Invert selection</string>
-    <string name="end_selection">Done selecting</string>
+    <string name="start_selection">Select items</string>
+    <string name="end_selection">Stop selecting</string>
     <string name="title_activity_sync_setup">Sign in</string>
     <string name="title_activity_library">Loading</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>

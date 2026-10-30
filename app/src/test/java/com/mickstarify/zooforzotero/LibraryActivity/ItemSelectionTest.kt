@@ -62,6 +62,14 @@ class ItemSelectionTest {
     }
 
     @Test
+    fun `start enters selection mode with nothing chosen`() {
+        val s = ItemSelection()
+        s.start()
+        assertTrue(s.active)
+        assertTrue(s.isEmpty())
+    }
+
+    @Test
     fun `end leaves selection mode`() {
         val s = selection("A", "B")
         s.end()

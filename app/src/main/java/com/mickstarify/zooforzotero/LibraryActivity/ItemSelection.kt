@@ -10,8 +10,8 @@ class ItemSelection {
     private val keys = LinkedHashSet<String>()
 
     /**
-     * Whether the list is in selection mode: from the first item chosen until [end] (✕,
-     * Back). Emptied by unticking each item, it stays, so choosing can start over without
+     * Whether the list is in selection mode: from [start] or the first item chosen until
+     * [end] (✕, Back). Emptied by unticking each item, it stays, so choosing can start over without
      * long-pressing again.
      */
     var active = false
@@ -66,6 +66,11 @@ class ItemSelection {
         val before = keys.toSet()
         keys.clear()
         listed.filterTo(keys) { it !in before }
+    }
+
+    /** Enters selection mode with nothing chosen yet (the menu's Select items). */
+    fun start() {
+        active = true
     }
 
     /** Leaves selection mode, unselecting everything. */
