@@ -82,6 +82,7 @@ class LibraryComponents(
             ui, library, { zoteroAPI }, zoteroDatabase, preferences, itemEdits, editedAttachments,
             lists, attachments, edits,
             refreshPendingEdits = { deviceState.refresh() },
+            hasPendingEdits = { deviceState.current.let { it.edited.isNotEmpty() || it.itemEdits.isNotEmpty() } },
             selectedItem = selectedItem,
         )
     }

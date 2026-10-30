@@ -32,6 +32,7 @@ private const val TAG = "LibrarySync"
  *
  * @param api the API client, built on first use (see LibraryComponents)
  * @param refreshPendingEdits works out again what's on the device and waits to sync
+ * @param hasPendingEdits whether edits wait to sync, as last worked out
  * @param selectedItem the item open in the item view, if any
  */
 class LibrarySync(
@@ -46,6 +47,7 @@ class LibrarySync(
     private val attachments: LibraryAttachments,
     private val edits: LibraryItemEdits,
     private val refreshPendingEdits: () -> Unit,
+    private val hasPendingEdits: () -> Boolean,
     private val selectedItem: () -> Item?,
 ) : OnSyncChangeListener {
     private val navigator get() = library.navigator
@@ -70,9 +72,11 @@ class LibrarySync(
      */
     fun refreshLibrary(useSmallLoadingAnimation: Boolean = false) {
         if (!state.isUsingGroup()) {
-            showEditsStage(StageState(StageState.Phase.RUNNING))
+            // listed only when there are some: "sent" for nothing would mislead
+            val sending = hasPendingEdits()
+            if (sending) showEditsStage(StageState(StageState.Phase.RUNNING))
             val pull = {
-                editsStage = StageState(StageState.Phase.DONE)
+                if (sending) editsStage = StageState(StageState.Phase.DONE)
                 downloadLibrary(doRefresh = true, useSmallLoadingAnimation = useSmallLoadingAnimation)
             }
             val attachmentsThenPull: () -> Unit = {
