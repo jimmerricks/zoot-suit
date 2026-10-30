@@ -5,9 +5,9 @@
   system store in 7.1.1, so HTTPS to Let's Encrypt servers (e.g. a WebDAV host)
   otherwise fails with SSLHandshakeException. User-installed CAs stay untrusted.
 
-  Setting a network security config makes the platform ignore the manifest's
-  usesCleartextTraffic, so cleartext is allowed here instead (WebDAV servers are
-  configured at runtime and may be plain http).
+  Cleartext is allowed here, not in the manifest (a network security config
+  overrides usesCleartextTraffic there): WebDAV servers are configured at
+  runtime and may be plain http.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true">
