@@ -2,44 +2,17 @@
 
 An Android app for reading your Zotero library and syncing the PDFs you edit on the
 device. It is a modified version of [Zoo for Zotero](https://github.com/mickstar/Zoo-For-Zotero)
-by Michael Johnston, forked at v4.0.0 (commit `0261040`) in October 2026.
+by Michael Johnston, forked at v4.0.0 (commit `0261040`) in October 2026. What changed:
+[Differences from Zoo for Zotero](docs/differences-from-zoo.md).
 
 - **Licence:** GPLv3, see [LICENSE](LICENSE). Upstream ships no licence file; its
   author states GPLv3 in its terms of use.
-- **App id:** `se.jmwhite.zootsuit` (0.1.0 was `nu.n4.zootsuit`, see the
+- **App id:** `se.jmwhite.zootsuit` (since 0.2.0, see the
   [changelog](docs/changelog.md)). It installs beside Zoo for Zotero, not over it.
-- **Not affiliated with the Zotero project.**
-- [Privacy policy](https://jimmerricks.github.io/zoot-suit/privacy-policy.html) ·
-  [Terms of use](https://jimmerricks.github.io/zoot-suit/terms-of-use.html)
+- [Privacy policy](https://jimmerricks.github.io/zoot-suit/privacy-policy.html)
+- [Terms of use](https://jimmerricks.github.io/zoot-suit/terms-of-use.html)
 
-## Status
-
-Early test releases. Tested on Android 7.0 (Samsung Galaxy Tab S2) and Android 14,
-with attachments stored on WebDAV. Zotero File Storage works but has had less testing.
-Android 16 has been checked on an emulator (library, search, filter, sort, sync);
-Android 15 not yet. Signing in with an API key is tested; signing in with your Zotero
-account (OAuth) has not been tested to the end yet.
-
-## Install
-
-1. Download the APK from [Releases](https://github.com/jimmerricks/zoot-suit/releases).
-2. Check it (optional): its SHA-256 is listed with each release, and every release is
-   signed with the same certificate:
-   ```
-   SHA-256: FA:92:B9:89:83:CB:8A:21:78:32:FA:8E:3B:E5:D3:E2:25:75:41:5F:67:29:93:91:91:60:36:A4:04:AC:D5:36
-   ```
-   `apksigner verify --print-certs zoot-suit-*.apk` shows the certificate of a
-   downloaded file.
-3. Allow installs from your browser or file manager when Android asks, and open the APK.
-4. Sign in with your Zotero account or an API key, then set up WebDAV in Settings if
-   you use it.
-
-Coming from 0.1.0: 0.2.0 and later have a new app id and install as a separate app.
-Sync your edits in 0.1.0 first, then uninstall it once the new one is set up.
-
-To edit PDFs you need a PDF app that saves changes back to the file it opened.
-
-## What it does
+## Features
 
 - Browse and search your library and group libraries, online or offline.
 - Sidebar with the full collection tree; each group has its own collections.
@@ -69,6 +42,14 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
   It keeps the display on, and picks up where it stopped if the device slept anyway.
 - Settings → Sign out lists the edits not synced yet that signing out would delete.
 
+## Status
+
+Early test releases. Tested on devices running Android 7.0 and Android 14, with
+attachments stored on WebDAV. Zotero File Storage works but has had less testing.
+Android 16 has been checked on an emulator (library, search, filter, sort, sync);
+Android 15 not yet. Signing in with an API key and with your Zotero account (OAuth)
+have both been tested.
+
 ## Known limitations
 
 - Edits to attachments in group libraries are not uploaded.
@@ -77,9 +58,24 @@ To edit PDFs you need a PDF app that saves changes back to the file it opened.
 - Of an item's metadata, only tags can be edited.
 - No tablet-specific layouts yet.
 
-## Differences from Zoo for Zotero
+## Install
 
-See [docs/differences-from-zoo.md](docs/differences-from-zoo.md).
+1. Download the APK from [Releases](https://github.com/jimmerricks/zoot-suit/releases).
+2. Check it (optional): its SHA-256 is listed with each release, and every release is
+   signed with the same certificate:
+   ```
+   SHA-256: FA:92:B9:89:83:CB:8A:21:78:32:FA:8E:3B:E5:D3:E2:25:75:41:5F:67:29:93:91:91:60:36:A4:04:AC:D5:36
+   ```
+   `apksigner verify --print-certs zoot-suit-*.apk` shows the certificate of a
+   downloaded file.
+3. Allow installs from your browser or file manager when Android asks, and open the APK.
+4. Sign in with your Zotero account or an API key, then set up WebDAV in Settings if
+   you use it.
+
+Coming from 0.1.0: 0.2.0 and later have a new app id and install as a separate app.
+Sync your edits in 0.1.0 first, then uninstall it once the new one is set up.
+
+To edit PDFs you need a PDF app that saves changes back to the file it opened.
 
 ## Building
 
