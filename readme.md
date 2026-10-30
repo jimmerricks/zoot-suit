@@ -14,33 +14,17 @@ by Michael Johnston, forked at v4.0.0 (commit `0261040`) in October 2026. What c
 
 ## Features
 
-- Browse and search your library and group libraries, online or offline.
-- Sidebar with the full collection tree; each group has its own collections.
-- Search titles, creators and years, or the fields you choose (publication, abstract,
-  tags, notes, other fields); every word must match, accents are ignored.
-- One filter for tags, PDFs, notes, files on the device and unsynced edits. Search and
-  filter narrow the list on screen and clear when you open another collection, or stay
-  (for each library) if you choose so in Settings. Sort is kept per library.
-- Edit any number of PDFs, online or offline. The next sync uploads them, then
-  downloads what changed elsewhere.
-- Detects edits to every downloaded file, not just files opened through the app.
-- Before uploading, checks whether someone else changed the file on the server,
-  so a newer version is not overwritten.
-- Long-press an attachment to open it, download it, upload your changes or delete the
-  local copy. Opening or downloading asks Zotero for the current version first, so a
-  file changed elsewhere since the last sync comes down intact.
-- Add notes, and add and remove tags, offline too; the next sync uploads them without
-  losing tags added elsewhere. Edit and delete notes (online, unless not yet synced).
-  My Library only.
-- Light or dark theme, or the system's choice (Settings → Theme); dark works on
-  Android 7 too, which has no dark mode of its own.
-- Works on Android 7 with Let's Encrypt servers (the root certificate is bundled).
-- Made for large libraries (tested with 18,000 items): the list, sorting and search
-  read from the database page by page instead of holding the library in memory.
-- A first sync of a large library downloads four pages at a time, opens the library
-  once the top-level items are in and fetches attachment details and notes behind it.
-  It keeps the display on, and picks up where it stopped if the device slept anyway.
-- Settings → Sign out lists the edits not synced yet that signing out would delete.
+- Browse, search, filter and sort your library and group libraries, online or offline,
+  with the full collection tree in the sidebar.
+- Edit PDFs in any PDF app that saves to the file; the next sync uploads them to Zotero
+  Storage or your WebDAV server, without overwriting a newer version made elsewhere.
+- Add notes, tags and items to collections, offline too; changes made elsewhere are
+  kept (My Library only).
+- Select many items at once to tag them, file them, or download or remove their
+  attachments in the background.
+- Built for large libraries (tested with 18,000 items): a fast first sync that resumes
+  if interrupted, with progress in the toolbar.
+- Light and dark themes; runs on Android 7 and later.
 
 ## Status
 
@@ -55,7 +39,7 @@ have both been tested.
 - Edits to attachments in group libraries are not uploaded.
 - No adding items: use Zotero itself. The upstream ISBN scanner and share target
   are removed.
-- Of an item's metadata, only tags can be edited.
+- Of an item's metadata, only tags and collections can be edited.
 - No tablet-specific layouts yet.
 
 ## Install

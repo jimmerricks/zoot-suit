@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.3.1
+
+Updates 0.3.0 in place (same app id and signing key).
 
 New:
 - Settings → Attachments → Remove all files from this device, with how many files
