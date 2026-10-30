@@ -9,6 +9,9 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import androidx.work.await
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -18,9 +21,10 @@ import java.util.concurrent.TimeUnit
  */
 object AttachmentDownloads {
     private const val WORK = "attachment-downloads"
+    private const val QUEUE_FILE = "attachment-downloads.json"
 
     fun queue(context: Context) =
-        AttachmentDownloadQueue(File(context.applicationContext.filesDir, "attachment-downloads.json"))
+        AttachmentDownloadQueue(File(context.applicationContext.filesDir, QUEUE_FILE))
 
     /**
      * Queues the attachments [entries] and makes sure a worker will take them; returns how
@@ -42,6 +46,19 @@ object AttachmentDownloads {
     fun stop(context: Context) {
         queue(context).clear()
         WorkManager.getInstance(context).cancelUniqueWork(WORK)
+    }
+
+    /**
+     * Forgets bulk downloads altogether (signing out): the worker is cancelled, waiting up to
+     * a few seconds for WorkManager to store that, as the process exits next; the queue and
+     * its tally are deleted.
+     */
+    fun forget(context: Context) {
+        val cancelled = WorkManager.getInstance(context).cancelUniqueWork(WORK)
+        runBlocking { withTimeoutOrNull(5_000) { runCatching { cancelled.await() } } }
+        val file = File(context.applicationContext.filesDir, QUEUE_FILE)
+        file.delete()
+        File(file.path + ".tmp").delete()
     }
 
     /** The workers of bulk downloads, for their state and progress. */

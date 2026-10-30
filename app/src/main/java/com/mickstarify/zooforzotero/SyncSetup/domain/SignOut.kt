@@ -9,6 +9,7 @@ import com.mickstarify.zooforzotero.MainActivity
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentDownloads
 import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachments
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditStore
@@ -17,9 +18,10 @@ import java.io.File
 /**
  * Signing out leaves the device as a fresh install would, except for attachment files in a
  * folder the user chose (Custom Path), which are theirs. Gone: the login, every library's
- * data and sync versions, the settings (WebDAV login included) and the app's own attachment
- * cache. The process then restarts into sign-in, so nothing of the old account survives in
- * memory (the API client, loaded libraries, singletons).
+ * data and sync versions, the settings (WebDAV login included), the app's own attachment
+ * cache, queued bulk downloads and the sign-in page's cookies. The process then restarts
+ * into sign-in, so nothing of the old account survives in memory (the API client, loaded
+ * libraries, singletons).
  */
 object SignOut {
     /** What signing out would throw away: edits made on this device that Zotero doesn't have yet. */
@@ -53,6 +55,8 @@ object SignOut {
     }
 
     fun signOut(activity: Activity, database: ZoteroDatabase) {
+        // before the library goes: a download running now would look its items up
+        AttachmentDownloads.forget(activity)
         database.deleteEverything()
 
         // login (credentials), library versions (one file per library), settings
@@ -66,6 +70,10 @@ object SignOut {
         // downloaded attachments in the default location, plus temporary files
         activity.externalCacheDir?.listFiles()?.forEach { it.deleteRecursively() }
         activity.cacheDir.listFiles()?.forEach { it.deleteRecursively() }
+
+        // the sign-in page's cookies and storage: kept, the next sign-in went straight
+        // into the old account. No WebView is open in Settings, so nothing holds them.
+        File(activity.applicationInfo.dataDir, "app_webview").deleteRecursively()
 
         val restart = Intent.makeRestartActivityTask(ComponentName(activity, MainActivity::class.java))
         activity.startActivity(restart)
