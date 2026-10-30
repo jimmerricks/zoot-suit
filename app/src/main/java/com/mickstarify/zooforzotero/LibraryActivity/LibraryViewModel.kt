@@ -291,7 +291,12 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             ).joinToString(" · ")
         showSubtitle()
         libraryListViewModel.setEmptyMessage(
-            EmptyListMessage.forList(search, filter, shown != null, navigator.currentCollection())
+            EmptyListMessage.forList(
+                search, filter, shown != null, navigator.currentCollection(),
+                downloading = syncStatus.value?.let {
+                    it.running && it.firstSync && it.groupID == library.state.currentGroup.id
+                } == true,
+            )
         )
     }
 
@@ -621,9 +626,11 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         if (parts.sync.isFirstSync()) {
             Log.d("zotero", "First sync - loading library from scratch")
             parts.groups.loadGroups()
-            // full loading screen with item counts, not the pull-to-refresh spinner:
-            // a first sync of a large library takes many minutes.
-            parts.sync.refreshLibrary(useSmallLoadingAnimation = false)
+            // the empty list at once, filling as the items arrive; progress and details
+            // in the toolbar ("Syncing n/m"): a first sync of a large library takes minutes
+            parts.sync.loadLibraryLocally {
+                this.requestLibraryRefresh()
+            }
         } else if (parts.sync.shouldIUpdateLibrary()) {
             Log.d("zotero", "Updating library")
             parts.groups.loadGroups()

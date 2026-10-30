@@ -15,12 +15,15 @@ data class EmptyListMessage(val text: String, val clearLabel: String? = null) {
          *   Trash and My Publications)
          * @param collection the current place: a collection key or one of the app's
          *   special keys ("all", "group_all", "unfiled_items", "zooforzotero_Trash", …)
+         * @param downloading whether the library's first sync is running: it's empty
+         *   because nothing has arrived yet
          */
         fun forList(
             search: String,
             filter: LibraryFilter,
             filterApplies: Boolean,
             collection: String,
+            downloading: Boolean = false,
         ): EmptyListMessage {
             val searching = filterApplies && search.isNotEmpty()
             val filtering = filterApplies && filter.isActive
@@ -33,7 +36,11 @@ data class EmptyListMessage(val text: String, val clearLabel: String? = null) {
                 filtering -> EmptyListMessage("No items match the filter: ${filter.describe()}.", "Clear filter")
                 else -> EmptyListMessage(
                     when (collection) {
-                        "all", "group_all" -> "This library has no items yet. Pull down to sync."
+                        "all", "group_all" -> if (downloading) {
+                            "Downloading the library. Items appear here as they arrive."
+                        } else {
+                            "This library has no items yet. Pull down to sync."
+                        }
                         "unfiled_items" -> "No unfiled items."
                         "zooforzotero_Trash" -> "The trash is empty."
                         "zooforzotero_my_publications" -> "No items in My Publications."

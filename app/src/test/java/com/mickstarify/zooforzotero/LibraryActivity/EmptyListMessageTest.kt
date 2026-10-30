@@ -44,4 +44,10 @@ class EmptyListMessageTest {
             EmptyListMessage.forList("", none, true, "all").text
         )
     }
+
+    @Test
+    fun `a library being downloaded says its items are on the way`() {
+        val m = EmptyListMessage.forList("", none, filterApplies = true, collection = "all", downloading = true)
+        assertEquals("Downloading the library. Items appear here as they arrive.", m.text)
+    }
 }

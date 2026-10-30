@@ -316,6 +316,7 @@ class SyncManager (
                 var libraryVersion = startVersion // -1: replaced in onNext()
                 var downloaded = progress?.nDownloaded ?: 0
                 var shownAt = now()
+                var shownOnce = false
                 override fun onComplete() {
                     Log.d("zotero", "load Items ($scope) oncomplete")
                     if (scope == ItemScope.TOP) {
@@ -370,9 +371,12 @@ class SyncManager (
                             response.totalResults)
                     }
                     Log.d("zotero", "got ${this.downloaded} of ${response.totalResults} items ($scope)")
-                    if (scope == ItemScope.CHILDREN && now() - shownAt >= SHOW_CHILDREN_EVERY_MS) {
-                        // the open library's PDF icons, filters and note search fill in as they come
+                    // a first sync's list fills as the items come: the top-level items from
+                    // the first page on, then the PDF icons, filters and note search
+                    val firstPage = scope == ItemScope.TOP && !shownOnce
+                    if (scope != ItemScope.ALL && (firstPage || now() - shownAt >= SHOW_NEW_ITEMS_EVERY_MS)) {
                         shownAt = now()
+                        shownOnce = true
                         syncChangeListener.showNewItems(db)
                     }
                 }
@@ -518,8 +522,8 @@ class SyncManager (
     }
 
     companion object {
-        // how often the list is redrawn while a first sync's children arrive: each redraw
-        // re-reads the rows on screen, and a filtered list grows under the reader
-        const val SHOW_CHILDREN_EVERY_MS = 10_000L
+        // how often the list is redrawn while a first sync's items arrive: each redraw
+        // re-reads the rows on screen, and the list grows under the reader
+        const val SHOW_NEW_ITEMS_EVERY_MS = 10_000L
     }
 }

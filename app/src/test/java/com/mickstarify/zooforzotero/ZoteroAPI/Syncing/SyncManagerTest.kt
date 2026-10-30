@@ -96,8 +96,9 @@ class SyncManagerTest {
 
         sync.startCompleteSync(db, useSmallLoadingAnimation = false)
 
-        // the library opens before the children come, and again once all is in
-        assertEquals(listOf("fetch TOP", "open", "fetch CHILDREN", "version 100", "open"), events)
+        // the library opens before the children come, and again once all is in;
+        // the list shows the first page of top-level items as soon as it's in
+        assertEquals(listOf("fetch TOP", "show", "open", "fetch CHILDREN", "version 100", "open"), events)
         assertEquals(100, itemsVersion) // the first pass's: the next sync fetches what changed since
         assertNull(progress)
         assertFalse(sync.loadingItems)
