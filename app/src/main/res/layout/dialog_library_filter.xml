@@ -54,6 +54,13 @@
 
     <CheckBox
         style="@style/DialogChoice"
+        android:id="@+id/checkBox_filter_html_on_device"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="HTML snapshot downloaded" />
+
+    <CheckBox
+        style="@style/DialogChoice"
         android:id="@+id/checkBox_filter_edited"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

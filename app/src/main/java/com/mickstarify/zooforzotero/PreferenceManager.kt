@@ -72,7 +72,8 @@ class PreferenceManager @Inject constructor(context: Context) {
         return LibraryFilter(
             tags = sharedPreferences.getStringSet(libraryKey("library_filter_tags", groupId), null)
                 ?.toSet() ?: emptySet(),
-            onDevice = flag("library_filter_on_device"),
+            pdfOnDevice = flag("library_filter_on_device"), // "PDF downloaded"; the key predates HTML
+            htmlOnDevice = flag("library_filter_html_on_device"),
             editedHere = flag("library_filter_edited_here"),
             // the sort dialog's former "only show items with…" options, same keys
             hasPdf = flag("is_showing_only_with_pdfs"),
@@ -85,7 +86,8 @@ class PreferenceManager @Inject constructor(context: Context) {
     fun setLibraryFilter(groupId: Int, filter: LibraryFilter) {
         sharedPreferences.edit()
             .putStringSet(libraryKey("library_filter_tags", groupId), HashSet(filter.tags))
-            .putBoolean(libraryKey("library_filter_on_device", groupId), filter.onDevice)
+            .putBoolean(libraryKey("library_filter_on_device", groupId), filter.pdfOnDevice)
+            .putBoolean(libraryKey("library_filter_html_on_device", groupId), filter.htmlOnDevice)
             .putBoolean(libraryKey("library_filter_edited_here", groupId), filter.editedHere)
             .putBoolean(libraryKey("is_showing_only_with_pdfs", groupId), filter.hasPdf)
             .putBoolean(libraryKey("is_showing_only_with_notes", groupId), filter.hasNotes)

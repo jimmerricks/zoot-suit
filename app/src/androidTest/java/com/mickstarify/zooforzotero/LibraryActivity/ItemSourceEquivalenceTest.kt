@@ -212,12 +212,14 @@ class ItemSourceEquivalenceTest {
     fun deviceStateFilters() {
         device = DeviceState(
             onDevice = attachmentKeys.filterIndexed { i, _ -> i % 3 == 0 }.toSet(),
+            pdfOnDevice = attachmentKeys.filterIndexed { i, _ -> i % 3 == 0 }.toSet(),
+            htmlOnDevice = attachmentKeys.filterIndexed { i, _ -> i % 5 == 0 }.toSet(),
             edited = attachmentKeys.filterIndexed { i, _ -> i % 7 == 0 }.toSet(),
             itemEdits = topKeys.filterIndexed { i, _ -> i % 11 == 0 }.toSet(),
         )
         for (place in places) for (filter in listOf(
-            LibraryFilter(onDevice = true), LibraryFilter(editedHere = true),
-            LibraryFilter(onDevice = true, hasPdf = true, tags = setOf("to-read")),
+            LibraryFilter(pdfOnDevice = true), LibraryFilter(htmlOnDevice = true), LibraryFilter(editedHere = true),
+            LibraryFilter(pdfOnDevice = true, hasPdf = true, tags = setOf("to-read")),
         )) {
             assertSame(LibraryQuery(place, filter = filter))
         }

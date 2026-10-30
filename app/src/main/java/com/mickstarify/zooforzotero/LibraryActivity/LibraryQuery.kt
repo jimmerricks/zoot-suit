@@ -35,6 +35,9 @@ data class LibraryQuery(
 /** Attachment keys whose file is on this device / has edits to sync, and keys of items with metadata edits to sync. */
 data class DeviceState(
     val onDevice: Set<String> = emptySet(),
+    /** Those of [onDevice] that are PDFs, and those that are HTML snapshots (the filter's). */
+    val pdfOnDevice: Set<String> = emptySet(),
+    val htmlOnDevice: Set<String> = emptySet(),
     val edited: Set<String> = emptySet(),
     val itemEdits: Set<String> = emptySet(),
 )

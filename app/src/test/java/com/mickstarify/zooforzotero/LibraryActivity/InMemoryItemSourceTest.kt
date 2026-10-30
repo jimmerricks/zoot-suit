@@ -105,8 +105,9 @@ class InMemoryItemSourceTest {
 
     @Test
     fun `on this device matches the parent of a downloaded attachment`() {
-        device = DeviceState(onDevice = setOf("A-PDF"))
-        assertEquals(listOf("A"), keys(LibraryQuery(LibraryPlace.Library, filter = LibraryFilter(onDevice = true))))
+        device = DeviceState(onDevice = setOf("A-PDF"), pdfOnDevice = setOf("A-PDF"))
+        assertEquals(listOf("A"), keys(LibraryQuery(LibraryPlace.Library, filter = LibraryFilter(pdfOnDevice = true))))
+        assertEquals(emptyList<String>(), keys(LibraryQuery(LibraryPlace.Library, filter = LibraryFilter(htmlOnDevice = true))))
     }
 
     @Test

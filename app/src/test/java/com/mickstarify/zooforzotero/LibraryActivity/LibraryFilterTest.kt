@@ -17,8 +17,9 @@ class LibraryFilterTest {
         collections = emptyList()
     }
 
-    private fun LibraryFilter.keeps(item: Item, onDevice: Set<String> = emptySet(), edited: Set<String> = emptySet()) =
-        matches(item, onDevice, edited)
+    private fun LibraryFilter.keeps(
+        item: Item, pdf: Set<String> = emptySet(), edited: Set<String> = emptySet(), html: Set<String> = emptySet(),
+    ) = matches(item, pdf, html, edited)
 
     @Test
     fun `an empty filter keeps everything`() {
@@ -34,18 +35,23 @@ class LibraryFilterTest {
     }
 
     @Test
-    fun `on device means the item has an attachment on the device`() {
-        val f = LibraryFilter(onDevice = true)
-        assertTrue(f.keeps(item("B"), onDevice = setOf("B")))
-        assertFalse(f.keeps(item("B"), onDevice = setOf("A")))
+    fun `on device means the item has that kind of attachment on the device`() {
+        val pdf = LibraryFilter(pdfOnDevice = true)
+        assertTrue(pdf.keeps(item("B"), pdf = setOf("B")))
+        assertFalse(pdf.keeps(item("B"), pdf = setOf("A")))
+        assertFalse(pdf.keeps(item("B"), html = setOf("B")))
+        val html = LibraryFilter(htmlOnDevice = true)
+        assertTrue(html.keeps(item("B"), html = setOf("B")))
+        assertFalse(html.keeps(item("B"), pdf = setOf("B")))
+        assertTrue(html.isActive && html.needsDeviceState)
     }
 
     @Test
     fun `tags and device state combine with AND`() {
-        val f = LibraryFilter(tags = setOf("theory"), onDevice = true, editedHere = true)
-        assertTrue(f.keeps(item("A", "theory"), onDevice = setOf("A"), edited = setOf("A")))
-        assertFalse(f.keeps(item("A", "theory"), onDevice = setOf("A")))
-        assertFalse(f.keeps(item("A"), onDevice = setOf("A"), edited = setOf("A")))
+        val f = LibraryFilter(tags = setOf("theory"), pdfOnDevice = true, editedHere = true)
+        assertTrue(f.keeps(item("A", "theory"), pdf = setOf("A"), edited = setOf("A")))
+        assertFalse(f.keeps(item("A", "theory"), pdf = setOf("A")))
+        assertFalse(f.keeps(item("A"), pdf = setOf("A"), edited = setOf("A")))
     }
 
     @Test
@@ -63,8 +69,8 @@ class LibraryFilterTest {
     @Test
     fun `description lists tags then device conditions`() {
         assertEquals(
-            "method · Theory · on this device",
-            LibraryFilter(tags = setOf("Theory", "method"), onDevice = true).describe()
+            "method · Theory · PDF on this device · HTML on this device",
+            LibraryFilter(tags = setOf("Theory", "method"), pdfOnDevice = true, htmlOnDevice = true).describe()
         )
     }
 }

@@ -32,10 +32,10 @@ class EditedAttachments(
     @Volatile
     private var downloadedCache: Pair<Int, Map<String, Item>> = GroupInfo.NO_GROUP_ID to emptyMap()
 
-    /** Keys of attachments whose file is on this device (non-empty). */
-    fun onDeviceKeys(): Set<String> = downloaded().filterValues { item ->
+    /** Attachments whose file is on this device (non-empty), by key. */
+    fun onDevice(): Map<String, Item> = downloaded().filterValues { item ->
         storage.getFileSize(item).getOrDefault(0L) > 0
-    }.keys
+    }
 
     /**
      * Attachments edited on this device and not uploaded yet. Hashes files whose size or

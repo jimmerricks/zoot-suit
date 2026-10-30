@@ -40,6 +40,7 @@ class LibraryFilterDialog(
         val hasOther = view.findViewById<CheckBox>(R.id.checkBox_filter_has_other)
         val hasNotes = view.findViewById<CheckBox>(R.id.checkBox_filter_has_notes)
         val onDevice = view.findViewById<CheckBox>(R.id.checkBox_filter_on_device)
+        val htmlOnDevice = view.findViewById<CheckBox>(R.id.checkBox_filter_html_on_device)
         val edited = view.findViewById<CheckBox>(R.id.checkBox_filter_edited)
         val search = view.findViewById<EditText>(R.id.editText_tag_search)
         val list = view.findViewById<ListView>(R.id.listView_tags)
@@ -53,7 +54,8 @@ class LibraryFilterDialog(
             hasHtml.isChecked = filter.hasHtml
             hasOther.isChecked = filter.hasOtherAttachment
             hasNotes.isChecked = filter.hasNotes
-            onDevice.isChecked = filter.onDevice
+            onDevice.isChecked = filter.pdfOnDevice
+            htmlOnDevice.isChecked = filter.htmlOnDevice
             edited.isChecked = filter.editedHere
             // the library's tags plus the selected ones; selected first
             val all = (counts.keys + filter.tags).filter { it.contains(query.trim(), ignoreCase = true) }
@@ -79,7 +81,8 @@ class LibraryFilterDialog(
         hasHtml.setOnClickListener { update(filter.copy(hasHtml = hasHtml.isChecked)) }
         hasOther.setOnClickListener { update(filter.copy(hasOtherAttachment = hasOther.isChecked)) }
         hasNotes.setOnClickListener { update(filter.copy(hasNotes = hasNotes.isChecked)) }
-        onDevice.setOnClickListener { update(filter.copy(onDevice = onDevice.isChecked)) }
+        onDevice.setOnClickListener { update(filter.copy(pdfOnDevice = onDevice.isChecked)) }
+        htmlOnDevice.setOnClickListener { update(filter.copy(htmlOnDevice = htmlOnDevice.isChecked)) }
         edited.setOnClickListener { update(filter.copy(editedHere = edited.isChecked)) }
         list.setOnItemClickListener { _, _, position, _ ->
             val tag = shownTags[position]

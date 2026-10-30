@@ -83,8 +83,12 @@ class RoomItemSource(
         val filter = query.filter
         if (filter.needsDeviceState) {
             val state = deviceState()
-            if (filter.onDevice) {
-                val owners = owningItems(state.onDevice)
+            if (filter.pdfOnDevice) {
+                val owners = owningItems(state.pdfOnDevice)
+                result = result.filter { it in owners }
+            }
+            if (filter.htmlOnDevice) {
+                val owners = owningItems(state.htmlOnDevice)
                 result = result.filter { it in owners }
             }
             if (filter.editedHere) {

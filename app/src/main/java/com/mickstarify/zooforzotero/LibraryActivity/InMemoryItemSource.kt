@@ -55,9 +55,10 @@ class InMemoryItemSource(
         }
         if (!filter.isActive) return searched
         val state = if (filter.needsDeviceState) deviceState() else DeviceState()
-        val onDeviceItems = if (filter.onDevice) owningItems(lib, state.onDevice) else emptySet()
+        val pdfItems = if (filter.pdfOnDevice) owningItems(lib, state.pdfOnDevice) else emptySet()
+        val htmlItems = if (filter.htmlOnDevice) owningItems(lib, state.htmlOnDevice) else emptySet()
         val editedItems = if (filter.editedHere) owningItems(lib, state.edited) + state.itemEdits else emptySet()
-        return searched.filter { filter.matches(it, onDeviceItems, editedItems) }
+        return searched.filter { filter.matches(it, pdfItems, htmlItems, editedItems) }
     }
 
     /** For attachment keys: their parent items' keys, plus their own (standalone attachments). */

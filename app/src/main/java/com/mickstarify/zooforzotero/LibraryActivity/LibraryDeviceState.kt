@@ -4,6 +4,7 @@ import android.util.Log
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind
 import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachments
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditStore
@@ -67,8 +68,11 @@ class LibraryDeviceState(
      */
     fun refresh(onDone: () -> Unit = {}) {
         Single.fromCallable {
+            val here = if (library.isLoaded()) editedAttachments.onDevice() else emptyMap()
             DeviceState(
-                onDevice = if (library.isLoaded()) editedAttachments.onDeviceKeys() else emptySet(),
+                onDevice = here.keys,
+                pdfOnDevice = here.filterValues { AttachmentKind.PDF.matches(it) }.keys,
+                htmlOnDevice = here.filterValues { AttachmentKind.HTML.matches(it) }.keys,
                 edited = findEditedAttachments().map { it.itemKey }.toSet(),
                 itemEdits = itemEdits.editedItemKeys(GroupInfo.NO_GROUP_ID),
             )
