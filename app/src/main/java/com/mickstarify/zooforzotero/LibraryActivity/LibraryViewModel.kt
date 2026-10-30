@@ -272,9 +272,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         libraryListViewModel.setEmptyMessage(
             EmptyListMessage.forList(
                 search, filter, shown != null, navigator.currentCollection(),
-                downloading = syncStatus.value?.let {
-                    it.running && it.firstSync && it.groupID == library.state.currentGroup.id
-                } == true,
+                downloading = isDownloadingOpenLibrary(syncStatus.value),
             )
         )
     }
@@ -316,8 +314,15 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     }
 
     override fun showSyncStatus(status: SyncStatus) {
+        val wasDownloading = isDownloadingOpenLibrary(syncStatus.value)
         syncStatus.value = status
+        // the empty list was drawn before the first sync began, or says it's downloading
+        if (isDownloadingOpenLibrary(status) != wasDownloading) showFilterSummary()
     }
+
+    /** Whether [status] is the open library's first sync, still running. */
+    private fun isDownloadingOpenLibrary(status: SyncStatus?): Boolean =
+        status != null && status.running && status.firstSync && status.groupID == library.state.currentGroup.id
 
     /** What the sync details dialog says about [status]. */
     fun syncDetails(status: SyncStatus) = SyncDetails(
