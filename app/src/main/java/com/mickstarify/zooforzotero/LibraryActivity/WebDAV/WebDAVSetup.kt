@@ -297,7 +297,8 @@ class WebDAVSetup : AppCompatActivity() {
     }
 
     fun hideProgressDialog() {
-        progressDialog?.hide()
+        // dismiss, not hide: a hidden dialog keeps its window, leaked when the screen closes
+        progressDialog?.dismiss()
         progressDialog = null
     }
 

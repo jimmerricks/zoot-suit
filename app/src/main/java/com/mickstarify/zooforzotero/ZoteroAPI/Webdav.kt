@@ -81,8 +81,10 @@ class Webdav(
         attachmentStorageManager: AttachmentStorageManager
     ): Observable<DownloadProgress> {
         val key = attachment.itemKey.uppercase()
-        val webpathProp = "$address/$key.prop"
-        val webpathZip = "$address/$key.zip"
+        // trimmed as WebdavUploader does: an address ending in "/" gave "//KEY.zip"
+        val base = address.trimEnd('/')
+        val webpathProp = "$base/$key.prop"
+        val webpathZip = "$base/$key.zip"
 
         val observable: Observable<DownloadProgress> = Observable.create { emitter ->
             // unique names: a bulk download and one from the attachment menu can overlap
