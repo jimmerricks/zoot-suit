@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+Changed:
+- Select items, in the toolbar's menu, starts selecting without a long press; Stop
+  selecting, in the menu while selecting, ends it like ✕ and Back.
+- Removing attachments from the device says "Remove" throughout, as its menu entry
+  does: the confirmation, its buttons and the message after it, and in the attachment
+  menu of a single file ("Remove from this device").
+
+Fixed:
+- On a large library the sync could end "incomplete" with "Trash: failed (offline)"
+  although the device was online: the trash request gave up after 10 seconds, and a
+  slow answer was reported as being offline. It now waits as long as the item pages
+  do (30 seconds), and a slow answer reads "Zotero didn't answer in time".
+
 ## 0.3.0
 
 Updates 0.2.3 in place (same app id and signing key).
