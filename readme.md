@@ -1,16 +1,14 @@
 # Zoot Suit
 
-An Android app for reading your Zotero library and syncing the PDFs you edit on the
-device. It is a modified version of [Zoo for Zotero](https://github.com/mickstar/Zoo-For-Zotero)
+Zoot Suit is an Android app for your Zotero library. It keeps a copy of the library on
+your phone or tablet, so you can browse and search it and open the files you have
+downloaded without a connection, and it sends what you change on the device back to
+Zotero: PDFs you annotate in a PDF app, notes, tags and collections. Files sync through
+Zotero Storage or your own WebDAV server.
+
+It is a modified version of [Zoo for Zotero](https://github.com/mickstar/Zoo-For-Zotero)
 by Michael Johnston, forked at v4.0.0 (commit `0261040`) in October 2026. What changed:
 [Differences from Zoo for Zotero](docs/differences-from-zoo.md).
-
-- **Licence:** GPLv3, see [LICENSE](LICENSE). Upstream ships no licence file; its
-  author states GPLv3 in its terms of use.
-- **App id:** `se.jmwhite.zootsuit` (since 0.2.0, see the
-  [changelog](docs/changelog.md)). It installs beside Zoo for Zotero, not over it.
-- [Privacy policy](https://jimmerricks.github.io/zoot-suit/privacy-policy.html)
-- [Terms of use](https://jimmerricks.github.io/zoot-suit/terms-of-use.html)
 
 ## Features
 
@@ -56,9 +54,6 @@ have both been tested.
 4. Sign in with your Zotero account or an API key, then set up WebDAV in Settings if
    you use it.
 
-Coming from 0.1.0: 0.2.0 and later have a new app id and install as a separate app.
-Sync your edits in 0.1.0 first, then uninstall it once the new one is set up.
-
 To edit PDFs you need a PDF app that saves changes back to the file it opened.
 
 ## Building
@@ -80,6 +75,13 @@ signing and releases in [docs/releases.md](docs/releases.md); changes per releas
 
 Open an issue on [GitHub](https://github.com/jimmerricks/zoot-suit/issues) with your
 Android version, device, and whether you use WebDAV or Zotero File Storage.
+
+## Licence and policies
+
+- **Licence:** GPLv3, see [LICENSE](LICENSE). Upstream ships no licence file; its
+  author states GPLv3 in its terms of use.
+- [Privacy policy](https://jimmerricks.github.io/zoot-suit/privacy-policy.html)
+- [Terms of use](https://jimmerricks.github.io/zoot-suit/terms-of-use.html)
 
 ## Credits
 
