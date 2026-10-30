@@ -3,6 +3,8 @@ package com.mickstarify.zooforzotero.LibraryActivity
 import android.util.Log
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditKind
 import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachments
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEditStore
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
@@ -23,11 +25,38 @@ class LibraryDeviceState(
     private val editedAttachments: EditedAttachments,
     private val findEditedAttachments: () -> List<Item>,
     private val itemEdits: ItemEditStore,
+    private val zoteroDatabase: ZoteroDatabase,
     private val filterNeedsDeviceState: () -> Boolean,
 ) {
     @Volatile
     var current = DeviceState()
         private set
+
+    /**
+     * The edits waiting to sync, a line per item (PendingEditsSummary), worked out off the
+     * main thread; then [onResult] on it.
+     */
+    fun describePending(onResult: (List<String>) -> Unit) {
+        Single.fromCallable {
+            val edits = itemEdits.pending(GroupInfo.NO_GROUP_ID)
+            val files = findEditedAttachments()
+            val keys = (edits.keys + edits.values.flatten().filter { it.kind == ItemEditKind.CREATE_NOTE }.map { it.name } +
+                    files.mapNotNull { it.data["parentItem"] }).distinct()
+            // in chunks: a bulk edit can touch thousands of items, past SQLite's variable limit
+            val titles = keys.chunked(500).flatMap {
+                zoteroDatabase.loadItemsByKeys(it, listFieldsOnly = true, withChildren = false)
+            }.associate { it.itemKey to it.getTitle() }
+            PendingEditsSummary.lines(
+                edits, files.map { EditedFile(it.getTitle(), it.data["parentItem"]) }, titles::get
+            ) { library.collection(it)?.name }
+        }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(onResult) { e ->
+                Log.e("zotero", "listing the edits to sync failed: $e")
+                onResult(emptyList())
+            }
+    }
 
     fun hasPendingEdits(item: Item) = !library.state.isUsingGroup() && item.itemKey in current.itemEdits
 

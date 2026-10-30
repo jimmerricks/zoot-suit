@@ -88,7 +88,7 @@ class LibraryComponents(
 
     val deviceState: LibraryDeviceState by lazy {
         LibraryDeviceState(
-            ui, library, editedAttachments, { attachments.findEditedAttachments() }, itemEdits,
+            ui, library, editedAttachments, { attachments.findEditedAttachments() }, itemEdits, zoteroDatabase,
             filterNeedsDeviceState = { lists.libraryFilter.needsDeviceState },
         )
     }

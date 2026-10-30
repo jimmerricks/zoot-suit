@@ -55,6 +55,9 @@ import dagger.hilt.android.AndroidEntryPoint
 
 private const val TAG = "LibraryActivity"
 
+// lines in the "N edits to sync" dialog; a bulk edit can make thousands
+private const val MAX_EDIT_LINES = 100
+
 @AndroidEntryPoint
 class LibraryActivity : AppCompatActivity(),
     SidebarAdapter.Listener,
@@ -369,9 +372,7 @@ class LibraryActivity : AppCompatActivity(),
 
             R.id.sync_status -> showSyncDetails()
 
-            R.id.pending_edits -> {
-                viewModel.requestLibraryRefresh()
-            }
+            R.id.pending_edits -> showPendingEditsDialog()
 
             R.id.upload_edited_attachments -> {
                 viewModel.uploadEditedAttachments()
@@ -467,6 +468,27 @@ class LibraryActivity : AppCompatActivity(),
     override fun onDestroy() {
         syncDetailsDialog?.dismiss() // its window would leak with the activity (rotation)
         super.onDestroy()
+    }
+
+    /** What "N edits to sync" would send, with Sync now: attachment uploads are worth a look first. */
+    private fun showPendingEditsDialog() {
+        viewModel.describePendingEdits { lines ->
+            if (isFinishing || isDestroyed) return@describePendingEdits
+            val shown = lines.take(MAX_EDIT_LINES).joinToString("\n") { "• $it" }
+            val more = lines.size - MAX_EDIT_LINES
+            AlertDialog.Builder(this)
+                .setTitle(resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits))
+                .setMessage(
+                    when {
+                        lines.isEmpty() -> "Nothing is waiting any more."
+                        more > 0 -> "$shown\n…and $more more items."
+                        else -> shown
+                    }
+                )
+                .setPositiveButton("Sync now") { _, _ -> viewModel.requestLibraryRefresh() }
+                .setNegativeButton("Close", null)
+                .show()
+        }
     }
 
     /** Attachment keys whose file is on this device / has edits to sync, for the list's PDF icons. */

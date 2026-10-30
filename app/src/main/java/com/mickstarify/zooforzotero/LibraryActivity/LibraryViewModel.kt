@@ -347,6 +347,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         },
     )
 
+    /** The edits waiting to sync, a line per item, for the dialog behind "N edits to sync". */
+    fun describePendingEdits(onResult: (List<String>) -> Unit) = parts.deviceState.describePending(onResult)
+
     override fun showPendingEdits(count: Int) {
         pendingEdits.value = count
     }
