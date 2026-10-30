@@ -13,6 +13,8 @@
     </plurals>
     <string name="add_tag">Add tag…</string>
     <string name="remove_tag">Remove tag…</string>
+    <string name="add_to_collection">Add to collection…</string>
+    <string name="remove_from_collection">Remove from this collection</string>
     <string name="select_all">Select all</string>
     <string name="invert_selection">Invert selection</string>
     <string name="clear_selection">Clear selection</string>

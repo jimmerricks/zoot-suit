@@ -313,6 +313,18 @@ class LibraryActivity : AppCompatActivity(),
                 val count = libraryListViewModel.getSelection().value!!.size
                 SelectionDialogs(this).removeTag(count, tags) { viewModel.editSelectedTags(it, add = false) }
             }
+            R.id.selection_add_to_collection -> {
+                val count = libraryListViewModel.getSelection().value!!.size
+                SelectionDialogs(this).addToCollection(count, viewModel.collectionsForPicker()) {
+                    viewModel.editSelectedCollection(it.key, it.name, add = true)
+                }
+            }
+            R.id.selection_remove_from_collection -> viewModel.currentCollection()?.let { (key, name) ->
+                val count = libraryListViewModel.getSelection().value!!.size
+                SelectionDialogs(this).removeFromCollection(count, name) {
+                    viewModel.editSelectedCollection(key, name, add = false)
+                }
+            }
             R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
             R.id.invert_selection -> libraryListViewModel.changeSelection { invert(it) }
             R.id.clear_selection -> libraryListViewModel.changeSelection { clear() }
@@ -396,6 +408,8 @@ class LibraryActivity : AppCompatActivity(),
     // here rather than in onCreateOptionsMenu: LibraryListFragment re-inflates the menu after it
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         menu.setGroupVisible(R.id.selection_edits, viewModel.canEditItems())
+        menu.findItem(R.id.selection_remove_from_collection)?.isVisible =
+            viewModel.canEditItems() && viewModel.currentCollection() != null
         menu.findItem(R.id.pending_edits)?.apply {
             isVisible = pendingEdits > 0
             title = resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)

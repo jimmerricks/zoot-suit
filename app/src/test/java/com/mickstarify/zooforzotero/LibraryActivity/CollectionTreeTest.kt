@@ -81,4 +81,12 @@ class CollectionTreeTest {
         }
         assertEquals(listOf("I1"), result.map { it.itemKey })
     }
+
+    @Test
+    fun `flattened lists parents before children, siblings by name, with depths`() {
+        assertEquals(
+            listOf("BOOKS" to 0, "RESEARCH" to 0, "METHOD" to 1, "INTERVIEWS" to 2, "THEORY" to 1),
+            tree.flattened().map { (c, depth) -> c.key to depth }
+        )
+    }
 }

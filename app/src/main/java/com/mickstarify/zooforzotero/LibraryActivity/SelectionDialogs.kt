@@ -8,6 +8,7 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 
 /** The dialogs of the list's bulk actions, which act on the selected items. */
@@ -68,6 +69,37 @@ class SelectionDialogs(private val context: Context) {
         AlertDialog.Builder(context)
             .setTitle("Remove a tag from ${items(count)}")
             .setItems(labels.toTypedArray()) { _, which -> onRemove(tags[which].first) }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * Lists the library's [collections] as a tree (indented by depth); the one tapped gets
+     * the [count] selected items.
+     */
+    fun addToCollection(count: Int, collections: List<Pair<Collection, Int>>, onChoose: (Collection) -> Unit) {
+        if (collections.isEmpty()) {
+            AlertDialog.Builder(context)
+                .setTitle("No collections")
+                .setMessage("This library has no collections. Make them in Zotero.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+        val labels = collections.map { (c, depth) -> "\u2003".repeat(depth) + c.name }
+        AlertDialog.Builder(context)
+            .setTitle("Add ${items(count)} to a collection")
+            .setItems(labels.toTypedArray()) { _, which -> onChoose(collections[which].first) }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /** Asks before taking the [count] selected items out of the collection [name]. */
+    fun removeFromCollection(count: Int, name: String, onRemove: () -> Unit) {
+        AlertDialog.Builder(context)
+            .setTitle("Remove ${items(count)} from “$name”?")
+            .setMessage("They stay in the library and in any other collections.")
+            .setPositiveButton("Remove") { _, _ -> onRemove() }
             .setNegativeButton("Cancel", null)
             .show()
     }

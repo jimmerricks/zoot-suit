@@ -38,6 +38,22 @@ class CollectionTree(collections: List<Collection>) {
         return result
     }
 
+    /**
+     * Every collection, each once, as the sidebar shows them all expanded: a parent before
+     * its children, siblings by name; with its depth (0 for top-level).
+     */
+    fun flattened(): List<Pair<Collection, Int>> {
+        val result = mutableListOf<Pair<Collection, Int>>()
+        val seen = HashSet<String>()
+        fun visit(collection: Collection, depth: Int) {
+            if (!seen.add(collection.key)) return
+            result.add(collection to depth)
+            childrenOf(collection.key).forEach { visit(it, depth + 1) }
+        }
+        roots.forEach { visit(it, 0) }
+        return result
+    }
+
     /** [key] and every collection below it, each once. */
     fun withDescendants(key: String): List<String> {
         val seen = LinkedHashSet<String>()

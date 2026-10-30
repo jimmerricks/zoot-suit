@@ -337,9 +337,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         showEditedItems()
     }
 
-    override fun showEditedItems() {
+    override fun showEditedItems(collectionsChanged: Boolean) {
         // only a list that can depend on tags is redrawn; a large one is slow to redraw
-        if (parts.lists.libraryFilter.tags.isNotEmpty() ||
+        if (collectionsChanged || parts.lists.libraryFilter.tags.isNotEmpty() ||
             parts.lists.librarySearch.isNotEmpty()
         ) redisplayItems()
     }
@@ -348,6 +348,19 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     private fun selectedKeys() = libraryListViewModel.getSelection().value!!.keys()
 
     fun editSelectedTags(tag: String, add: Boolean) = parts.edits.editTags(selectedKeys(), tag, add)
+
+    /** The open collection's key and name, or null if the list isn't a collection. */
+    fun currentCollection(): Pair<String, String>? {
+        if (!library.isLoaded()) return null
+        val key = navigator.currentCollection()
+        return library.collection(key)?.let { key to it.name }
+    }
+
+    /** The open library's collections, parents before children, with their depth. */
+    fun collectionsForPicker(): List<Pair<Collection, Int>> = CollectionTree(library.collections).flattened()
+
+    fun editSelectedCollection(collectionKey: String, name: String, add: Boolean) =
+        parts.edits.editCollection(selectedKeys(), collectionKey, name, add)
 
     fun loadSelectedTags(onResult: (List<Pair<String, Int>>) -> Unit) =
         parts.edits.tagsOf(selectedKeys(), onResult)

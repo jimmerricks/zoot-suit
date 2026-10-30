@@ -82,21 +82,67 @@ class LibraryItemEdits(
             return
         }
         val edit = ItemEdit(if (add) ItemEditKind.ADD_TAG else ItemEditKind.REMOVE_TAG, tag)
-        ui.showLoadingAlertDialog(if (add) "Adding the tag…" else "Removing the tag…")
-        Single.fromCallable { itemEdits.recordAll(GroupInfo.NO_GROUP_ID, keys, edit) }
+        recordInBulk(edit, if (add) "Adding the tag…" else "Removing the tag…", { keys }) { changed ->
+            bulkTagMessage(tag, add, changed, keys.size)
+        }
+    }
+
+    /**
+     * Puts ([add]) the items [keys] in collection [collectionKey], or takes them out of it,
+     * on this device at once, like a tag. Only top-level items can be in collections, so
+     * attachments and notes among them are left out.
+     */
+    fun editCollection(keys: List<String>, collectionKey: String, collectionName: String, add: Boolean) {
+        if (state.isUsingGroup()) {
+            ui.makeToastAlert("Collections can be changed only in My Library, not in groups.")
+            return
+        }
+        val kind = if (add) ItemEditKind.ADD_TO_COLLECTION else ItemEditKind.REMOVE_FROM_COLLECTION
+        var topLevel = keys.size
+        val keysToEdit = {
+            val parents = zoteroDatabase.parentsOf(keys)
+            keys.filter { parents[it] == null && it in parents }.also { topLevel = it.size }
+        }
+        recordInBulk(ItemEdit(kind, collectionKey), if (add) "Adding to the collection…" else "Removing from the collection…", keysToEdit) { changed ->
+            bulkCollectionMessage(collectionName, add, changed, topLevel, keys.size)
+        }
+    }
+
+    /**
+     * Records [edit] for the items [keys] reads (off the main thread), with [progress]
+     * showing meanwhile; then says [message] of how many it changed, and redraws.
+     */
+    private fun recordInBulk(edit: ItemEdit, progress: String, keys: () -> List<String>, message: (Int) -> String) {
+        ui.showLoadingAlertDialog(progress)
+        Single.fromCallable { itemEdits.recordAll(GroupInfo.NO_GROUP_ID, keys(), edit) }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ changed ->
                 ui.hideLoadingAlertDialog()
-                ui.makeToastAlert(bulkTagMessage(tag, add, changed.size, keys.size))
+                ui.makeToastAlert(message(changed.size))
                 if (changed.isEmpty()) return@subscribe
                 invalidateList()
-                refreshPendingEdits { ui.showEditedItems() }
+                val collections = edit.kind == ItemEditKind.ADD_TO_COLLECTION ||
+                        edit.kind == ItemEditKind.REMOVE_FROM_COLLECTION
+                refreshPendingEdits { ui.showEditedItems(collectionsChanged = collections) }
             }, { e ->
                 ui.hideLoadingAlertDialog()
-                Log.e("zotero", "editing a tag of ${keys.size} items failed: $e")
-                ui.createErrorAlert("Couldn't change the tag", "Nothing was changed.\n\nDetails: ${e.message ?: e}") {}
+                Log.e("zotero", "recording ${edit.kind} in bulk failed: $e")
+                ui.createErrorAlert("Couldn't make the change", "Nothing was changed.\n\nDetails: ${e.message ?: e}") {}
             })
+    }
+
+    private fun bulkCollectionMessage(name: String, add: Boolean, changed: Int, topLevel: Int, selected: Int): String {
+        fun items(n: Int) = if (n == 1) "1 item" else "$n items"
+        val skipped = (selected - topLevel).takeIf { it > 0 }
+            ?.let { " ${items(it)} left out: attachments and notes go with their parent." } ?: ""
+        return when {
+            changed == 0 && add -> "All of them are in “$name” already.$skipped"
+            changed == 0 -> "None of them is in “$name” itself.$skipped"
+            add -> "Added ${items(changed)} to “$name”.$skipped"
+            else -> "Removed ${items(changed)} from “$name”." +
+                    if (changed < topLevel) " The others are only in its subcollections." else skipped
+        }
     }
 
     private fun bulkTagMessage(tag: String, add: Boolean, changed: Int, selected: Int): String {
