@@ -127,7 +127,7 @@ class ItemViewFragment : DialogFragment(),
         this.addCreators(item.getSortedCreators())
         for ((key, value) in item.data) {
             if (value != "" && key != "itemType" && key != "title") {
-                addTextEntry(ItemFieldLabel.of(key), value)
+                addTextEntry(ItemFieldLabel.of(key), ItemFieldLabel.value(key, value))
             }
         }
         this.addAttachments(attachments)
