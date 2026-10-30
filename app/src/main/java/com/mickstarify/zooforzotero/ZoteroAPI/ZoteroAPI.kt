@@ -102,7 +102,7 @@ class ZoteroAPI(
     val attachmentStorageManager: AttachmentStorageManager,
     val preferencesManager: PreferenceManager,
     // tests point this at a MockWebServer
-    baseUrl: String = BASE_URL
+    private val baseUrl: String = BASE_URL
 ) {
     private val baseHttpClient = OkHttpClient().newBuilder().apply {
         if (BuildConfig.DEBUG) {
@@ -115,6 +115,15 @@ class ZoteroAPI(
     // shared by both API clients so a Backoff from one also delays the other
     private val rateLimitInterceptor = ZoteroRateLimitInterceptor()
 
+    private val zoteroHeaders = Interceptor { chain ->
+        chain.proceed(
+            chain.request().newBuilder()
+                .addHeader("Zotero-API-Version", "3")
+                .addHeader("Zotero-API-Key", API_KEY)
+                .build()
+        )
+    }
+
     private val zoteroHttpClient = baseHttpClient
         .newBuilder().apply {
             addInterceptor(rateLimitInterceptor)
@@ -122,28 +131,14 @@ class ZoteroAPI(
                 preferencesManager.getHttpWriteTimeout(),
                 TimeUnit.MILLISECONDS
             ) // so socket doesn't timeout on large uploads (attachments)
-            addInterceptor(object : Interceptor {
-                override fun intercept(chain: Interceptor.Chain): okhttp3.Response {
-                    val request = chain.request().newBuilder()
-                        .addHeader("Zotero-API-Version", "3")
-                        .addHeader("Zotero-API-Key", API_KEY)
-                    return chain.proceed(request.build())
-                }
-            })
+            addInterceptor(zoteroHeaders)
         }
         .build()
 
     private val zoteroHttpClientShortTimeout = baseHttpClient
         .newBuilder().apply {
             addInterceptor(rateLimitInterceptor)
-            addInterceptor(object : Interceptor {
-                override fun intercept(chain: Interceptor.Chain): okhttp3.Response {
-                    val request = chain.request().newBuilder()
-                        .addHeader("Zotero-API-Version", "3")
-                        .addHeader("Zotero-API-Key", API_KEY)
-                    return chain.proceed(request.build())
-                }
-            })
+            addInterceptor(zoteroHeaders)
             // connect fails fast when offline; reads get longer because a 100-item page
             // from a large library can take the server well over 5 s on a cold query.
             connectTimeout(5000, TimeUnit.MILLISECONDS)
@@ -152,7 +147,7 @@ class ZoteroAPI(
         }
         .build()
 
-
+    // no Zotero headers: it posts to the storage URLs Zotero hands out (S3)
     private val httpClientForAttachments = baseHttpClient
         .newBuilder()
         .apply {
@@ -163,26 +158,16 @@ class ZoteroAPI(
         }
         .build()
 
-    val service: ZoteroAPIService = Retrofit.Builder()
+    private fun serviceWith(client: OkHttpClient): ZoteroAPIService = Retrofit.Builder()
         .baseUrl(baseUrl)
-        .client(zoteroHttpClient)
+        .client(client)
         .addConverterFactory(GsonConverterFactory.create())
         .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
         .build().create(ZoteroAPIService::class.java)
 
-    val attachmentsService: ZoteroAPIService = Retrofit.Builder()
-        .baseUrl(baseUrl)
-        .client(httpClientForAttachments)
-        .addConverterFactory(GsonConverterFactory.create())
-        .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
-        .build().create(ZoteroAPIService::class.java)
-
-    val shortTimeoutService: ZoteroAPIService = Retrofit.Builder()
-        .baseUrl(baseUrl)
-        .client(zoteroHttpClientShortTimeout)
-        .addConverterFactory(GsonConverterFactory.create())
-        .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
-        .build().create(ZoteroAPIService::class.java)
+    val service = serviceWith(zoteroHttpClient)
+    val attachmentsService = serviceWith(httpClientForAttachments)
+    val shortTimeoutService = serviceWith(zoteroHttpClientShortTimeout)
 
     private var webdavClient: Pair<String, Webdav>? = null
 
