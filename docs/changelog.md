@@ -1,12 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
+
+Updates 0.2.3 in place (same app id and signing key).
 
 New:
 - Select items in the library list: a long press starts, a tap adds or removes, and
   the toolbar shows how many are selected, with buttons to Select all and Invert
   selection; ✕ or Back ends it. Only items in the list on screen can be selected, so
-  an action never reaches one you can't see.
+  an action never reaches one you can't see. While selecting, a long press selects
+  everything from the item pressed before up to it, like Shift-click on a computer;
+  after unticking an item, the same long press unselects the range.
 - Bulk actions on the selection, all in the toolbar's menu:
   - Add tag… and Remove tag…, offline like a tag added in the item dialog.
   - Add to collection… (the collections as a tree) and, while a collection is open,
@@ -23,6 +27,10 @@ New:
     been uploaded are named first; you can keep those and delete the rest.
   Edits are My Library only, as before; downloads and deletions work in groups too.
 
+- Sync progress in the toolbar: while a sync runs it shows how far it got ("45%", or
+  "Syncing 45%" on wider screens); tap it for each stage's details. "N edits to sync"
+  now lists the edits waiting, with Sync now, instead of syncing straight away.
+- A first sync opens the library list at once and fills it as pages arrive.
 - Filter: "HTML snapshot downloaded" beside "PDF downloaded" under On this device.
   "PDF downloaded" now means a PDF: it used to match any downloaded attachment.
 - The attachment menu (long press) offers only what applies to the file as it stands:
