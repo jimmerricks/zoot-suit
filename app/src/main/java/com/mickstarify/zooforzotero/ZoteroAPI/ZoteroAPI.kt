@@ -115,11 +115,14 @@ class ZoteroAPI(
     // shared by both API clients so a Backoff from one also delays the other
     private val rateLimitInterceptor = ZoteroRateLimitInterceptor()
 
+    // The key goes as "Authorization: Bearer", not "Zotero-API-Key": a file download is
+    // redirected to Zotero's storage host (S3), and OkHttp drops only Authorization when
+    // a redirect leaves the host, so the other header went along to S3.
     private val zoteroHeaders = Interceptor { chain ->
         chain.proceed(
             chain.request().newBuilder()
                 .addHeader("Zotero-API-Version", "3")
-                .addHeader("Zotero-API-Key", API_KEY)
+                .addHeader("Authorization", "Bearer $API_KEY")
                 .build()
         )
     }
