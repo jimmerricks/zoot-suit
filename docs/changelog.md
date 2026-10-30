@@ -53,6 +53,13 @@ Fixed:
   removes their emptied folders.
 - A downloaded file is recorded only once it matches Zotero's checksum.
 - An upload whose file Zotero already has is recognised however Zotero spaces its answer.
+- A first sync's percentage in the toolbar no longer starts again from 0 for attachments
+  and notes: top-level items count for the first half, attachments and notes the second.
+- The item dialog shows the dates added, modified and accessed in the device's time zone
+  and date format, not as stored ("2026-10-30T01:23:36Z").
+- The WebDAV server screen has a toolbar with a back arrow, like Settings.
+- Settings: "Back up files before uploading" moved to the WebDAV section and is greyed out
+  while WebDAV is off; "WebDAV server" shows the address set up, or "Not set up".
 
 ## 0.2.3
 
