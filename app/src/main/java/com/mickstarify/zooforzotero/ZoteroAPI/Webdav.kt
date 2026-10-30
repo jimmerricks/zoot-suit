@@ -85,8 +85,9 @@ class Webdav(
         val webpathZip = "$address/$key.zip"
 
         val observable: Observable<DownloadProgress> = Observable.create { emitter ->
-            val zipFile = attachmentStorageManager.createTempFile("$key.zip")
-            val extracted = attachmentStorageManager.createTempFile("$key.download")
+            // unique names: a bulk download and one from the attachment menu can overlap
+            val zipFile = attachmentStorageManager.downloadTempFile(key)
+            val extracted = attachmentStorageManager.downloadTempFile(key)
             try {
                 val prop = WebdavProp(downloadPropToString(webpathProp))
                 val reporter = ProgressThrottle()

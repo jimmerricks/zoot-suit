@@ -28,8 +28,9 @@ private const val TAG = "AttachmentDownloads"
  * already on the device is skipped: bulk downloads fetch what's missing.
  *
  * Runs only with a network (AttachmentDownloads). Offline, or stopped by Android, it asks
- * to be run again and carries on from the queue; a download cut off midway is deleted
- * then, so a partial file is never taken for a whole one.
+ * to be run again and carries on from the queue. A download goes to a temporary file
+ * first; one whose process was killed while copying it into place is deleted at the next
+ * start, so a partial file is never taken for a whole one.
  */
 class AttachmentDownloadWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
@@ -54,7 +55,8 @@ class AttachmentDownloadWorker(context: Context, params: WorkerParameters) : Cor
         val api = ZoteroAPI(auth.getUserKey(), auth.getUserID(), auth.getUsername(), storage, preferences)
 
         queue.state().inProgress?.let { cutOff ->
-            // the last run ended during this download; its file, if any, is partial
+            // the last run ended during this download, perhaps while copying it into
+            // place; its file, if any, may be partial
             load(cutOff)?.let { storage.deleteAttachment(it) }
         }
         while (!isStopped) {
@@ -66,7 +68,6 @@ class AttachmentDownloadWorker(context: Context, params: WorkerParameters) : Cor
             } catch (e: Exception) {
                 if (NetworkErrors.isOffline(e)) {
                     Log.d(TAG, "offline at ${entry.key}; trying again when there's a network")
-                    load(entry)?.let { storage.deleteAttachment(it) }
                     queue.release(entry) // first again when the network is back
                     return Result.retry()
                 }
@@ -98,7 +99,7 @@ class AttachmentDownloadWorker(context: Context, params: WorkerParameters) : Cor
         try {
             api.downloadItemRx(item, entry.group, applicationContext).ignoreElements().blockingAwait()
         } catch (e: Exception) {
-            storage.deleteAttachment(item)
+            // a failed download never reaches storage (it goes through a temporary file)
             if (generateSequence<Throwable>(e) { it.cause }.any { it is ZoteroNotFoundException }) {
                 return Outcome.FAILED to "A file isn't in Zotero's storage (or on your WebDAV server)."
             }

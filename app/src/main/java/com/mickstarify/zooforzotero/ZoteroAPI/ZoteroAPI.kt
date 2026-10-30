@@ -235,37 +235,42 @@ class ZoteroAPI(
                     if (response.code() == 200 && body != null) {
                         val md5Hash = item.data["md5"] ?: ""
                         val mtime = (item.data["mtime"] ?: "0").toLong()
-                        // opened only now, so a failed request leaves an existing copy
-                        // alone; closed on every path, which also flushes it
-                        attachmentStorageManager.getItemOutputStream(item).use { out ->
-                            body.byteStream().use { input ->
-                                val buffer = ByteArray(65536)
-                                val reporter = ProgressThrottle()
-                                var progress: Long = 0
-                                var read = input.read(buffer)
-                                // a cancelled download stops here; left running, a retry
-                                // wrote the same file alongside it
-                                while (read > 0 && !emitter.isDisposed) {
-                                    out.write(buffer, 0, read)
-                                    progress += read
-                                    if (reporter.due()) {
-                                        emitter.onNext(
-                                            DownloadProgress(
-                                                progress = progress,
-                                                total = fileSize,
-                                                metadataHash = md5Hash,
-                                                mtime = mtime
+                        // into a temporary file first: a download that fails or is cancelled
+                        // midway leaves the copy on the device as it was (as WebDAV's does)
+                        val temp = attachmentStorageManager.downloadTempFile(item.itemKey)
+                        try {
+                            temp.outputStream().use { out ->
+                                body.byteStream().use { input ->
+                                    val buffer = ByteArray(65536)
+                                    val reporter = ProgressThrottle()
+                                    var progress: Long = 0
+                                    var read = input.read(buffer)
+                                    // a cancelled download stops here; left running, a retry
+                                    // wrote the same file alongside it
+                                    while (read > 0 && !emitter.isDisposed) {
+                                        out.write(buffer, 0, read)
+                                        progress += read
+                                        if (reporter.due()) {
+                                            emitter.onNext(
+                                                DownloadProgress(
+                                                    progress = progress,
+                                                    total = fileSize,
+                                                    metadataHash = md5Hash,
+                                                    mtime = mtime
+                                                )
                                             )
-                                        )
+                                        }
+                                        read = input.read(buffer)
                                     }
-                                    read = input.read(buffer)
+                                    emitter.onNext(
+                                        DownloadProgress(progress = progress, total = fileSize, metadataHash = md5Hash, mtime = mtime)
+                                    )
                                 }
-                                emitter.onNext(
-                                    DownloadProgress(progress = progress, total = fileSize, metadataHash = md5Hash, mtime = mtime)
-                                )
                             }
+                            if (!emitter.isDisposed) attachmentStorageManager.writeAttachmentFromFile(temp, item)
+                        } finally {
+                            temp.delete()
                         }
-                        if (emitter.isDisposed) attachmentStorageManager.deleteAttachment(item) // partial
                         emitter.onComplete()
                     } else if (response.code() == 404) {
                         throw ZoteroNotFoundException("Not found on server.")
@@ -277,7 +282,6 @@ class ZoteroAPI(
 
                 override fun onError(e: Throwable) {
                     Log.e("zotero", "download attachment got error $e  ${emitter.isDisposed}")
-                    attachmentStorageManager.deleteAttachment(item)
                     if (!emitter.isDisposed) {
                         emitter.onError(e)
                     }

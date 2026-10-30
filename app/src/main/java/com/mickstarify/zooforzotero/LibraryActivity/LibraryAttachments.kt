@@ -204,8 +204,7 @@ class LibraryAttachments(
             AttachmentOpenCheck.Action.REDOWNLOAD -> {
                 ui.makeToastAlert("Zotero has a newer version of this file. Downloading it.")
                 ui.updateAttachmentDownloadProgress(0, -1)
-                attachmentStorageManager.deleteAttachment(item)
-                downloadAttachment(item)
+                downloadAttachment(item) // replaces the copy once it's in
                 return
             }
             AttachmentOpenCheck.Action.ASK_EDITED_STALE -> {
@@ -217,7 +216,6 @@ class LibraryAttachments(
                             "replaced), or open your copy and save your annotations as a new file.",
                     "Download newer", "Open my copy", {
                         ui.updateAttachmentDownloadProgress(0, -1)
-                        attachmentStorageManager.deleteAttachment(item)
                         downloadAttachment(item)
                     }, {
                         openPDF(item)
@@ -239,7 +237,6 @@ class LibraryAttachments(
                 "The file on this device differs from the one in Zotero. Download Zotero's version?",
                 "Download", "Open mine", {
                     ui.updateAttachmentDownloadProgress(0, -1)
-                    attachmentStorageManager.deleteAttachment(item)
                     downloadAttachment(item)
                 }, {
                     openPDF(item)
@@ -290,7 +287,6 @@ class LibraryAttachments(
         val localMd5 = local.md5
         when (AttachmentOpenCheck.decide(local.base, latestMd5, localMd5)) {
             AttachmentOpenCheck.Action.REDOWNLOAD -> {
-                attachmentStorageManager.deleteAttachment(item)
                 ui.updateAttachmentDownloadProgress(0, -1)
                 downloadAttachment(item, openWhenDone = false)
             }
@@ -299,7 +295,6 @@ class LibraryAttachments(
                 "This file changed in Zotero after you downloaded it, and your copy has " +
                         "edits of its own. Downloading the newer version replaces your edits.",
                 "Download newer", "Keep my copy", {
-                    attachmentStorageManager.deleteAttachment(item)
                     ui.updateAttachmentDownloadProgress(0, -1)
                     downloadAttachment(item, openWhenDone = false)
                 }, {}

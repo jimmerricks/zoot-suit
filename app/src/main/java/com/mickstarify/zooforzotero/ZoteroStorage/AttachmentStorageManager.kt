@@ -285,6 +285,10 @@ class AttachmentStorageManager @Inject constructor(
         return zipFile
     }
 
+    /** A new, empty file in the app's cache for a download of attachment [itemKey]; delete it after. */
+    fun downloadTempFile(itemKey: String): File =
+        File.createTempFile("${itemKey.uppercase()}-", ".download", context.cacheDir)
+
     fun setStorage(location: String?) {
         if (location == null) {
             Log.e("zotero", "error got null for location in setStorage()")
