@@ -5,6 +5,11 @@
 New:
 - Clear search and filters in the library's menu, shown while a search or filter is set.
 
+Changed:
+- On a phone held upright, the toolbar shows a sync icon while syncing and an upload
+  icon for edits waiting to sync, instead of "45%" and "N edits to sync". A long press
+  shows the words; a tap opens the same details as before. Wider screens keep the words.
+
 Removed:
 - "Upload edited attachments" in the library's menu: the toolbar's "N edits to sync"
   lists the edits and uploads them with Sync now.

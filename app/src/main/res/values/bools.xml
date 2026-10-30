@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the toolbar's sync progress and edit count as icons: no room for words on a phone
+         upright; values-w600dp has the words -->
+    <bool name="sync_info_as_icons">true</bool>
+</resources>

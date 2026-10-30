@@ -3,8 +3,7 @@
     <string name="clear_search_and_filters">Clear search and filters</string>
     <string name="sync">Sync</string>
     <string name="syncing">Syncing…</string>
-    <!-- the number alone where the toolbar is narrow (a phone upright); values-w600dp has more -->
-    <string name="syncing_progress">%1$d%%</string>
+    <string name="syncing_progress">Syncing %1$d%%</string>
     <string name="sort">Sort</string>
     <plurals name="pending_edits">
         <item quantity="one">%d edit to sync</item>

@@ -539,9 +539,12 @@ class LibraryActivity : AppCompatActivity(),
         menu.findItem(R.id.stop_downloads)?.isVisible = viewModel.downloadsActive.value == true
         menu.findItem(R.id.selection_remove_from_collection)?.isVisible =
             viewModel.canEditItems() && !selectedNone && viewModel.currentCollection() != null
+        // a phone upright has no room for the words: icons, the words their tooltips
+        val asIcons = resources.getBoolean(R.bool.sync_info_as_icons)
         syncMenuItem = menu.findItem(R.id.sync_status)?.apply {
             isVisible = syncLabel != null
             syncLabel?.let { title = it }
+            if (asIcons) setIcon(R.drawable.baseline_sync_white_24)
         }
         // Android caps the toolbar's buttons by its width, and the sync label takes a
         // place: search and filter keep theirs beside it rather than move to the menu
@@ -557,6 +560,7 @@ class LibraryActivity : AppCompatActivity(),
             // while a sync runs the edits are going up; its details list them
             isVisible = pendingEdits > 0 && syncLabel == null
             title = resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)
+            if (asIcons) setIcon(R.drawable.baseline_cloud_upload_white_24)
         }
         return super.onPrepareOptionsMenu(menu)
     }
