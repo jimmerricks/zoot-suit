@@ -376,6 +376,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
      */
     private fun showList(place: LibraryPlace) {
         parts.lists.listItems(place) { pages ->
+            // bulk actions on trashed items aren't offered
+            libraryListViewModel.selectable = place != LibraryPlace.Trash
             libraryListViewModel.setItems(pages)
             showFilterSummary()
         }

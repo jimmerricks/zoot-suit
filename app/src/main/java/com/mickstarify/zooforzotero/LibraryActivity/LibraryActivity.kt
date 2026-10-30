@@ -95,6 +95,8 @@ class LibraryActivity : AppCompatActivity(),
                 val drawer = findViewById<DrawerLayout>(R.id.drawerlayout_library)
                 if (drawer.isDrawerOpen(GravityCompat.START)) {
                     drawer.closeDrawer(GravityCompat.START)
+                } else if (libraryListViewModel.isSelecting()) {
+                    libraryListViewModel.changeSelection { clear() }
                 } else {
                     viewModel.backButtonPressed()
                 }
@@ -136,8 +138,9 @@ class LibraryActivity : AppCompatActivity(),
         }
 
         // LibraryViewModel's state outlives this activity; a recreated one just renders it
-        viewModel.title.observe(this) { supportActionBar?.title = it }
-        viewModel.subtitle.observe(this) { supportActionBar?.subtitle = it }
+        viewModel.title.observe(this) { showTitle() }
+        viewModel.subtitle.observe(this) { showTitle() }
+        libraryListViewModel.getSelection().observe(this) { showSelectionMode(!it.isEmpty()) }
         viewModel.sidebar.observe(this) { showSidebar(it) }
         viewModel.pendingEdits.observe(this) { showPendingEdits(it) }
         viewModel.screen.observe(this) {
@@ -150,13 +153,46 @@ class LibraryActivity : AppCompatActivity(),
         }
     }
 
+    private var selecting = false
+
+    /**
+     * The toolbar while items are selected: their count for a title, ✕ to clear them in
+     * place of the drawer's button, and the bulk actions in the menu. The drawer is locked
+     * shut, so the list (and the selection) stay where they are.
+     */
+    private fun showSelectionMode(on: Boolean) {
+        if (on != selecting) {
+            selecting = on
+            findViewById<DrawerLayout>(R.id.drawerlayout_library).setDrawerLockMode(
+                if (on) DrawerLayout.LOCK_MODE_LOCKED_CLOSED else DrawerLayout.LOCK_MODE_UNLOCKED
+            )
+            mDrawerToggle.isDrawerIndicatorEnabled = !on
+            // the drawer's button names itself again when it comes back
+            if (on) supportActionBar?.setHomeActionContentDescription(R.string.clear_selection)
+            invalidateOptionsMenu()
+        }
+        showTitle()
+    }
+
+    private fun showTitle() {
+        val actionBar = supportActionBar ?: return
+        if (selecting) {
+            val count = libraryListViewModel.getSelection().value!!.size
+            actionBar.title = resources.getQuantityString(R.plurals.selected_items, count, count)
+            actionBar.subtitle = null
+        } else {
+            actionBar.title = viewModel.title.value
+            actionBar.subtitle = viewModel.subtitle.value
+        }
+    }
+
     private fun libraryLoadingScreenShown() {
-        mDrawerToggle.isDrawerIndicatorEnabled = true
+        mDrawerToggle.isDrawerIndicatorEnabled = !selecting
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
     }
 
     private fun libraryListScreenShown() {
-        mDrawerToggle.isDrawerIndicatorEnabled = true
+        mDrawerToggle.isDrawerIndicatorEnabled = !selecting
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
@@ -267,6 +303,10 @@ class LibraryActivity : AppCompatActivity(),
         }
 
         when (item.itemId) {
+            R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
+            R.id.invert_selection -> libraryListViewModel.changeSelection { invert(it) }
+            R.id.clear_selection -> libraryListViewModel.changeSelection { clear() }
+
             R.id.filter_menu -> {
                 showFilterMenu()
             }
@@ -313,6 +353,7 @@ class LibraryActivity : AppCompatActivity(),
             }
 
             android.R.id.home -> {
+                // ✕ while selecting; Back clears the selection then
                 onBackPressedDispatcher.onBackPressed()
             }
 
@@ -336,7 +377,9 @@ class LibraryActivity : AppCompatActivity(),
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         super.onCreateOptionsMenu(menu)
-        menuInflater.inflate(R.menu.activity_library_actionbar, menu)
+        menuInflater.inflate(
+            if (selecting) R.menu.library_selection else R.menu.activity_library_actionbar, menu
+        )
         return true
     }
 
@@ -374,6 +417,8 @@ class LibraryActivity : AppCompatActivity(),
 
         mDrawerToggle.isDrawerIndicatorEnabled = true
         mDrawerToggle.isDrawerSlideAnimationEnabled = true
+        // the button while items are selected (showSelectionMode)
+        mDrawerToggle.setHomeAsUpIndicator(R.drawable.baseline_close_24)
 
         drawer.addDrawerListener(mDrawerToggle)
         mDrawerToggle.syncState()

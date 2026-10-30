@@ -7,6 +7,13 @@
         <item quantity="one">%d edit to sync</item>
         <item quantity="other">%d edits to sync</item>
     </plurals>
+    <plurals name="selected_items">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <string name="select_all">Select all</string>
+    <string name="invert_selection">Invert selection</string>
+    <string name="clear_selection">Clear selection</string>
     <string name="title_activity_sync_setup">Sign in</string>
     <string name="title_activity_library">Loading</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>

@@ -10,6 +10,8 @@
     <color name="themeOnPrimary">#FFFFFF</color>
     <!-- the sidebar's selected row: themePrimary at 12% (20% in dark mode) -->
     <color name="sidebarSelected">#1F3F3577</color>
+    <!-- a row selected in the library list, as the sidebar's selected row -->
+    <color name="listSelected">@color/sidebarSelected</color>
     <!-- badges on the library list's PDF icon -->
     <color name="attachmentOnDevice">#2E7D32</color>
     <color name="attachmentEdited">#E65100</color>

@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.mickstarify.zooforzotero.LibraryActivity.EmptyListMessage
 import com.mickstarify.zooforzotero.LibraryActivity.ItemPages
+import com.mickstarify.zooforzotero.LibraryActivity.ItemSelection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
 /** Attachment keys whose file is on this device, and those of them with edits to sync. */
@@ -18,12 +19,40 @@ class LibraryListViewModel : ViewModel() {
     fun setItems(items: ItemPages) {
         Log.d("zotero", "Setting items ${items.size}")
         this.items.value = items
+        // a sync or an edit can take selected items out of the list
+        if (isSelecting()) changeSelection { retainIn(it) }
     }
 
     private val attachmentStates = MutableLiveData(AttachmentStates(emptySet(), emptySet()))
     fun getAttachmentStates(): LiveData<AttachmentStates> = attachmentStates
     fun setAttachmentStates(states: AttachmentStates) {
         if (attachmentStates.value != states) attachmentStates.value = states
+    }
+
+    /**
+     * The items chosen for a bulk action. Non-empty: the list is in selection mode, where a
+     * tap selects instead of opening. Each change is posted (the same object) to observers.
+     */
+    private val selection = MutableLiveData(ItemSelection())
+    fun getSelection(): LiveData<ItemSelection> = selection
+    fun isSelecting() = !selection.value!!.isEmpty()
+
+    /** Whether the list on screen may be selected from: not the trash. */
+    var selectable = true
+        set(value) {
+            field = value
+            if (!value) changeSelection { clear() }
+        }
+
+    /** Changes the selection; [listed] in [change] is the list's keys, in order. */
+    fun changeSelection(change: ItemSelection.(listed: List<String>) -> Unit) {
+        val current = selection.value!!
+        current.change(items.value?.rows?.keys ?: emptyList())
+        selection.value = current
+    }
+
+    fun toggleSelected(item: Item) {
+        if (selectable) changeSelection { toggle(item.itemKey) }
     }
 
     private val itemClicked = MutableLiveData<Item>()

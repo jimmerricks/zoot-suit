@@ -1,6 +1,7 @@
 package com.mickstarify.zooforzotero.adapters
 
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +11,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.LibraryActivity.ItemPages
+import com.mickstarify.zooforzotero.LibraryActivity.ItemSelection
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.AttachmentStates
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -20,6 +22,9 @@ class LibraryListRecyclerViewAdapter(
 ) : RecyclerView.Adapter<LibraryListRecyclerViewAdapter.ItemViewHolder>() {
     /** Which PDFs are on this device or edited here; badges the PDF icon. */
     var attachmentStates = AttachmentStates(emptySet(), emptySet())
+
+    /** The items selected for a bulk action; while there are any, a tap selects. */
+    var selection = ItemSelection()
 
     class ItemViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView = view.findViewById<ImageView>(R.id.imageView_library_list_image)
@@ -67,20 +72,37 @@ class LibraryListRecyclerViewAdapter(
                 }
             }
             holder.pdfImage.setOnClickListener {
+                if (!selection.isEmpty()) return@setOnClickListener listener.onItemSelect(item)
                 Log.d("zotero", "Open Attachment ${item.getTitle()}")
                 listener.onItemAttachmentOpen(pdfAttachment)
             }
             holder.pdfImage.setOnLongClickListener {
-                listener.onItemAttachmentMenu(pdfAttachment)
+                if (!selection.isEmpty()) listener.onItemSelect(item)
+                else listener.onItemAttachmentMenu(pdfAttachment)
                 true
             }
         } else {
             holder.pdfImage.visibility = View.GONE
         }
         holder.layout.setOnClickListener {
+            if (!selection.isEmpty()) return@setOnClickListener listener.onItemSelect(item)
             Log.d("zotero", "Open Item")
             listener.onItemOpen(item)
         }
+        holder.layout.setOnLongClickListener {
+            listener.onItemSelect(item)
+            true
+        }
+        val selected = item.itemKey in selection
+        holder.layout.setBackgroundResource(
+            if (selected) R.color.listSelected else selectableBackground(holder.layout)
+        )
+        if (selected) {
+            holder.imageView.setImageResource(R.drawable.baseline_check_circle_24)
+            holder.imageView.contentDescription = "Selected"
+            return
+        }
+        holder.imageView.contentDescription = "icon for the item type"
 
         val iconResource = when (item.itemType) {
             "note" -> {
@@ -205,6 +227,20 @@ class LibraryListRecyclerViewAdapter(
         holder.pdfImage.visibility = View.GONE
         holder.imageView.setImageResource(R.drawable.treeitem_2x)
         holder.layout.setOnClickListener(null)
+        holder.layout.setOnLongClickListener(null)
+        holder.layout.setBackgroundResource(selectableBackground(holder.layout))
+    }
+
+    private var rippleBackground = 0
+
+    /** The theme's ripple, as the row's layout sets it; restored after a selected row's tint. */
+    private fun selectableBackground(view: View): Int {
+        if (rippleBackground == 0) {
+            val value = TypedValue()
+            view.context.theme.resolveAttribute(android.R.attr.selectableItemBackground, value, true)
+            rippleBackground = value.resourceId
+        }
+        return rippleBackground
     }
 
     override fun getItemCount(): Int {
@@ -216,4 +252,7 @@ interface LibraryListInteractionListener {
     fun onItemOpen(item: Item)
     fun onItemAttachmentOpen(item: Item)
     fun onItemAttachmentMenu(item: Item)
+
+    /** A long press, or a tap while items are selected: selects or unselects [item]. */
+    fun onItemSelect(item: Item)
 }

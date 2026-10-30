@@ -45,7 +45,9 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         menu.clear()
-        inflater.inflate(R.menu.activity_library_actionbar, menu)
+        inflater.inflate(
+            if (::viewModel.isInitialized && viewModel.isSelecting()) R.menu.library_selection else R.menu.activity_library_actionbar, menu
+        )
         super.onCreateOptionsMenu(menu, inflater)
     }
 
@@ -82,6 +84,12 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
             clearFilter.visibility = if (message.clearLabel != null) View.VISIBLE else View.GONE
         }
 
+        viewModel.getSelection().observe(viewLifecycleOwner) { selection ->
+            adapter.selection = selection
+            // only the rows on screen are bound again
+            adapter.notifyItemRangeChanged(0, adapter.itemCount)
+        }
+
         viewModel.getAttachmentStates().observe(viewLifecycleOwner) { states ->
             adapter.attachmentStates = states
             adapter.notifyDataSetChanged()
@@ -93,6 +101,8 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         viewModel.getIsShowingLoadingAnimation().observe(viewLifecycleOwner) {
             swipeRefresh.isRefreshing = it
         }
+        // a sync while selecting would change the list under the selection
+        viewModel.getSelection().observe(viewLifecycleOwner) { swipeRefresh.isEnabled = it.isEmpty() }
 
         // keep the list above the navigation bar
         setupWindowInsets()
@@ -108,6 +118,10 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
 
     override fun onItemAttachmentMenu(item: Item) {
         (requireActivity() as LibraryActivity).showAttachmentMenu(item)
+    }
+
+    override fun onItemSelect(item: Item) {
+        viewModel.toggleSelected(item)
     }
 
     override fun onRefresh() {
