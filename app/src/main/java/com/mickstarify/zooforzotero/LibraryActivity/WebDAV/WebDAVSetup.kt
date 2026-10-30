@@ -4,7 +4,6 @@ import android.app.ProgressDialog
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
@@ -63,41 +62,20 @@ class WebDAVSetup : AppCompatActivity() {
 
         textInputLayout_auth_mode = findViewById(R.id.TextInputLayout_webdav_auth_mode)
 
-        val authModeAdapter = ArrayAdapter<String>(
-            this, R.layout.webdav_auth_mode_list_item, listOf(
-                "AUTOMATIC",
-                "BASIC",
-                "DIGEST"
-            )
+        val authModes = listOf(WebdavAuthMode.AUTOMATIC, WebdavAuthMode.BASIC, WebdavAuthMode.DIGEST)
+        val authModeAdapter = ArrayAdapter(
+            this, R.layout.webdav_auth_mode_list_item, authModes.map { it.name }
         )
         (textInputLayout_auth_mode.editText as AutoCompleteTextView).apply {
             setAdapter(authModeAdapter)
+            // the saved mode; false: don't filter the list down to it
+            setText(preferenceManager.getWebDAVAuthMode().name, false)
 
-            this.listSelection = when (preferenceManager.getWebDAVAuthMode()) {
-                WebdavAuthMode.AUTOMATIC -> 0
-                WebdavAuthMode.BASIC -> 1
-                WebdavAuthMode.DIGEST -> 2
-            }
-
-            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long
-                ) {
-                    val authMode = when (position) {
-                        0 -> WebdavAuthMode.AUTOMATIC
-                        1 -> WebdavAuthMode.BASIC
-                        2 -> WebdavAuthMode.DIGEST
-                        else -> WebdavAuthMode.AUTOMATIC
-                    }
-                    Log.d("Webdav", "Setting auth mode to ${authMode}")
-                    preferenceManager.setWebDAVAuthMode(authMode)
-                }
-
-                override fun onNothingSelected(p0: AdapterView<*>?) {
-                }
+            // a tap in the list is an item click; onItemSelected only follows the keyboard
+            setOnItemClickListener { _, _, position, _ ->
+                val authMode = authModes[position]
+                Log.d("Webdav", "Setting auth mode to ${authMode}")
+                preferenceManager.setWebDAVAuthMode(authMode)
             }
         }
 
