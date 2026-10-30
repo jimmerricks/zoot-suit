@@ -632,7 +632,7 @@ class LibraryAttachments(
 
     /** Deletes the copies of [files] on this device; Zotero keeps them. */
     fun deleteLocalAttachments(files: List<Item>) {
-        Single.fromCallable { files.count { runCatching { attachmentStorageManager.deleteAttachment(it) }.isSuccess } }
+        Single.fromCallable { files.count { runCatching { attachmentStorageManager.deleteAttachment(it) }.getOrDefault(false) } }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ deleted ->

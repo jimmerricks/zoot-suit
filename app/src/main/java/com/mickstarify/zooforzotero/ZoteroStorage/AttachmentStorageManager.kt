@@ -397,22 +397,26 @@ class AttachmentStorageManager @Inject constructor(
         return getAttachmentUri(attachment)
     }
 
-    fun deleteAttachment(attachment: Item) {
-        when (storageMode) {
+    /**
+     * Deletes [attachment]'s file from the device; true if there was one and it's gone. In
+     * the app's cache its folder goes too once empty: an empty folder still counted as
+     * downloaded (listDownloadedItemKeys).
+     */
+    fun deleteAttachment(attachment: Item): Boolean {
+        return when (storageMode) {
             StorageMode.EXTERNAL_CACHE -> {
-                try {
-                    getAttachmentFile(attachment).delete()
-                } catch (e: Exception) {
-                    Log.d("zotero", "cannot delete file. Not found.")
-                }
+                val file = getAttachmentFile(attachment)
+                val deleted = file.delete()
+                file.parentFile?.delete() // only if empty
+                deleted
             }
 
             StorageMode.CUSTOM -> {
                 try {
-                    val docFile = DocumentFile.fromSingleUri(context, getAttachmentUri(attachment))
-                    docFile?.delete()
+                    DocumentFile.fromSingleUri(context, getAttachmentUri(attachment))?.delete() == true
                 } catch (e: java.io.FileNotFoundException) {
                     Log.d("zotero", "cannot delete file. Not found.")
+                    false
                 }
             }
 
