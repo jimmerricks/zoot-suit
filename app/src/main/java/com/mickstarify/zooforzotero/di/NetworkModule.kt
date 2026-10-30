@@ -3,12 +3,12 @@ package com.mickstarify.zooforzotero.di
 import com.mickstarify.zooforzotero.BuildConfig
 import com.mickstarify.zooforzotero.ZoteroAPI.BASE_URL
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPIService
+import com.mickstarify.zooforzotero.ZoteroAPI.debugHttpLogging
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Qualifier
@@ -27,9 +27,7 @@ object NetworkModule {
     fun provideUnauthenticatedZoteroApiService(): ZoteroAPIService {
         val httpClient = OkHttpClient.Builder().apply {
             if (BuildConfig.DEBUG) {
-                addInterceptor(HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY
-                })
+                addInterceptor(debugHttpLogging())
             }
             // Add version header but NO API key for validation calls
             addInterceptor { chain ->

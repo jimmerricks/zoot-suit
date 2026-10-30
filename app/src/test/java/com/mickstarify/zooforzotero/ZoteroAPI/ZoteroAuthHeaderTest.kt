@@ -49,3 +49,12 @@ class ZoteroAuthHeaderTest {
         assertNull(toStorage.getHeader("Zotero-API-Key"))
     }
 }
+
+class RedactKeysTest {
+    @Test
+    fun `a key in a keys URL is hidden`() {
+        assertEquals("--> GET https://api.zotero.org/keys/…", redactKeys("--> GET https://api.zotero.org/keys/AbC123xyz"))
+        assertEquals("<-- 200 https://api.zotero.org/keys/… (5ms)", redactKeys("<-- 200 https://api.zotero.org/keys/AbC123xyz (5ms)"))
+        assertEquals("--> GET https://api.zotero.org/users/1/items", redactKeys("--> GET https://api.zotero.org/users/1/items"))
+    }
+}

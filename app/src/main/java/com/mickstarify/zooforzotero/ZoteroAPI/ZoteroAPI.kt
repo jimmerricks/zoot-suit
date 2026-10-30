@@ -33,7 +33,6 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -106,9 +105,7 @@ class ZoteroAPI(
 ) {
     private val baseHttpClient = OkHttpClient().newBuilder().apply {
         if (BuildConfig.DEBUG) {
-            addInterceptor(HttpLoggingInterceptor().apply {
-                this.level = HttpLoggingInterceptor.Level.BASIC
-            })
+            addInterceptor(debugHttpLogging())
         }
     }.build()
 
