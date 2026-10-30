@@ -63,6 +63,9 @@ class ZoteroNotFoundException(message: String) : RuntimeException(message)
 // Pagination advances by the number of items actually returned, so any value works.
 private const val ITEMS_PAGE_SIZE = 100
 
+/** Objects per multi-object write, and keys per itemKey= read: the Zotero Web API's limit for both. */
+const val MAX_ITEMS_PER_WRITE = 50
+
 // Item pages requested at once during a sync: Zotero's documented ceiling of 4 concurrent
 // requests, which ZoteroRateLimitInterceptor enforces (and lowers to 1 after a 429).
 // Measured on an 18,300-item library: 1 → ~2,500 items/min, 4 → ~10,300, no Backoff or 429.
@@ -445,6 +448,44 @@ class ZoteroAPI(
             else -> throw Exception("Zotero server gave back code ${response.code()} creating an item")
         }
         return WriteResponse.firstFailure(response.body()?.string() ?: "")
+    }
+
+    /**
+     * Up to [MAX_ITEMS_PER_WRITE] items of My Library as Zotero has them: by key, each its
+     * version and "data" object. A key Zotero doesn't have (deleted for good) isn't in the
+     * map. Blocking.
+     */
+    fun getItemsData(itemKeys: List<String>): Map<String, Pair<Int, JsonObject>> {
+        require(itemKeys.size <= MAX_ITEMS_PER_WRITE)
+        if (itemKeys.isEmpty()) return emptyMap()
+        val response = service.getItemsByKey(userID, itemKeys.joinToString(",")).blockingFirst()
+        if (response.code() != 200) {
+            throw Exception("Zotero server gave back code ${response.code()} for ${itemKeys.size} items")
+        }
+        val items = Gson().fromJson(response.body()!!.string(), JsonArray::class.java)
+        return items.mapNotNull { it as? JsonObject }.associate { root ->
+            root.get("key").asString to Pair(root.get("version").asInt, root.getAsJsonObject("data"))
+        }
+    }
+
+    /**
+     * Writes up to [MAX_ITEMS_PER_WRITE] changes to items of My Library in one request, each
+     * a partial "data" object with its "key" and the "version" it was read at (Zotero only
+     * applies it to that version). Returns each one's outcome by index (WriteResponse.outcomes).
+     * Blocking.
+     */
+    fun updateItems(changes: List<JsonObject>): List<WriteResponse.Failure?> {
+        require(changes.size <= MAX_ITEMS_PER_WRITE)
+        if (changes.isEmpty()) return emptyList()
+        val body = JsonArray().apply { changes.forEach { add(it) } }
+        val response = service.createItems(userID, body).blockingFirst()
+        when (response.code()) {
+            200 -> {}
+            403 -> throw WriteAccessDeniedException("This app's API key may only read the library.")
+            409 -> throw ItemLockedException("The library is locked.")
+            else -> throw Exception("Zotero server gave back code ${response.code()} updating ${changes.size} items")
+        }
+        return WriteResponse.outcomes(response.body()?.string() ?: "", changes.size)
     }
 
     /**

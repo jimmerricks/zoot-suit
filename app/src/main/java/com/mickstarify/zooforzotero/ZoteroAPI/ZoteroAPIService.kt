@@ -196,6 +196,15 @@ interface ZoteroAPIService {
         @Body json: JsonArray
     ): Observable<Response<ResponseBody>>
 
+    /** Up to 50 items by key ([itemKeys] comma-separated), trashed ones too. */
+    @GET("users/{user}/items")
+    fun getItemsByKey(
+        @Path("user") user: String,
+        @Query("itemKey") itemKeys: String,
+        @Query("includeTrashed") includeTrashed: Int = 1,
+        @Query("limit") limit: Int = 50,
+    ): Observable<Response<ResponseBody>>
+
     @GET("users/{user}/items/{itemKey}")
     fun getItem(
         @Path("user") user: String,

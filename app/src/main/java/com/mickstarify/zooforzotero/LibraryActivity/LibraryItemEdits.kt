@@ -247,6 +247,10 @@ class LibraryItemEdits(
             if (it == 1) "The item of 1 new note was deleted in Zotero; the note was dropped."
             else "The items of $it new notes were deleted in Zotero; the notes were dropped."
         },
+        result.missingCollections.takeIf { it > 0 }?.let {
+            if (it == 1) "1 item was to go in a collection that was deleted in Zotero; that change was dropped."
+            else "$it items were to go in collections that were deleted in Zotero; those changes were dropped."
+        },
         result.conflicts.takeIf { it > 0 }?.let {
             "$it item${if (it == 1) "" else "s"} had a field changed here and in Zotero; " +
                 "that change stays on this device."

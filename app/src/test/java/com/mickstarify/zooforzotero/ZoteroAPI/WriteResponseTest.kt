@@ -38,4 +38,42 @@ class WriteResponseTest {
         assertNull(WriteResponse.firstFailure("<html>oops</html>")?.code)
         assertNotNull(WriteResponse.firstFailure(""))
     }
+
+    // outcomes of a multi-object write
+
+    @Test
+    fun `each object's outcome is read by its index`() {
+        val body = """{"successful":{"0":{"key":"AAAA2222"}},"success":{"0":"AAAA2222"},"unchanged":{"2":"CCCC2222"},""" +
+            """"failed":{"1":{"key":"BBBB2222","code":412,"message":"Item has been modified since specified version"}}}"""
+        val outcomes = WriteResponse.outcomes(body, 3)
+        assertNull(outcomes[0])
+        assertEquals(412, outcomes[1]?.code)
+        assertNull(outcomes[2])
+    }
+
+    @Test
+    fun `an object the answer doesn't mention counts as failed`() {
+        val outcomes = WriteResponse.outcomes("""{"successful":{"0":{}},"failed":{}}""", 2)
+        assertNull(outcomes[0])
+        assertNull(outcomes[1]?.code)
+        assertNotNull(outcomes[1])
+    }
+
+    @Test
+    fun `an unreadable answer fails every object`() {
+        assertEquals(2, WriteResponse.outcomes("<html>", 2).count { it != null })
+    }
+
+    // Zotero's answer, from the scratch account (2026-10-30)
+    @Test
+    fun `a collection Zotero doesn't have is named, from data or from the message`() {
+        val zotero = """{"successful":{},"success":{},"unchanged":{},"failed":{"0":{"code":409,"message":"Collection ZZZZ2222 not found","data":{"collection":"ZZZZ2222"}}}}"""
+        assertEquals("ZZZZ2222", WriteResponse.outcomes(zotero, 1)[0]?.missingCollection)
+        val messageOnly = """{"failed":{"0":{"code":409,"message":"Collection ZZZZ2222 not found"}}}"""
+        assertEquals("ZZZZ2222", WriteResponse.outcomes(messageOnly, 1)[0]?.missingCollection)
+        val fromMessage = """{"failed":{"0":{"code":409,"message":"Collection 123456/QQQQ2222 doesn't exist"}}}"""
+        assertEquals("QQQQ2222", WriteResponse.outcomes(fromMessage, 1)[0]?.missingCollection)
+        val other = """{"failed":{"0":{"code":400,"message":"Invalid property 'foo'"}}}"""
+        assertNull(WriteResponse.outcomes(other, 1)[0]?.missingCollection)
+    }
 }

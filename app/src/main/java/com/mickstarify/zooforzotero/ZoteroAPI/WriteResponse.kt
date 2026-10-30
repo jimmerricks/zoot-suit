@@ -16,7 +16,12 @@ object WriteResponse {
      * at another version, 409: e.g. its parent item doesn't exist), null if the body
      * couldn't be read at all.
      */
-    data class Failure(val code: Int?, val message: String) {
+    data class Failure(
+        val code: Int?,
+        val message: String,
+        /** The key of a collection the object was put in that Zotero doesn't have. */
+        val missingCollection: String? = null,
+    ) {
         override fun toString() = "${code ?: "?"}: $message"
     }
 
@@ -29,9 +34,45 @@ object WriteResponse {
         } ?: return Failure(null, "empty server response")
         val failed = root.getAsJsonObject("failed") ?: return null
         val first = failed.entrySet().firstOrNull() ?: return null
-        val detail = first.value.asJsonObject
+        return failure(first.value.asJsonObject)
+    }
+
+    /**
+     * Each object's outcome in a write of [count] objects, by its index in the request:
+     * null where it was written (successful or unchanged), else why not. An index the body
+     * doesn't mention, or a body that can't be read, counts as failed: unknown is not done.
+     */
+    fun outcomes(body: String, count: Int): List<Failure?> {
+        val root = try {
+            Gson().fromJson(body, JsonObject::class.java)
+        } catch (e: Exception) {
+            null
+        } ?: return List(count) { Failure(null, "unreadable server response") }
+        val done = HashSet<Int>()
+        for (name in listOf("successful", "success", "unchanged")) {
+            root.getAsJsonObject(name)?.keySet()?.mapNotNullTo(done) { it.toIntOrNull() }
+        }
+        val failed = root.getAsJsonObject("failed")
+        return List(count) { index ->
+            val detail = failed?.get(index.toString())?.takeIf { it.isJsonObject }?.asJsonObject
+            when {
+                detail != null -> failure(detail)
+                index in done -> null
+                else -> Failure(null, "not in the server's answer")
+            }
+        }
+    }
+
+    private fun failure(detail: JsonObject): Failure {
         val code = detail.get("code")?.takeUnless { it.isJsonNull }?.asInt
         val message = detail.get("message")?.takeUnless { it.isJsonNull }?.asString ?: "no message"
-        return Failure(code, message)
+        val data = detail.get("data")?.takeIf { it.isJsonObject }?.asJsonObject
+        val collection = data?.get("collection")?.takeUnless { it.isJsonNull }?.asString
+            ?: MISSING_COLLECTION.find(message)?.groupValues?.get(1)
+        return Failure(code, message, missingCollection = collection)
     }
+
+    // Zotero's message for an unknown collection, if "data" lacks it: "Collection <key> not
+    // found" (the API, 2026-10-30), or "Collection <libraryID>/<key> doesn't exist" (dataserver)
+    private val MISSING_COLLECTION = Regex("""Collection (?:\d+/)?([23456789A-Z]{8}) (?:not found|doesn't exist)""")
 }
