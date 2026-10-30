@@ -121,6 +121,7 @@ class SyncManager (
 
         Log.d("zotero", "initializing sync for ${zoteroDB.groupID}")
         begin(initialStatus(zoteroDB))
+        if (status?.firstSync == true) countFirstSync(zoteroDB)
         loadItems(zoteroDB)
         loadCollections(zoteroDB)
         loadTrashedItems(zoteroDB)
@@ -150,6 +151,24 @@ class SyncManager (
      * it instead: a second item download alongside the running one wrote the same progress
      * and ended the sync twice.
      */
+    /**
+     * Asks Zotero how many items each pass of a first sync of [db] will fetch, so the
+     * toolbar's percentage weighs them by size from the start (SyncStatus.percent). A
+     * count a pass has reported itself is kept; without an answer, the passes go by halves.
+     */
+    private fun countFirstSync(db: ZoteroDB) {
+        zoteroAPI.countItems(db.groupID, ItemScope.TOP)
+            .zipWith(zoteroAPI.countItems(db.groupID, ItemScope.CHILDREN)) { top, children -> top to children }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ (top, children) ->
+                if (status?.running != true || status?.groupID != db.groupID) return@subscribe
+                status = status?.copy(counted = true)
+                report(SyncStage.ITEMS) { if (it.total == 0) it.copy(total = top) else it }
+                report(SyncStage.CHILDREN) { if (it.total == 0) it.copy(total = children) else it }
+            }, { Log.d("zotero", "counting the first sync's items failed: $it") })
+    }
+
     fun startItemsSync(db: ZoteroDB){
         if (isSyncing()) {
             startCompleteSync(db)
@@ -328,7 +347,8 @@ class SyncManager (
                         // stored before the library opens, so a sync cut off now resumes here
                         db.setDownloadProgress(ItemsDownloadProgress(libraryVersion, 0, 0, ItemScope.CHILDREN))
                         report(SyncStage.ITEMS) { it.copy(phase = StageState.Phase.DONE) }
-                        report(SyncStage.CHILDREN) { StageState(StageState.Phase.RUNNING) }
+                        // keeps the count asked for at the start (countFirstSync)
+                        report(SyncStage.CHILDREN) { it.copy(phase = StageState.Phase.RUNNING) }
                         syncChangeListener.makeToastAlert("Library ready. Attachment details and notes are still downloading.")
                         downloadItems(db, ItemScope.CHILDREN, null, libraryVersion)
                         return

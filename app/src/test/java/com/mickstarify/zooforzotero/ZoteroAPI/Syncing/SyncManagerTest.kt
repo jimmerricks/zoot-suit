@@ -12,6 +12,7 @@ import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ZoteroDB
 import io.reactivex.rxjava3.android.plugins.RxAndroidPlugins
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.plugins.RxJavaPlugins
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.junit.After
@@ -53,6 +54,8 @@ class SyncManagerTest {
         // finishing at once, each would end it again
         on { getCollections(any(), any()) } doReturn Observable.never()
         on { getTrashedItems(any(), any()) } doReturn Observable.never()
+        // a first sync's counts (countFirstSync); tests that want them answer it
+        on { countItems(any(), any()) } doReturn Single.never()
     }
     private val listener = mock<OnSyncChangeListener> {
         on { finishLibrarySync(any(), any()) } doAnswer {
@@ -241,5 +244,20 @@ class SyncManagerTest {
 
         assertEquals(listOf("fetch ALL"), events) // not a second download alongside
         assertEquals(GroupInfo.NO_GROUP_ID, statuses.last().queued)
+    }
+
+    @Test
+    fun aFirstSyncCountsBothPassesAtTheStart() {
+        whenever(api.countItems(any(), eq(ItemScope.TOP))) doReturn Single.just(10_306)
+        whenever(api.countItems(any(), eq(ItemScope.CHILDREN))) doReturn Single.just(8_007)
+        whenever(api.getItems(any(), any(), anyOrNull(), eq(ItemScope.TOP))) doReturn Observable.never()
+
+        sync.startCompleteSync(db)
+
+        val now = statuses.last()
+        assertTrue(now.counted)
+        assertEquals(10_306, now.stages[SyncStage.ITEMS]?.total)
+        assertEquals(8_007, now.stages[SyncStage.CHILDREN]?.total)
+        assertEquals(0, now.percent())
     }
 }

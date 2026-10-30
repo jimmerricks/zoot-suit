@@ -21,6 +21,9 @@ data class StageState(
     val error: String? = null,
 ) {
     enum class Phase { WAITING, RUNNING, DONE, UP_TO_DATE, FAILED }
+
+    /** Items received, as far as [total] goes: all of them once done (a resumed pass received fewer now). */
+    fun received(): Int = if (phase == Phase.DONE) total else minOf(done, total)
 }
 
 /**
@@ -29,6 +32,7 @@ data class StageState(
  * the sync ends ([running] false) so its details can still be read.
  *
  * @param queued the library a sync waits behind this one for, if any
+ * @param counted a first sync's item totals were counted at its start (SyncManager)
  */
 data class SyncStatus(
     val groupID: Int,
@@ -36,6 +40,7 @@ data class SyncStatus(
     val stages: Map<SyncStage, StageState>,
     val running: Boolean = true,
     val queued: Int? = null,
+    val counted: Boolean = false,
 ) {
     fun with(stage: SyncStage, change: (StageState) -> StageState): SyncStatus =
         copy(stages = stages + (stage to change(stages[stage] ?: StageState())))
@@ -48,16 +53,23 @@ data class SyncStatus(
 
     /**
      * How far the item download is, in percent: the toolbar's label, the counts being in
-     * the details. A first sync's two passes share the scale, top-level items 0-49 and
-     * attachments and notes 50-99, so it never runs backwards: the second pass's total
-     * isn't known before it starts, and it was shown from 0 again. Rounded down, so 100
+     * the details. A first sync's two passes count together, each by its share of the
+     * items: SyncManager asks Zotero for both totals as the sync starts ([counted]), so
+     * the scale is known before the second pass begins and the percentage never runs
+     * backwards. Until those counts are in (or if they can't be had) the passes take half
+     * each, all the way: switching scales midway could move it back. Rounded down, so 100
      * only once the download is complete.
      */
     fun percent(): Int? {
         val (done, total) = itemProgress() ?: return null
+        val children = stages[SyncStage.CHILDREN] ?: return (done.toLong() * 100 / total).toInt()
+        val top = stages[SyncStage.ITEMS] ?: StageState()
+        if (counted && top.total > 0 && children.total > 0) {
+            val received = top.received() + children.received()
+            return (received.toLong() * 100 / (top.total + children.total)).toInt()
+        }
         val pass = (done.toLong() * 100 / total).toInt()
-        if (SyncStage.CHILDREN !in stages) return pass
-        return if (stages[SyncStage.CHILDREN]?.phase == StageState.Phase.RUNNING) 50 + pass / 2 else pass / 2
+        return if (children.phase == StageState.Phase.RUNNING) 50 + pass / 2 else pass / 2
     }
 
     /** Stages in the order they're listed. */

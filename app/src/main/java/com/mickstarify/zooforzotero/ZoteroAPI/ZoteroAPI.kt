@@ -530,6 +530,26 @@ class ZoteroAPI(
         }
     }
 
+    /**
+     * How many items [scope] holds in library [groupID] now, from the Total-Results of a
+     * one-item page: what a first sync's pass of that scope will fetch.
+     */
+    fun countItems(groupID: Int, scope: ItemScope): Single<Int> {
+        val group = groupID != GroupInfo.NO_GROUP_ID
+        val itemType = scope.itemType
+        val request = when {
+            itemType == null && group -> shortTimeoutService.getTopItemsForGroup(0, groupID, 0, 0, 1)
+            itemType == null -> shortTimeoutService.getTopItems(0, userID, 0, 0, 1)
+            group -> shortTimeoutService.getItemsForGroup(0, groupID, 0, 1, itemType)
+            else -> shortTimeoutService.getItems(0, userID, 0, 1, itemType)
+        }
+        return Single.fromObservable(request.map { response ->
+            response.body()?.close()
+            if (response.code() != 200) throw Exception("Server gave back ${response.code()} counting $scope items")
+            response.headers()["Total-Results"]?.toIntOrNull() ?: throw Exception("no Total-Results counting $scope items")
+        })
+    }
+
     /** [itemKey]'s attachments and notes (the first [ITEMS_PAGE_SIZE]), in one request. */
     fun getChildItems(itemKey: String, groupID: Int): Single<List<ItemPOJO>> {
         val request = if (groupID != GroupInfo.NO_GROUP_ID) {
