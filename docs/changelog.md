@@ -2,7 +2,19 @@
 
 ## Unreleased
 
+New:
+- Settings → Attachments → Remove all files from this device, with how many files
+  there are and the space they take. Asks first, like removing a selection's files,
+  and names edited files not uploaded yet, which can be kept. Stops a bulk download
+  that is running.
+
 Changed:
+- Settings in a new order: Library, Attachments, WebDAV, Syncing, Appearance, and
+  Account (Sign out) last. "Sync method", a list with one choice, is gone; the upload
+  timeout moved from Advanced to Syncing.
+- The WebDAV server screen looks like Settings: no card, a Server header, switches
+  instead of checkboxes, and Advanced as a row that opens below it. The keyboard no
+  longer opens with the screen; the password can be shown; shorter help texts.
 - Select items, in the toolbar's menu, starts selecting without a long press; Stop
   selecting, in the menu while selecting, ends it like ✕ and Back.
 - Removing attachments from the device says "Remove" throughout, as its menu entry

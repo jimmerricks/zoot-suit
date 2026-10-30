@@ -1,219 +1,208 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Laid out like the Settings list that opens it: headers, rows and insets as there
+     (SettingsForm styles), no card. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".LibraryActivity.WebDAV.WebDAVSetup"
     tools:showIn="@layout/activity_web_dav_setup">
 
-    <ScrollView
+    <!-- focusable itself: the address field doesn't take the focus, and the keyboard
+         doesn't cover the screen, until it's tapped -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="82dp">
+        android:layout_height="wrap_content"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:orientation="vertical"
+        android:paddingBottom="16dp">
 
+        <TextView
+            style="@style/SettingsForm.Header"
+            android:text="Server" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textInputLayout_webdav_host"
+            style="@style/SettingsForm.Field"
+            android:hint="@string/host_url"
+            app:helperText="https:// and /zotero are added if missing (see Advanced).">
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/materialCardView"
+            <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginTop="12dp"
-                android:layout_marginEnd="12dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp"
-                app:layout_constraintEnd_toEndOf="parent"
+                android:inputType="textUri" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textInputLayout_webdav_user"
+            style="@style/SettingsForm.Field"
+            android:hint="@string/username"
+            app:helperText="Optional.">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
+            <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textWebEditText" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textInputLayout_webdav_password"
+            style="@style/SettingsForm.Field"
+            android:hint="@string/password"
+            app:endIconMode="password_toggle"
+            app:helperText="Optional.">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- opens and closes the section below -->
+        <LinearLayout
+            android:id="@+id/button_webdav_advanced_config"
+            style="@style/SettingsForm.Row"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/SettingsForm.Title"
+                    android:text="@string/advanced_configuration" />
+
+                <TextView
+                    style="@style/SettingsForm.Summary"
+                    android:text="Address format, certificate check, authentication, timeouts" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/imageView_webdav_advanced_chevron"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="16dp"
+                android:importantForAccessibility="no"
+                android:rotation="90"
+                android:src="@drawable/baseline_chevron_right_24" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/linearLayout_advanced_config"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:id="@+id/row_add_zotero_host"
+                style="@style/SettingsForm.Row">
+
+                <TextView
+                    style="@style/SettingsForm.Title"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:text="Add https:// and /zotero to the address" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/checkBox_add_zotero_host"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:checked="true"
+                    android:clickable="false"
+                    android:focusable="false" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/row_verify_ssl"
+                style="@style/SettingsForm.Row">
+
+                <TextView
+                    style="@style/SettingsForm.Title"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:text="Verify the server's certificate" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/checkBox_Verify_ssl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:checked="true"
+                    android:clickable="false"
+                    android:focusable="false" />
+            </LinearLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/TextInputLayout_webdav_auth_mode"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="?android:attr/listPreferredItemPaddingStart"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="?android:attr/listPreferredItemPaddingEnd"
+                android:layout_marginBottom="8dp"
+                android:hint="Authentication"
+                app:helperText="Change this only if signing in fails.">
+
+                <AutoCompleteTextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_margin="12dp">
+                    android:inputType="none"
+                    android:text="AUTOMATIC" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                    <Button
-                        android:id="@+id/button_webdav_advanced_config"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/advanced_configuration"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/textInputLayout_webdav_password" />
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/textInputLayout_webdav_connect_timeout"
+                style="@style/SettingsForm.Field"
+                android:hint="Connect timeout (ms)"
+                app:helperText="How long connecting may take. 0 waits forever. Default 10000.">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/textInputLayout_webdav_host"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="0dp"
-                        app:helperText="'/zotero' will automatically be appended. Go to advanced to disable this."
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/host_url"
-                            android:inputType="text" />
-                    </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/textInputLayout_webdav_read_timeout"
+                style="@style/SettingsForm.Field"
+                android:hint="Read timeout (ms)"
+                app:helperText="How long the server may take to answer. 0 waits forever. Default 30000.">
 
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/textInputLayout_webdav_user"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="24dp"
-                        app:helperText="You may leave this blank."
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/textInputLayout_webdav_host">
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/textInputLayout_webdav_write_timeout"
+                style="@style/SettingsForm.Field"
+                android:hint="Write timeout (ms)"
+                app:helperText="How long sending a file may stall. 0 waits forever. Default 30000.">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/username"
-                            android:inputType="textWebEditText" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/textInputLayout_webdav_password"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        app:helperText="You may leave this blank."
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/textInputLayout_webdav_user">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/password"
-                            android:inputType="textPassword" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <LinearLayout
-                        android:id="@+id/linearLayout_advanced_config"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:visibility="gone"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/button_webdav_advanced_config"
-                        tools:visibility="visible">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/textInputLayout_webdav_connect_timeout"
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_marginTop="12dp"
-                            app:helperText="Timeout for establishing TCP connection in milliseconds. Use 0 for no timeout. Default is 10000 (10 seconds).">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="Connect timeout (ms)" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/textInputLayout_webdav_read_timeout"
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_marginTop="12dp"
-                            app:helperText="Timeout for read requests in milliseconds. Use 0 for no timeout. Default is 30000 (30 seconds).">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="Read timeout (ms)" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/textInputLayout_webdav_write_timeout"
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-
-                            android:layout_marginTop="12dp"
-                            app:helperText="Timeout for write requests in milliseconds. Use 0 for no timeout. Default is 30000 (30 seconds).">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="Write timeout (ms)" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <CheckBox
-                            android:id="@+id/checkBox_Verify_ssl"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:checked="true"
-                            android:text="Verify the server's certificate" />
-
-                        <CheckBox
-                            android:id="@+id/checkBox_add_zotero_host"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:checked="true"
-                            android:clickable="true"
-                            android:text="Add https:// and /zotero to the address" />
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/TextInputLayout_webdav_auth_mode"
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="Authentication">
-
-                            <AutoCompleteTextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:text="AUTOMATIC" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <TextView
-                            android:id="@+id/textView_authmethod_helper"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Change this only if signing in fails." />
-                    </LinearLayout>
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <Button
-                android:id="@+id/button_webdav_connect"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="12dp"
-                android:gravity="center_horizontal|center_vertical"
-                android:text="@string/save_connect"
-                app:layout_constraintEnd_toEndOf="@+id/materialCardView"
-                app:layout_constraintStart_toStartOf="@+id/materialCardView"
-                app:layout_constraintTop_toBottomOf="@+id/materialCardView" />
-
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
-    </ScrollView>
 
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <Button
+            android:id="@+id/button_webdav_connect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginStart="?android:attr/listPreferredItemPaddingStart"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="?android:attr/listPreferredItemPaddingEnd"
+            android:text="@string/save_connect" />
+    </LinearLayout>
+</ScrollView>

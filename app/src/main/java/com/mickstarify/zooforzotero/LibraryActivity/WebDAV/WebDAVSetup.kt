@@ -8,7 +8,8 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
-import android.widget.CheckBox
+import android.widget.CompoundButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.SystemBarStyle
@@ -45,8 +46,8 @@ class WebDAVSetup : AppCompatActivity() {
 
     lateinit var textInputLayout_auth_mode: TextInputLayout
 
-    lateinit var checkBox_verifySSL: CheckBox
-    lateinit var checkBox_formatAddress: CheckBox
+    lateinit var checkBox_verifySSL: CompoundButton
+    lateinit var checkBox_formatAddress: CompoundButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // as Settings, which opens it: white status bar icons over the toolbar's colour
@@ -74,6 +75,9 @@ class WebDAVSetup : AppCompatActivity() {
 
         checkBox_verifySSL = findViewById(R.id.checkBox_Verify_ssl)
         checkBox_formatAddress = findViewById(R.id.checkBox_add_zotero_host)
+        // the whole row toggles its switch, as in Settings
+        findViewById<View>(R.id.row_verify_ssl).setOnClickListener { checkBox_verifySSL.toggle() }
+        findViewById<View>(R.id.row_add_zotero_host).setOnClickListener { checkBox_formatAddress.toggle() }
 
         textInputLayout_auth_mode = findViewById(R.id.TextInputLayout_webdav_auth_mode)
 
@@ -112,7 +116,7 @@ class WebDAVSetup : AppCompatActivity() {
             }
         }
 
-        val advancedConfigButton: Button = findViewById(R.id.button_webdav_advanced_config)
+        val advancedConfigButton: View = findViewById(R.id.button_webdav_advanced_config)
         linearLayourAdvancedConfig = findViewById(R.id.linearLayout_advanced_config)
         advancedConfigButton.setOnClickListener {
             toggleAdvancedConfig()
@@ -236,15 +240,14 @@ class WebDAVSetup : AppCompatActivity() {
         val showing = linearLayourAdvancedConfig.visibility == View.VISIBLE
 
         val transition = AutoTransition()
-        transition.setDuration(500)
+        transition.setDuration(200)
         transition.addTarget(R.id.linearLayout_advanced_config)
 
         TransitionManager.beginDelayedTransition(linearLayourAdvancedConfig, transition)
-        if (showing) {
-            linearLayourAdvancedConfig.visibility = View.GONE
-        } else {
-            linearLayourAdvancedConfig.visibility = View.VISIBLE
-        }
+        linearLayourAdvancedConfig.visibility = if (showing) View.GONE else View.VISIBLE
+        // the chevron points down while closed, up while open
+        findViewById<ImageView>(R.id.imageView_webdav_advanced_chevron).animate()
+            .rotation(if (showing) 90f else -90f).setDuration(200).start()
     }
 
     fun formatAddress(address: String): String {
