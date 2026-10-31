@@ -9,6 +9,10 @@ Changed:
 - The filter lists your coloured tags first, with their dots, in their Zotero order
   (as at the top of Zotero's tag selector), then the ticked tags, then the rest.
 
+Fixed:
+- Removing or adding a tag in an item's dialog keeps the dialog where it was scrolled
+  to (at the bottom, by the tags), rather than jumping.
+
 ## 0.4.0
 
 Updates 0.3.1 in place (same app id and signing key).

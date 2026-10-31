@@ -14,6 +14,8 @@ import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.doOnNextLayout
+import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.ViewModelProvider
 import android.app.AlertDialog
 import androidx.fragment.app.DialogFragment
@@ -114,8 +116,31 @@ class ItemViewFragment : DialogFragment(),
         }
     }
 
-    /** Draws [item]; again whenever it changes, so everything below the headers is redone. */
+    // the item last drawn: drawn again (a tag removed, say), it keeps its place in the scroll
+    private var renderedKey: String? = null
+
+    /**
+     * Draws [item]; again whenever it changes, so everything below the headers is redone.
+     * Drawn again, it stays where it was scrolled to, or at the bottom if it was there
+     * (the tags are last: removing one there kept the dialog at the top).
+     */
     private fun render(item: Item) {
+        val scroll = requireView().findViewById<NestedScrollView>(R.id.item_fragment_scrollview)
+        if (item.itemKey == renderedKey) {
+            val atBottom = !scroll.canScrollVertically(1)
+            val y = scroll.scrollY
+            scroll.doOnNextLayout {
+                val bottom = scroll.getChildAt(0).height - scroll.height
+                scroll.scrollTo(0, if (atBottom) bottom else minOf(y, bottom))
+            }
+        }
+        renderedKey = item.itemKey
+        drawItem(item)
+        // the rows are fragments: in place before the layout that restores the scroll
+        childFragmentManager.executePendingTransactions()
+    }
+
+    private fun drawItem(item: Item) {
         attachments = item.attachments
         notes = item.notes
         clearEntries()
