@@ -1,11 +1,26 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
+
+Updates 0.3.1 in place (same app id and signing key).
 
 New:
+- Settings → Appearance sets up the library list:
+  - List rows: Comfortable (as before) or Compact, with one-line titles and smaller
+    rows, which fits about a fifth more items on a screen.
+  - Second line: Creator (as before), Creator · year, or Creator · year · publication
+    or publisher. The publication is the journal, book, proceedings, website and so on;
+    a book or thesis shows its publisher or university.
+  - Item type icons: on (as before) or off, which starts the text at the edge. While
+    selecting, the icons' place shows a tick or an empty circle on every row.
+  - Coloured and emoji tags: the tags you coloured in Zotero show as dots in their
+    colours before an item's title, and tags with an emoji as that emoji, in Zotero's
+    order. On by default. The colours come from Zotero with every sync, for My Library
+    and each group.
 - Clear search and filters in the library's menu, shown while a search or filter is set.
 
 Changed:
+- Appearance is first in Settings, above Library.
 - On a phone held upright, the toolbar shows a sync icon while syncing and an upload
   icon for edits waiting to sync, instead of "45%" and "N edits to sync". A long press
   shows the words; a tap opens the same details as before. Wider screens keep the words.
