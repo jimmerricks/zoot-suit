@@ -1,11 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.4.2
+
+Updates 0.4.1 in place (same app id and signing key).
 
 Changed:
 - Sync now in the "N edits to sync" dialog keeps the dialog open: it becomes the
   sync's details (your edits, then the download), updated as the sync goes on, and
   stays until you close it.
+- Less space beside the item type icons in the library list, scaled to the row
+  density: the compact list is tighter than the comfortable one. The list now runs to
+  the screen's edges, as does the highlight when you tap or select an item.
 
 ## 0.4.1
 
