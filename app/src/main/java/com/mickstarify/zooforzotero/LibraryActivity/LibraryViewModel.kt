@@ -179,6 +179,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     /** The open library: GroupInfo.NO_GROUP_ID for My Library, else the group's id. */
     fun currentLibraryId(): Int = library.state.currentGroup.id
 
+    /** The open library's coloured tags, as the last sync stored them. */
+    fun currentTagColors(): TagColors = TagColors.parse(parts.preferences.getTagColors(currentLibraryId()))
+
     fun getLibraryFilter(): LibraryFilter = parts.lists.libraryFilter
 
     /** Ends the search and the filter, and redraws the list. */

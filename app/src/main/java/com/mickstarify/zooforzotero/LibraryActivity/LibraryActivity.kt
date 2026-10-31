@@ -393,7 +393,7 @@ class LibraryActivity : AppCompatActivity(),
             R.id.library_filter -> {
                 viewModel.loadTags { tags ->
                     if (isFinishing || isDestroyed) return@loadTags
-                    LibraryFilterDialog(this, viewModel.getLibraryFilter(), tags) {
+                    LibraryFilterDialog(this, viewModel.getLibraryFilter(), tags, viewModel.currentTagColors()) {
                         viewModel.setLibraryFilter(it)
                     }.show()
                 }

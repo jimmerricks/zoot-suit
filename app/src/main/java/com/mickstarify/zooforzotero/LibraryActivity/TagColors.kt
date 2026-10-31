@@ -8,8 +8,14 @@ import com.google.gson.JsonParser
  * The items list shows these, and any tag containing an emoji, beside an item's title.
  */
 class TagColors(val colors: List<Pair<String, String>>) {
-    private val position = colors.withIndex().associate { (i, c) -> c.first to i }
-    private val colorOf = colors.toMap()
+    private val positions = colors.withIndex().associate { (i, c) -> c.first to i }
+    private val colorByTag = colors.toMap()
+
+    /** [tag]'s number less one, if it is coloured. */
+    fun position(tag: String): Int? = positions[tag]
+
+    /** [tag]'s colour ("#RRGGBB"), if it is coloured. */
+    fun colorOf(tag: String): String? = colorByTag[tag]
 
     /** A coloured dot ([color], "#RRGGBB") or an emoji ([emoji]) shown for a tag. */
     data class Swatch(val tag: String, val color: String?, val emoji: String?)
@@ -20,14 +26,14 @@ class TagColors(val colors: List<Pair<String, String>>) {
      * emoji, as on desktop.
      */
     fun swatches(tags: Collection<String>): List<Swatch> {
-        val shown = tags.distinct().filter { it in colorOf || containsEmoji(it) }
+        val shown = tags.distinct().filter { it in colorByTag || containsEmoji(it) }
         if (shown.isEmpty()) return emptyList()
         val ordered = shown.sortedWith(
-            compareBy<String> { position[it] ?: Int.MAX_VALUE }.thenBy { it.lowercase() }
+            compareBy<String> { positions[it] ?: Int.MAX_VALUE }.thenBy { it.lowercase() }
         )
         return ordered.map { tag ->
             val emoji = if (containsEmoji(tag)) extractEmoji(tag) else null
-            Swatch(tag, if (emoji == null) colorOf[tag] else null, emoji)
+            Swatch(tag, if (emoji == null) colorByTag[tag] else null, emoji)
         }
     }
 

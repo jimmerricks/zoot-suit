@@ -2,8 +2,12 @@ package com.mickstarify.zooforzotero.LibraryActivity
 
 import android.app.AlertDialog
 import android.content.Context
+import android.graphics.Color
 import android.text.Editable
+import android.text.SpannableStringBuilder
+import android.text.Spanned
 import android.text.TextWatcher
+import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
@@ -21,12 +25,14 @@ import com.mickstarify.zooforzotero.R
  * Cancel (or Back) leaves the list as it was.
  *
  * @param tagCounts the open library's tags with how many items carry each
+ * @param tagColors the library's coloured tags: listed first, as in Zotero's tag selector
  * @param onApply sets the filter on the list
  */
 class LibraryFilterDialog(
     private val context: Context,
     private val initial: LibraryFilter,
     private val tagCounts: List<Pair<String, Int>>,
+    private val tagColors: TagColors,
     private val onApply: (LibraryFilter) -> Unit,
 ) {
     private var filter = initial
@@ -45,7 +51,7 @@ class LibraryFilterDialog(
         val search = view.findViewById<EditText>(R.id.editText_tag_search)
         val list = view.findViewById<ListView>(R.id.listView_tags)
         val noTags = view.findViewById<TextView>(R.id.textView_no_tags)
-        val adapter = ArrayAdapter<String>(context, R.layout.dialog_filter_tag_item)
+        val adapter = ArrayAdapter<CharSequence>(context, R.layout.dialog_filter_tag_item)
         list.adapter = adapter
         val counts = tagCounts.toMap()
 
@@ -57,13 +63,10 @@ class LibraryFilterDialog(
             onDevice.isChecked = filter.pdfOnDevice
             htmlOnDevice.isChecked = filter.htmlOnDevice
             edited.isChecked = filter.editedHere
-            // the library's tags plus the selected ones; selected first
             val all = (counts.keys + filter.tags).filter { it.contains(query.trim(), ignoreCase = true) }
-            shownTags = all.sortedWith(
-                compareBy<String> { it !in filter.tags }.thenBy(String.CASE_INSENSITIVE_ORDER) { it }
-            )
+            shownTags = order(all, filter.tags, tagColors)
             adapter.clear()
-            adapter.addAll(shownTags.map { "$it (${counts[it] ?: 0})" })
+            adapter.addAll(shownTags.map { row(it, counts[it] ?: 0) })
             shownTags.forEachIndexed { i, tag -> list.setItemChecked(i, tag in filter.tags) }
             noTags.visibility = if (shownTags.isEmpty()) View.VISIBLE else View.GONE
             // as tall as its rows (36dp each, dialog_filter_tag_item), up to 300dp, then it scrolls
@@ -108,5 +111,31 @@ class LibraryFilterDialog(
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
         render()
         dialog.show()
+    }
+
+    /** "tag (count)", a coloured tag after its dot; one with an emoji in its name has no dot, as in the list. */
+    private fun row(tag: String, count: Int): CharSequence {
+        val text = SpannableStringBuilder()
+        val color = tagColors.colorOf(tag)?.takeUnless { TagColors.containsEmoji(tag) }
+            ?.let { runCatching { Color.parseColor(it) }.getOrNull() }
+        if (color != null) {
+            text.append("●")
+            text.setSpan(ForegroundColorSpan(color), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            text.append(' ')
+        }
+        return text.append("$tag ($count)")
+    }
+
+    companion object {
+        /**
+         * The order of [tags] in the dialog: the coloured ones by their number, as at the top
+         * of Zotero's tag selector, then the [selected] ones, then the rest, each by name.
+         */
+        fun order(tags: Collection<String>, selected: Set<String>, colors: TagColors): List<String> =
+            tags.distinct().sortedWith(
+                compareBy<String> { colors.position(it) ?: Int.MAX_VALUE }
+                    .thenBy { it !in selected }
+                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it }
+            )
     }
 }

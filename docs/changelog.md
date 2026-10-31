@@ -6,6 +6,8 @@ Changed:
 - On a narrow screen (a phone upright) Filter and Sort are always in the library's
   menu, rather than moving between the toolbar and the menu; from 600dp wide (a phone
   on its side, a tablet) they are toolbar buttons beside Search.
+- The filter lists your coloured tags first, with their dots, in their Zotero order
+  (as at the top of Zotero's tag selector), then the ticked tags, then the rest.
 
 ## 0.4.0
 
