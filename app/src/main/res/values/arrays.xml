@@ -22,4 +22,14 @@
         <item>light</item>
         <item>dark</item>
     </string-array>
+
+    <string-array name="list_density_entries">
+        <item>Comfortable: titles on up to two lines</item>
+        <item>Compact: one-line titles, smaller rows</item>
+    </string-array>
+
+    <string-array name="list_density_values">
+        <item>comfortable</item>
+        <item>compact</item>
+    </string-array>
 </resources>

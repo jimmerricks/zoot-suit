@@ -1,5 +1,6 @@
 package com.mickstarify.zooforzotero.LibraryActivity.Fragments
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,6 +13,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -19,6 +21,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.mickstarify.zooforzotero.LibraryActivity.LibraryActivity
+import com.mickstarify.zooforzotero.LibraryActivity.ListAppearance
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -35,6 +38,9 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
     }
 
     private lateinit var viewModel: LibraryListViewModel
+
+    // SharedPreferences holds its listeners weakly: kept here for the view's lifetime
+    private var appearanceListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -57,6 +63,14 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         viewModel = ViewModelProvider(requireActivity()).get(LibraryListViewModel::class.java)
         val recyclerView = requireView().findViewById<RecyclerView>(R.id.recyclerView)
         val adapter = LibraryListRecyclerViewAdapter(null, this)
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        adapter.appearance = ListAppearance.from(prefs)
+        // changed in Settings while this screen is stopped: shows on coming back
+        appearanceListener = SharedPreferences.OnSharedPreferenceChangeListener { changed, key ->
+            if (key !in ListAppearance.KEYS) return@OnSharedPreferenceChangeListener
+            adapter.appearance = ListAppearance.from(changed)
+            adapter.notifyDataSetChanged()
+        }.also { prefs.registerOnSharedPreferenceChangeListener(it) }
 
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -106,6 +120,15 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
 
         // keep the list above the navigation bar
         setupWindowInsets()
+    }
+
+    override fun onDestroyView() {
+        appearanceListener?.let {
+            PreferenceManager.getDefaultSharedPreferences(requireContext())
+                .unregisterOnSharedPreferenceChangeListener(it)
+        }
+        appearanceListener = null
+        super.onDestroyView()
     }
 
     override fun onItemOpen(item: Item) {
