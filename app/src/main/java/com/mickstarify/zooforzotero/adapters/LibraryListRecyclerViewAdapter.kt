@@ -283,16 +283,22 @@ class LibraryListRecyclerViewAdapter(
         fun dp(value: Int) = (value * density).roundToInt()
         val compact = appearance.compact
         val gap = dp(if (compact) 2 else 6)
+        val edge = dp(if (compact) 12 else 16)
+        val beside = dp(if (compact) 8 else 12)
 
         holder.layout.minHeight = dp(if (compact) 40 else 52)
         holder.textView_title.maxLines = if (compact) 1 else 2
         holder.textView_title.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (compact) 15f else 16f)
         holder.textView_author.setTextSize(TypedValue.COMPLEX_UNIT_SP, if (compact) 13f else 14f)
-        (holder.textView_title.layoutParams as MarginLayoutParams).topMargin = gap
+        (holder.textView_title.layoutParams as MarginLayoutParams).apply {
+            topMargin = gap
+            marginStart = beside
+        }
         (holder.textView_author.layoutParams as MarginLayoutParams).bottomMargin = gap
         (holder.imageView.layoutParams as MarginLayoutParams).apply {
             width = dp(if (compact) 24 else 32)
             height = width
+            marginStart = edge
             topMargin = gap
             bottomMargin = gap
         }
