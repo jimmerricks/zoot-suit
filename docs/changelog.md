@@ -10,6 +10,9 @@ Changed:
   (as at the top of Zotero's tag selector), then the ticked tags, then the rest.
 
 Fixed:
+- The filter's tag search is no longer hidden by the keyboard: the whole dialog
+  scrolls as one list, and tapping the search moves it to the top with the matching
+  tags below it, above the keyboard. Done on the keyboard brings the rest back.
 - Removing or adding a tag in an item's dialog keeps the dialog where it was scrolled
   to (at the bottom, by the tags), rather than jumping.
 

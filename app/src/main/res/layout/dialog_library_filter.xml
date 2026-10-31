@@ -1,97 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- The filter (LibraryFilterDialog): one list, its first row the conditions and the tag
+     search (dialog_library_filter_header), then a row per tag, then a blank that lets the
+     search scroll to the top when few tags match. -->
+<androidx.recyclerview.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/recyclerView_filter"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
     android:paddingStart="20dp"
-    android:paddingTop="4dp"
-    android:paddingEnd="20dp">
-
-    <TextView
-        style="@style/DialogSectionHeader"
-        android:paddingTop="4dp"
-        android:text="Item has" />
-
-    <CheckBox
-        style="@style/DialogChoice"
-        android:id="@+id/checkBox_filter_has_pdf"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="PDF attachment" />
-
-    <CheckBox
-        style="@style/DialogChoice"
-        android:id="@+id/checkBox_filter_has_html"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="HTML snapshot" />
-
-    <!-- EPUB, images, Word files...: not a PDF, an HTML snapshot or a web link -->
-    <CheckBox
-        style="@style/DialogChoice"
-        android:id="@+id/checkBox_filter_has_other"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Other attachment" />
-
-    <CheckBox
-        style="@style/DialogChoice"
-        android:id="@+id/checkBox_filter_has_notes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Notes" />
-
-    <TextView
-        style="@style/DialogSectionHeader"
-        android:text="On this device" />
-
-    <CheckBox
-        style="@style/DialogChoice"
-        android:id="@+id/checkBox_filter_on_device"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="PDF downloaded" />
-
-    <CheckBox
-        style="@style/DialogChoice"
-        android:id="@+id/checkBox_filter_html_on_device"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="HTML snapshot downloaded" />
-
-    <CheckBox
-        style="@style/DialogChoice"
-        android:id="@+id/checkBox_filter_edited"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Edits waiting to sync" />
-
-    <TextView
-        style="@style/DialogSectionHeader"
-        android:text="Tags" />
-
-    <EditText
-        android:id="@+id/editText_tag_search"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Search tags"
-        android:imeOptions="actionDone"
-        android:inputType="text" />
-
-    <TextView
-        android:id="@+id/textView_no_tags"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:text="No matching tags"
-        android:visibility="gone" />
-
-    <ListView
-        android:id="@+id/listView_tags"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:choiceMode="multipleChoice"
-        android:divider="@null"
-        android:dividerHeight="0dp" />
-
-</LinearLayout>
+    android:paddingEnd="20dp"
+    android:scrollbars="vertical" />
