@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+Changed:
+- Sync now in the "N edits to sync" dialog keeps the dialog open: it becomes the
+  sync's details (your edits, then the download), updated as the sync goes on, and
+  stays until you close it.
+
 ## 0.4.1
 
 Updates 0.4.0 in place (same app id and signing key).

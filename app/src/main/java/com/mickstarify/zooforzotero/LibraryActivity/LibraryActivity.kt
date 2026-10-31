@@ -503,7 +503,7 @@ class LibraryActivity : AppCompatActivity(),
             if (isFinishing || isDestroyed) return@describePendingEdits
             val shown = lines.take(MAX_EDIT_LINES).joinToString("\n") { "• $it" }
             val more = lines.size - MAX_EDIT_LINES
-            AlertDialog.Builder(this)
+            val dialog = AlertDialog.Builder(this)
                 .setTitle(resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits))
                 .setMessage(
                     when {
@@ -512,9 +512,18 @@ class LibraryActivity : AppCompatActivity(),
                         else -> shown
                     }
                 )
-                .setPositiveButton("Sync now") { _, _ -> viewModel.requestLibraryRefresh() }
+                .setPositiveButton("Sync now", null) // set below: the button would close the dialog
                 .setNegativeButton("Close", null)
+                .setOnDismissListener { if (syncDetailsDialog === it) syncDetailsDialog = null }
                 .show()
+            // Sync now turns the dialog into the sync's details, open until Close
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { button ->
+                button.visibility = View.GONE
+                dialog.setTitle(getString(R.string.syncing))
+                dialog.setMessage("Starting…")
+                syncDetailsDialog = dialog
+                viewModel.requestLibraryRefresh()
+            }
         }
     }
 
