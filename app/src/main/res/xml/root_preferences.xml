@@ -49,6 +49,12 @@
             android:key="list_type_icons"
             android:summary="An icon for each item's type (book, article, …) at the start of its row. Off leaves more room for the title."
             android:title="Item type icons" />
+
+        <SwitchPreference app:iconSpaceReserved="false"
+            android:defaultValue="true"
+            android:key="list_tag_colors"
+            android:summary="Tags you coloured in Zotero show as dots before the title, and tags with an emoji as the emoji, as in Zotero's items list."
+            android:title="Coloured and emoji tags" />
     </PreferenceCategory>
 
     <PreferenceCategory app:iconSpaceReserved="false" app:title="@string/library_header">

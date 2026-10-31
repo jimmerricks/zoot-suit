@@ -1,5 +1,9 @@
 package com.mickstarify.zooforzotero.adapters
 
+import android.graphics.Color
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.util.TypedValue
 import android.view.ViewGroup.MarginLayoutParams
@@ -14,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.LibraryActivity.ItemPages
 import com.mickstarify.zooforzotero.LibraryActivity.ItemSelection
 import com.mickstarify.zooforzotero.LibraryActivity.ListAppearance
+import com.mickstarify.zooforzotero.LibraryActivity.TagColors
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.AttachmentStates
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -31,6 +36,9 @@ class LibraryListRecyclerViewAdapter(
 
     /** Settings → Appearance; rows are restyled as they are bound again. */
     var appearance = ListAppearance()
+
+    /** A library's tag colours, by group id (My Library: NO_GROUP_ID). */
+    var tagColorsOf: (Int) -> TagColors = { TagColors.NONE }
 
     class ItemViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView = view.findViewById<ImageView>(R.id.imageView_library_list_image)
@@ -59,7 +67,7 @@ class LibraryListRecyclerViewAdapter(
     ) {
         style(holder)
         val item = items?.get(position) ?: return bindPlaceholder(holder)
-        holder.textView_title.text = item.getTitle()
+        bindTitle(holder, item)
         holder.textView_author.visibility = View.VISIBLE
         holder.textView_author.text = appearance.secondLine.of(item)
         val pdfAttachment = item.getPdfAttachment()
@@ -237,6 +245,36 @@ class LibraryListRecyclerViewAdapter(
         holder.imageView.setImageResource(iconResource)
     }
 
+    /**
+     * The title, after the item's coloured tags as dots and its emoji tags, as in Zotero's
+     * items list; a screen reader hears the tag names instead of the dots.
+     */
+    private fun bindTitle(holder: ItemViewHolder, item: Item) {
+        val title = item.getTitle()
+        val swatches = if (appearance.tagColors) {
+            tagColorsOf(item.getGroup()).swatches(item.getTagList())
+        } else emptyList()
+        if (swatches.isEmpty()) {
+            holder.textView_title.text = title
+            holder.textView_title.contentDescription = null
+            return
+        }
+        val text = SpannableStringBuilder()
+        for (swatch in swatches) {
+            if (swatch.emoji != null) {
+                text.append(swatch.emoji)
+                continue
+            }
+            val color = runCatching { Color.parseColor(swatch.color) }.getOrNull() ?: continue
+            val start = text.length
+            text.append("●")
+            text.setSpan(ForegroundColorSpan(color), start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        holder.textView_title.text = if (text.isEmpty()) title else text.append(' ').append(title)
+        holder.textView_title.contentDescription =
+            "$title. " + (if (swatches.size == 1) "Tag " else "Tags ") + swatches.joinToString(", ") { it.tag }
+    }
+
     /** Sizes and spacing for [appearance]; the comfortable ones are the layout's. */
     private fun style(holder: ItemViewHolder) {
         if (holder.styledAs == appearance) return
@@ -264,6 +302,7 @@ class LibraryListRecyclerViewAdapter(
     /** A row whose item is still being read: blank, and does nothing. */
     private fun bindPlaceholder(holder: ItemViewHolder) {
         holder.textView_title.text = ""
+        holder.textView_title.contentDescription = null
         holder.textView_author.text = ""
         holder.pdfImage.visibility = View.GONE
         holder.imageView.setImageResource(R.drawable.treeitem_2x)

@@ -22,6 +22,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.mickstarify.zooforzotero.LibraryActivity.LibraryActivity
 import com.mickstarify.zooforzotero.LibraryActivity.ListAppearance
+import com.mickstarify.zooforzotero.LibraryActivity.TagColors
+import com.mickstarify.zooforzotero.PreferenceManager.Companion.TAG_COLORS
+import com.mickstarify.zooforzotero.PreferenceManager.Companion.libraryKey
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -65,10 +68,18 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         val adapter = LibraryListRecyclerViewAdapter(null, this)
         val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         adapter.appearance = ListAppearance.from(prefs)
+        // parsed once per library, again when a sync stores new ones
+        val tagColors = HashMap<Int, TagColors>()
+        adapter.tagColorsOf = { group ->
+            tagColors.getOrPut(group) { TagColors.parse(prefs.getString(libraryKey(TAG_COLORS, group), null)) }
+        }
         // changed in Settings while this screen is stopped: shows on coming back
         appearanceListener = SharedPreferences.OnSharedPreferenceChangeListener { changed, key ->
-            if (key !in ListAppearance.KEYS) return@OnSharedPreferenceChangeListener
-            adapter.appearance = ListAppearance.from(changed)
+            when {
+                key in ListAppearance.KEYS -> adapter.appearance = ListAppearance.from(changed)
+                key?.startsWith(TAG_COLORS) == true -> tagColors.clear()
+                else -> return@OnSharedPreferenceChangeListener
+            }
             adapter.notifyDataSetChanged()
         }.also { prefs.registerOnSharedPreferenceChangeListener(it) }
 
