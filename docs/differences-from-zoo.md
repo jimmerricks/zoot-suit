@@ -19,6 +19,7 @@ forked at v4.0.0. The main differences:
 | Sidebar | Top-level collections; groups in a flat list | Collection tree; groups with their own collections |
 | Rotation and restart | Reloads the library; restarts in My Library | Keeps your place |
 | Theme | Follows the system | Settings → Theme: auto, light or dark (dark on Android 7–9 too) |
+| List rows | Type icon, title, first creator | Settings → Appearance: compact rows, year and publication after the creator, type icons on or off, and Zotero's coloured and emoji tags before the title |
 | Adding items | Zotero Save, ISBN scanner, share target | Removed |
 | Downloading many attachments | Attachment Manager: the whole library, while the screen stays open | The selected items' PDFs, snapshots or all files, in the background; resumes after interruptions |
 | Sharing an item | Share button in the item view | Removed |

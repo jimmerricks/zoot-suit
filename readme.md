@@ -22,7 +22,9 @@ by Michael Johnston, forked at v4.0.0 (commit `0261040`) in October 2026. What c
   attachments in the background.
 - Built for large libraries (tested with 18,000 items): a fast first sync that resumes
   if interrupted, with progress in the toolbar.
-- Light and dark themes; runs on Android 7 and later.
+- A list you can set up: compact rows, the year and journal or publisher beside the
+  creator, and the tags you coloured in Zotero as dots, emoji tags as emoji. Light and
+  dark themes. Runs on Android 7 and later.
 
 ## Status
 
