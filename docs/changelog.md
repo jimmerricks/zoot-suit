@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.4.1
+
+Updates 0.4.0 in place (same app id and signing key).
 
 Changed:
 - On a narrow screen (a phone upright) Filter and Sort are always in the library's

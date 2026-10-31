@@ -53,8 +53,8 @@ android {
         applicationId "se.jmwhite.zootsuit"
         minSdkVersion 24
         targetSdkVersion 36
-        versionCode 8
-        versionName "0.4.0"
+        versionCode 9
+        versionName "0.4.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "zotero_api_key", localSetting("zotero_api_key"))
         buildConfigField("String", "zotero_api_secret", localSetting("zotero_api_secret"))
