@@ -121,6 +121,23 @@ interface ZoteroAPIService {
         @Query("start") index: Int
     ): Observable<Response<List<CollectionPOJO>>>
 
+    /**
+     * A synced setting, as {"value": …, "version": N}; 404 when it isn't set. Always the
+     * whole value: Zotero ignores If-Modified-Since-Version here (checked 2026-10-31), and
+     * on /settings it compares the library's version, so every item edit sends them all.
+     */
+    @GET("users/{user}/settings/{setting}")
+    fun getUserSetting(
+        @Path("user") user: String,
+        @Path("setting") setting: String,
+    ): Call<JsonObject>
+
+    @GET("groups/{groupID}/settings/{setting}")
+    fun getGroupSetting(
+        @Path("groupID") groupID: Int,
+        @Path("setting") setting: String,
+    ): Call<JsonObject>
+
     @GET("keys/{key}")
     fun getKeyInfo(
         @Path("key") key: String

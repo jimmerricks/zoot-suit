@@ -145,6 +145,18 @@ class PreferenceManager @Inject constructor(context: Context) {
         sharedPreferences.edit().putBoolean("sidebar_groups_expanded", value).apply()
     }
 
+    /** A library's "tagColors" setting from Zotero (TagColors.parse reads it); null if none. */
+    fun getTagColors(groupId: Int): String? =
+        sharedPreferences.getString(libraryKey(TAG_COLORS, groupId), null)
+
+    /** Stores the setting; null removes it (not set, or deleted, in Zotero). */
+    fun setTagColors(groupId: Int, json: String?) {
+        sharedPreferences.edit {
+            if (json == null) remove(libraryKey(TAG_COLORS, groupId))
+            else putString(libraryKey(TAG_COLORS, groupId), json)
+        }
+    }
+
     /** On by default: Zotero keeps no file history, so this is the only undo for an upload. */
     fun isWebDAVBackupBeforeUploadEnabled(): Boolean {
         return sharedPreferences.getBoolean("webdav_backup_before_upload", true)
@@ -394,6 +406,9 @@ class PreferenceManager @Inject constructor(context: Context) {
     companion object {
         val SORT_METHOD_ASCENDING = "ASCENDING"
         val SORT_METHOD_DESCENDING = "DESCENDING"
+
+        /** Every library's tag colours are stored under keys starting with this. */
+        const val TAG_COLORS = "tag_colors"
 
         /** The key of a per-library setting: [base] for My Library, suffixed for a group. */
         fun libraryKey(base: String, groupId: Int): String =

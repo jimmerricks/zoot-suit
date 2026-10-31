@@ -306,6 +306,28 @@ class ZoteroAPI(
         return Completable.fromObservable(observable)
     }
 
+    /**
+     * The library's "tagColors" setting (coloured and numbered tags on desktop) as a JSON
+     * array of {name, color}, or null when it isn't set. Blocking; throws on a network or
+     * server error.
+     */
+    fun getTagColors(groupID: Int): String? {
+        val call = if (groupID == GroupInfo.NO_GROUP_ID) {
+            shortTimeoutService.getUserSetting(userID, "tagColors")
+        } else {
+            shortTimeoutService.getGroupSetting(groupID, "tagColors")
+        }
+        val response = call.execute()
+        return when (response.code()) {
+            404 -> null
+            200 -> {
+                val body = response.body() ?: throw Exception("tagColors: empty response")
+                body.get("value")?.takeIf { it.isJsonArray }?.toString()
+            }
+            else -> throw Exception("tagColors: server responded with code ${response.code()}")
+        }
+    }
+
     fun getDeletedEntries(
         sinceVersion: Int,
         groupID: Int = GroupInfo.NO_GROUP_ID

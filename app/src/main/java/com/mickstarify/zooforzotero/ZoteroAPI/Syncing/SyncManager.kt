@@ -132,6 +132,22 @@ class SyncManager (
         loadItems(zoteroDB)
         loadCollections(zoteroDB)
         loadTrashedItems(zoteroDB)
+        syncTagColors(zoteroDB.groupID)
+    }
+
+    /**
+     * The library's tag colours, beside the sync rather than one of its stages: they only
+     * decorate the list, so a failure is logged, not reported, and the next sync asks again.
+     * Stored in preferences, whose change the list listens for (an unchanged value
+     * notifies nobody).
+     */
+    private fun syncTagColors(groupID: Int) {
+        Completable.fromAction {
+            preferenceManager.setTagColors(groupID, zoteroAPI.getTagColors(groupID))
+        }.subscribeOn(Schedulers.io()).subscribe(
+            {},
+            { e -> Log.w("zotero", "tag colours of library $groupID not synced: $e") }
+        )
     }
 
     /** The stages of a complete sync of [db] about to start; a first sync has two item passes. */
