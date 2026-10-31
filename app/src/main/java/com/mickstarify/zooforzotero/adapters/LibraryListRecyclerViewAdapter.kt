@@ -61,7 +61,7 @@ class LibraryListRecyclerViewAdapter(
         val item = items?.get(position) ?: return bindPlaceholder(holder)
         holder.textView_title.text = item.getTitle()
         holder.textView_author.visibility = View.VISIBLE
-        holder.textView_author.text = item.getAuthor()
+        holder.textView_author.text = appearance.secondLine.of(item)
         val pdfAttachment = item.getPdfAttachment()
         if (pdfAttachment != null) {
             holder.pdfImage.visibility = View.VISIBLE

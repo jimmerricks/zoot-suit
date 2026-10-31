@@ -32,4 +32,16 @@
         <item>comfortable</item>
         <item>compact</item>
     </string-array>
+
+    <string-array name="list_second_line_entries">
+        <item>Creator</item>
+        <item>Creator · year</item>
+        <item>Creator · year · publication or publisher</item>
+    </string-array>
+
+    <string-array name="list_second_line_values">
+        <item>creator</item>
+        <item>creator_year</item>
+        <item>creator_year_publication</item>
+    </string-array>
 </resources>

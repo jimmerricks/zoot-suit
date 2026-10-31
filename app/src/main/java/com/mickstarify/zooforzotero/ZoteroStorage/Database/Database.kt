@@ -8,6 +8,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mickstarify.zooforzotero.LibraryActivity.ItemSubtitle
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemPOJO
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Maybe
@@ -333,7 +334,7 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         val LIST_FIELDS = listOf(
             "itemType", "title", "shortTitle", "caseName", "nameOfAct", "date", "dateAdded",
             "inPublications", "parentItem",
-        )
+        ) + ItemSubtitle.PUBLICATION_FIELDS + ItemSubtitle.PUBLISHER_FIELDS // the row's second line
     }
 
     fun getItemKeysWithTag(tag: String): Maybe<List<String>> {
