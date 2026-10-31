@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+Changed:
+- On a narrow screen (a phone upright) Filter and Sort are always in the library's
+  menu, rather than moving between the toolbar and the menu; from 600dp wide (a phone
+  on its side, a tablet) they are toolbar buttons beside Search.
+
 ## 0.4.0
 
 Updates 0.3.1 in place (same app id and signing key).

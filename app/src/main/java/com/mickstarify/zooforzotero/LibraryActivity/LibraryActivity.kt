@@ -547,10 +547,16 @@ class LibraryActivity : AppCompatActivity(),
             if (asIcons) setIcon(R.drawable.baseline_sync_white_24)
         }
         // Android caps the toolbar's buttons by its width, and the sync label takes a
-        // place: search and filter keep theirs beside it rather than move to the menu
+        // place: search (and filter, from 600dp wide) keep theirs beside it rather than move
+        // to the menu. Narrower, filter and sort are in the menu always, so they don't move.
         val pinned = if (syncLabel != null) MenuItem.SHOW_AS_ACTION_ALWAYS else MenuItem.SHOW_AS_ACTION_IF_ROOM
         menu.findItem(R.id.search)?.setShowAsAction(pinned)
-        menu.findItem(R.id.library_filter)?.setShowAsAction(pinned)
+        if (resources.getBoolean(R.bool.sort_filter_in_toolbar)) {
+            menu.findItem(R.id.library_filter)?.setShowAsAction(pinned)
+        } else {
+            menu.findItem(R.id.library_filter)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+            menu.findItem(R.id.filter_menu)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+        }
         for (id in listOf(R.id.search, R.id.library_filter, R.id.filter_menu)) {
             menu.findItem(id)?.isVisible = !nothingToNarrow
         }

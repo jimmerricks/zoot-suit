@@ -3,4 +3,7 @@
     <!-- the toolbar's sync progress and edit count as icons: no room for words on a phone
          upright; values-w600dp has the words -->
     <bool name="sync_info_as_icons">true</bool>
+    <!-- filter and sort as toolbar buttons from 600dp wide (values-w600dp): a phone on its
+         side, a tablet; narrower, they stay in the menu rather than move with the room -->
+    <bool name="sort_filter_in_toolbar">false</bool>
 </resources>

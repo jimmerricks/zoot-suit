@@ -2,4 +2,6 @@
 <resources>
     <!-- the toolbar has room for words: tablets, phones on their side -->
     <bool name="sync_info_as_icons">false</bool>
+    <!-- room for filter and sort beside search -->
+    <bool name="sort_filter_in_toolbar">true</bool>
 </resources>
