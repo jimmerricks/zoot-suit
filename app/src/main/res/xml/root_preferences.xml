@@ -14,10 +14,20 @@
   ~ limitations under the License.
   -->
 
-<!-- Order: what's used most (the library list, its attachments) first, then where files
-     sync to and how, appearance, and signing out last. -->
+<!-- Order: how the list looks first, then what's used most (the library list, its
+     attachments), then where files sync to and how, and signing out last. -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:iconSpaceReserved="false" android:title="Appearance">
+        <ListPreference app:iconSpaceReserved="false"
+            app:defaultValue="auto"
+            app:entries="@array/theme_entries"
+            app:entryValues="@array/theme_values"
+            app:key="theme"
+            app:title="Theme"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
 
     <PreferenceCategory app:iconSpaceReserved="false" app:title="@string/library_header">
         <SwitchPreference app:iconSpaceReserved="false"
@@ -101,16 +111,6 @@
             android:defaultValue="60000"
             android:summary="How long an upload may take before it is given up. 0 waits forever."
             android:inputType="number" />
-    </PreferenceCategory>
-
-    <PreferenceCategory app:iconSpaceReserved="false" android:title="Appearance">
-        <ListPreference app:iconSpaceReserved="false"
-            app:defaultValue="auto"
-            app:entries="@array/theme_entries"
-            app:entryValues="@array/theme_values"
-            app:key="theme"
-            app:title="Theme"
-            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
     <PreferenceCategory app:iconSpaceReserved="false" android:title="Account">
