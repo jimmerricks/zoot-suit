@@ -43,6 +43,12 @@
             app:key="list_second_line"
             app:title="Second line"
             app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreference app:iconSpaceReserved="false"
+            android:defaultValue="true"
+            android:key="list_type_icons"
+            android:summary="An icon for each item's type (book, article, …) at the start of its row. Off leaves more room for the title."
+            android:title="Item type icons" />
     </PreferenceCategory>
 
     <PreferenceCategory app:iconSpaceReserved="false" app:title="@string/library_header">

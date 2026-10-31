@@ -107,9 +107,16 @@ class LibraryListRecyclerViewAdapter(
         holder.layout.setBackgroundResource(
             if (selected) R.color.listSelected else selectableBackground(holder.layout)
         )
+        // without type icons the column is there only while selecting, for the ticks
+        holder.imageView.visibility = if (appearance.typeIcons || selection.active) View.VISIBLE else View.GONE
         if (selected) {
             holder.imageView.setImageResource(R.drawable.baseline_check_circle_24)
             holder.imageView.contentDescription = "Selected"
+            return
+        }
+        if (!appearance.typeIcons) {
+            holder.imageView.setImageResource(R.drawable.baseline_radio_button_unchecked_24)
+            holder.imageView.contentDescription = "Not selected"
             return
         }
         holder.imageView.contentDescription = "icon for the item type"
@@ -260,6 +267,7 @@ class LibraryListRecyclerViewAdapter(
         holder.textView_author.text = ""
         holder.pdfImage.visibility = View.GONE
         holder.imageView.setImageResource(R.drawable.treeitem_2x)
+        holder.imageView.visibility = if (appearance.typeIcons) View.VISIBLE else View.GONE
         holder.layout.setOnClickListener(null)
         holder.layout.setOnLongClickListener(null)
         holder.layout.setBackgroundResource(selectableBackground(holder.layout))
