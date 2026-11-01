@@ -55,6 +55,9 @@ Fixed:
 - A file saved again while it was being uploaded to WebDAV could reach the server with a
   `.prop` describing the earlier version. The upload now checks the bytes it zipped and,
   if they changed, sends nothing and tries again at the next sync.
+- An item opened during a first sync, before its attachments had arrived, closed and
+  opened again when they came, scrolled to the bottom. They now appear in the open
+  dialog, which stays where it was.
 
 Removed:
 - The crash-report code (ACRA), which was never switched on. Report crashes as GitHub

@@ -39,6 +39,7 @@ interface LibraryUi {
     fun receiveCollections(collections: List<Collection>)
     fun setCollection(collectionName: String)
     fun redisplayItems()
+    /** The open item's dialog draws its item again, in place (a note added or deleted). */
     fun refreshItemView()
     /** [item] changed on this device (a tag edit): redraws its dialog and lists that depend on it. */
     fun showEditedItem(item: Item)

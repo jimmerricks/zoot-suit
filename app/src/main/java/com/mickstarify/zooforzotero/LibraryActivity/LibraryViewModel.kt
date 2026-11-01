@@ -466,11 +466,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         parts.edits.tagsOf(selectedKeys(), onResult)
 
     override fun refreshItemView() {
-        val item = selectedItem
-        if (item != null) {
-            commands.send { it.closeItemView() }
-            commands.send { it.showItemDialog() }
-        }
+        // not closed and opened again: that blinked and lost the dialog's scroll
+        selectedItem?.let { libraryListViewModel.onItemChanged(it) }
     }
 
     fun openMyPublications() {

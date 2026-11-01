@@ -33,7 +33,6 @@ private const val TAG = "LibrarySync"
  * @param api the API client, built on first use (see LibraryComponents)
  * @param refreshPendingEdits works out again what's on the device and waits to sync
  * @param hasPendingEdits whether edits wait to sync, as last worked out
- * @param selectedItem the item open in the item view, if any
  */
 class LibrarySync(
     private val ui: LibraryUi,
@@ -48,7 +47,6 @@ class LibrarySync(
     private val edits: LibraryItemEdits,
     private val refreshPendingEdits: () -> Unit,
     private val hasPendingEdits: () -> Boolean,
-    private val selectedItem: () -> Item?,
 ) : OnSyncChangeListener {
     private val navigator get() = library.navigator
     private val state get() = library.state
@@ -293,8 +291,8 @@ class LibrarySync(
                 if (childKeys(fresh) == before) return@subscribe
                 item.attachments = fresh.attachments
                 item.notes = fresh.notes
+                // redraws the open dialog in place too
                 ui.showEditedItem(item)
-                if (selectedItem() === item) ui.refreshItemView()
             }, { Log.d(TAG, "fetching the children of ${item.itemKey} failed: $it") })
     }
 

@@ -123,13 +123,15 @@ class ItemViewFragment : DialogFragment(),
 
     /**
      * Draws [item]; again whenever it changes, so everything below the headers is redone.
-     * Drawn again, it stays where it was scrolled to, or at the bottom if it was there
-     * (the tags are last: removing one there kept the dialog at the top).
+     * Drawn again, it stays where it was scrolled to, or at the bottom if it was scrolled
+     * there (the tags are last: removing one there kept the dialog at the top). A dialog
+     * not scrolled, or not laid out yet, stays at the top: attachments arriving in it
+     * make it longer, and it isn't at the bottom of that.
      */
     private fun render(item: Item) {
         val scroll = requireView().findViewById<NestedScrollView>(R.id.item_fragment_scrollview)
         if (item.itemKey == renderedKey) {
-            val atBottom = !scroll.canScrollVertically(1)
+            val atBottom = scroll.canScrollVertically(-1) && !scroll.canScrollVertically(1)
             val y = scroll.scrollY
             scroll.doOnNextLayout {
                 val bottom = scroll.getChildAt(0).height - scroll.height
