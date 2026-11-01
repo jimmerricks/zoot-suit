@@ -27,14 +27,18 @@
                 android:layout_height="match_parent"
                 android:visibility="visible">
 
+                <!-- 0dp between 32dp margins: wrap_content in a ConstraintLayout ignores
+                     the margins once a line is as wide as the screen; at most 480dp wide,
+                     so a tablet's line stays readable -->
                 <TextView
                     android:id="@+id/textView_Library_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
+                    android:layout_marginStart="32dp"
                     android:layout_marginTop="96dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_marginEnd="32dp"
                     android:gravity="center"
+                    app:layout_constraintWidth_max="480dp"
                     android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
