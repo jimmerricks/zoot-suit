@@ -34,6 +34,14 @@ Changed:
   Zotero's icon for their kind (PDF, EPUB, web snapshot, linked file, link).
 - WebDAV setup warns, under the address, when it starts with http://: the password
   and files travel unencrypted.
+- "App storage" for downloaded attachments is now the app's private storage. Before, it
+  was the app's folder in shared storage, which on Android 7 to 9 any app with storage
+  permission could read, and which Android could empty to free space. Files already
+  downloaded move there in the background at the first start after the update, keeping
+  their dates (so they don't count as edited); until each is moved it opens from where it
+  was, and if space runs short the rest wait for a later start. Opening a file in another
+  app, and saving changes back from it, work as before. A file manager no longer sees
+  these files: to keep them visible, choose a folder in Settings → Attachments.
 
 Removed:
 - The crash-report code (ACRA), which was never switched on. Report crashes as GitHub

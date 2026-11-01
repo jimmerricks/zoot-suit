@@ -15,10 +15,6 @@ larger work behind them.
   systematic pass. Android 15 is untested.
 - **Tablet layouts.** There are no layouts for large screens yet: the sidebar overlays
   the list, and a wide screen could show the list and an item side by side.
-- **Downloaded files private on Android 7 to 9.** "App storage" is the app's folder in
-  shared storage, which on Android 7 to 9 any app with storage permission can read.
-  Moving it to the app's private storage needs the files already downloaded moved
-  with it, once, on update.
 - **Tested on a real device.** So far the app is tested on emulators (Android 7.0, 14
   and 16).
 

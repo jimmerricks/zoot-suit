@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.edit
 import com.mickstarify.zooforzotero.MainActivity
+import com.mickstarify.zooforzotero.ZoteroStorage.APP_STORAGE_FOLDER
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
@@ -68,7 +69,9 @@ object SignOut {
             activity.deleteSharedPreferences(name)
         }
 
-        // downloaded attachments in the default location, plus temporary files
+        // downloaded attachments in app storage (and where it was before 0.5.0), plus
+        // temporary files
+        File(activity.filesDir, APP_STORAGE_FOLDER).deleteRecursively()
         activity.externalCacheDir?.listFiles()?.forEach { it.deleteRecursively() }
         activity.cacheDir.listFiles()?.forEach { it.deleteRecursively() }
 

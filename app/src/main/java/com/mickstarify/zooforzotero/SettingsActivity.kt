@@ -143,7 +143,7 @@ class SettingsActivity : AppCompatActivity() {
                 settings.myStorageManager.chosenFolderName()?.let {
                     "\u201c$it\u201d, a folder you chose. The files there are yours: removing one " +
                             "deletes it, signing out leaves them."
-                } ?: "App storage. Emptied when you sign out or uninstall the app."
+                } ?: "App storage, which only this app can read. Emptied when you sign out or uninstall the app."
         }
 
         /**

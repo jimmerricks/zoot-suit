@@ -27,6 +27,9 @@ import javax.inject.Singleton
 
 const val STORAGE_ACCESS_REQUEST = 1  // The request code
 
+/** App storage's folder in filesDir; res/xml/file_paths.xml shares it. */
+const val APP_STORAGE_FOLDER = "attachments"
+
 private const val EXTERNAL_STORAGE_PROVIDER = "com.android.externalstorage.documents"
 
 /* This classes handles the data storage for all attachments. */
@@ -78,6 +81,19 @@ class AttachmentStorageManager @Inject constructor(
         }
 
 
+    /**
+     * "App storage": a folder per attachment key in the app's private files, which other
+     * apps can't read and Android doesn't clear to free space.
+     */
+    val appStorageDir: File get() = File(context.filesDir, APP_STORAGE_FOLDER)
+
+    /**
+     * App storage before 0.5.0: the app's cache in shared storage, which any app with
+     * storage permission reads on Android 7 to 9. [AppStorageMove] moves its folders to
+     * [appStorageDir]; a file not moved yet is read (and deleted) here.
+     */
+    val oldAppStorageDir: File? get() = context.externalCacheDir
+
     fun validateAccess() {
         if (storageMode == StorageMode.CUSTOM) {
             if (testStorage() == false) {
@@ -90,12 +106,7 @@ class AttachmentStorageManager @Inject constructor(
 
     fun checkIfAttachmentExists(item: Item, checkMd5: Boolean = true): Boolean {
         if (storageMode == StorageMode.EXTERNAL_CACHE) {
-            val filename = getFilenameForItem(item)
-            val outputDir = File(context.externalCacheDir, item.itemKey.uppercase())
-            if (!outputDir.exists() || outputDir.isDirectory == false) {
-                return false
-            }
-            val file = File(outputDir, filename)
+            val file = getAttachmentFile(item)
             if (file.length() == 0L) {
                 file.delete()
                 return false
@@ -136,7 +147,9 @@ class AttachmentStorageManager @Inject constructor(
         val filename = getFilenameForItem(item)
         val mimeType = item.data["contentType"] ?: "application/pdf"
         if (storageMode == StorageMode.EXTERNAL_CACHE) {
-            val file = getAttachmentFile(item)
+            // always the new place: a copy still in the old one is then shadowed, and the
+            // move deletes it
+            val file = appStorageFile(item)
             file.parentFile?.mkdirs()
             return file.outputStream()
         } else if (storageMode == StorageMode.CUSTOM) {
@@ -291,8 +304,11 @@ class AttachmentStorageManager @Inject constructor(
     fun listDownloadedItemKeys(): Set<String> {
         return when (storageMode) {
             StorageMode.EXTERNAL_CACHE ->
-                context.externalCacheDir?.listFiles()?.filter { it.isDirectory }
-                    ?.map { it.name.uppercase() }?.toSet() ?: emptySet()
+                listOfNotNull(appStorageDir, oldAppStorageDir).flatMap { dir ->
+                    // not a move's half-copied "KEY.moving"
+                    dir.listFiles()?.filter { it.isDirectory && !it.name.contains('.') }
+                        ?.map { it.name.uppercase() } ?: emptyList()
+                }.toSet()
             StorageMode.CUSTOM ->
                 DocumentFile.fromTreeUri(context, getCustomStorageTreeURI())?.listFiles()
                     ?.filter { it.isDirectory }?.mapNotNull { it.name?.uppercase() }?.toSet()
@@ -339,12 +355,22 @@ class AttachmentStorageManager @Inject constructor(
     }
 
     /**
-     * Where [attachment]'s file is (or would be) in the app's cache folder. Creates nothing:
-     * it used to create the folder, and every attachment whose size or state was looked up
-     * left an empty one, which then counted as downloaded (listDownloadedItemKeys).
+     * Where [attachment]'s file is (or would be) in app storage: in [appStorageDir], or in
+     * [oldAppStorageDir] while it hasn't been moved. Creates nothing: it used to create the
+     * folder, and every attachment whose size or state was looked up left an empty one,
+     * which then counted as downloaded (listDownloadedItemKeys).
      */
-    private fun getAttachmentFile(attachment: Item): File =
-        File(File(context.externalCacheDir, attachment.itemKey.uppercase()), getFilenameForItem(attachment))
+    private fun getAttachmentFile(attachment: Item): File {
+        val file = appStorageFile(attachment)
+        if (file.exists()) return file
+        val old = oldAppStorageDir?.let { attachmentFileIn(it, attachment) }
+        return if (old?.exists() == true) old else file
+    }
+
+    private fun appStorageFile(attachment: Item): File = attachmentFileIn(appStorageDir, attachment)
+
+    private fun attachmentFileIn(dir: File, attachment: Item): File =
+        File(File(dir, attachment.itemKey.uppercase()), getFilenameForItem(attachment))
 
     fun getFileSize(attachment: Item): Result<Long> {
         return try {
@@ -397,10 +423,11 @@ class AttachmentStorageManager @Inject constructor(
     fun deleteAttachment(attachment: Item): Boolean {
         return when (storageMode) {
             StorageMode.EXTERNAL_CACHE -> {
-                val file = getAttachmentFile(attachment)
-                val deleted = file.delete()
-                file.parentFile?.delete() // only if empty
-                deleted
+                // both places: a copy left in the old one would show again
+                listOfNotNull(appStorageDir, oldAppStorageDir).map { dir ->
+                    val file = attachmentFileIn(dir, attachment)
+                    file.delete().also { file.parentFile?.delete() } // the folder only if empty
+                }.any { it }
             }
 
             StorageMode.CUSTOM -> {
@@ -492,8 +519,9 @@ class AttachmentStorageManager @Inject constructor(
                     .trimStart('/')
                 if (path.isEmpty()) continue
                 Log.d("zotero", "checking path $path")
-                var document = File(context.externalCacheDir, path)
-                if (document.exists()) {
+                val document = listOfNotNull(appStorageDir, oldAppStorageDir)
+                    .map { File(it, path) }.firstOrNull { it.exists() }
+                if (document != null) {
                     return openAttachment(fileProviderUri(document), item.data["contentType"] ?: "")
                 }
             }
