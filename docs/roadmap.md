@@ -30,9 +30,6 @@ Smaller items, none blocking a release:
   goes only to the host set up, so such a server needs its final address entered);
   leaving a group library (its items are now removed from the device); tag colours
   and kept searches in group libraries; Android 15.
-- **WebDAV over `http`:** the password goes unencrypted, and Basic authentication
-  sends it as is. A warning in WebDAV setup is planned, worded together with the
-  rest of the setup screen.
 - **Size:** the release APK is about 2.6 MB. Keeping only the classes Gson, Room and
   Hilt reach by reflection, instead of all of the app's own, would save a few hundred
   KB more; the navigation library is used for a single screen.

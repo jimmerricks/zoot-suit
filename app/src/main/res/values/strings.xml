@@ -45,6 +45,7 @@
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="host_url">Server address</string>
+    <string name="webdav_http_warning">Not encrypted: your password and files travel in the clear. Use https:// if the server offers it.</string>
     <string name="webdav_config_title">WebDAV server</string>
     <string name="advanced_configuration">Advanced</string>
     <string name="save_connect">Save and connect</string>

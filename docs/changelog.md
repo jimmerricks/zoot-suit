@@ -32,6 +32,8 @@ Changed:
 - Item-type icons are Zotero 7's, sharp at any size, with their dark-mode versions.
   Datasets, preprints and standards get their own icons; an item's attachments show
   Zotero's icon for their kind (PDF, EPUB, web snapshot, linked file, link).
+- WebDAV setup warns, under the address, when it starts with http://: the password
+  and files travel unencrypted.
 
 Removed:
 - The crash-report code (ACRA), which was never switched on. Report crashes as GitHub

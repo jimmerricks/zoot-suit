@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.core.widget.doAfterTextChanged
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
 import com.google.android.material.textfield.TextInputLayout
@@ -72,6 +73,12 @@ class WebDAVSetup : AppCompatActivity() {
         textInputLayout_host = findViewById(R.id.textInputLayout_webdav_host)
         textInputLayout_user = findViewById(R.id.textInputLayout_webdav_user)
         textInputLayout_password = findViewById(R.id.textInputLayout_webdav_password)
+        // an http:// address: the password (sent as is with Basic) and files go unencrypted
+        val hostHelp = textInputLayout_host.helperText
+        textInputLayout_host.editText!!.doAfterTextChanged { text ->
+            textInputLayout_host.helperText =
+                if (isPlainHttp(text.toString())) getString(R.string.webdav_http_warning) else hostHelp
+        }
 
         checkBox_verifySSL = findViewById(R.id.checkBox_Verify_ssl)
         checkBox_formatAddress = findViewById(R.id.checkBox_add_zotero_host)
@@ -249,6 +256,8 @@ class WebDAVSetup : AppCompatActivity() {
         findViewById<ImageView>(R.id.imageView_webdav_advanced_chevron).animate()
             .rotation(if (showing) 90f else -90f).setDuration(200).start()
     }
+
+    private fun isPlainHttp(address: String) = address.trim().startsWith("http://", ignoreCase = true)
 
     fun formatAddress(address: String): String {
         var mAddress = address.trim()
