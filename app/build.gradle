@@ -146,6 +146,8 @@ dependencies {
     implementation 'io.reactivex.rxjava3:rxjava:3.1.8'
     implementation 'io.reactivex.rxjava3:rxandroid:3.0.2'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    // converter-gson brings Gson 2.8.5: CVE-2022-25647 (a crafted JSON exhausts the stack)
+    implementation 'com.google.code.gson:gson:2.11.0'
     implementation "io.github.rburgst:okhttp-digest:3.1.1"
 
     // Room Dependencies
@@ -154,8 +156,14 @@ dependencies {
     ksp "androidx.room:room-compiler:2.7.2"
 
     // ACRA crash reporting
-    implementation "ch.acra:acra-mail:$acraVersion"
-    implementation("ch.acra:acra-dialog:$acraVersion")
+    // auto-service is ACRA's annotation processor, needed only to build ACRA itself; it
+    // brought Guava (CVE-2026-102554) onto the app's classpath
+    implementation("ch.acra:acra-mail:$acraVersion") {
+        exclude group: 'com.google.auto.service'
+    }
+    implementation("ch.acra:acra-dialog:$acraVersion") {
+        exclude group: 'com.google.auto.service'
+    }
 
     // Dependency Injection
     implementation "com.google.dagger:hilt-android:2.57"
