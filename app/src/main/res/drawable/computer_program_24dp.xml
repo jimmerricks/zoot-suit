@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zotero's computer-program icon (chrome/skin/default/zotero/item-type/28/light), AGPLv3, converted -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <path
+        android:pathData="M11.1109 23.889L1.7229 14.5L11.1109 5.11099L11.8889 5.88899L3.2769 14.5L11.8889 23.111L11.1109 23.889ZM26.2769 14.5L16.8889 5.11099L16.1109 5.88899L24.7229 14.5L16.1109 23.111L16.8889 23.889L26.2769 14.5Z"
+        android:fillColor="#39BF68" />
+</vector>

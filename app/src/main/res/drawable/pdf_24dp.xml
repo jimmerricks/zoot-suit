@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zotero's attachment-pdf icon (chrome/skin/default/zotero/item-type/28/light), AGPLv3, converted -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <path
+        android:pathData="M20.717 0H5V28H28V7.283L20.717 0Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5" />
+    <path
+        android:pathData="M6 1V27H27V7.698L20.302 1H6Z"
+        android:fillColor="#FFFFFF" />
+    <path
+        android:pathData="M21 1.698V7H26.302L21 1.698Z"
+        android:fillColor="#000000"
+        android:fillAlpha="0.08" />
+    <path
+        android:pathData="M20.717 0H5V28H28V7.283L20.717 0ZM21 1.7L26.3 7H21V1.7ZM27 27H6V1H20V8H27V27Z"
+        android:fillColor="#000000"
+        android:fillAlpha="0.2" />
+    <path
+        android:pathData="M15 6H1V11H15V6Z"
+        android:fillColor="#F1ABB0" />
+    <path
+        android:pathData="M15 6V11H1V6H15ZM16 5H0V12H16V5Z"
+        android:fillColor="#DB2C3A" />
+</vector>

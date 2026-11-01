@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import androidx.annotation.DrawableRes
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -95,17 +96,11 @@ class ItemAttachmentEntry(
             }
 
             val filetype = attachment?.data!!["contentType"] ?: ""
+            icon.setImageResource(
+                attachmentIcon(linkMode, filetype, attachment?.getFileExtension() ?: "")
+            )
 
             if (attachment?.isDownloadable() == true) {
-                if (filetype == "application/pdf") {
-                    icon.setImageResource(R.drawable.treeitem_attachment_pdf_2x)
-                } else if (filetype == "image/vnd.djvu") {
-                    icon.setImageResource(R.drawable.djvu_icon)
-                } else if (attachment?.getFileExtension() == "epub") {
-                    icon.setImageResource(R.drawable.epub_icon)
-                } else {
-                    // todo get default attachment icon.
-                }
                 layout.setOnClickListener {
                     if (linkMode == "linked_file") {
                         fileOpenListener?.openLinkedAttachmentListener(
@@ -167,6 +162,26 @@ class ItemAttachmentEntry(
     }
 
     companion object {
+        /** Zotero's icon for an attachment of [linkMode] and [contentType] (or [extension]). */
+        @DrawableRes
+        fun attachmentIcon(linkMode: String?, contentType: String, extension: String): Int {
+            val pdf = contentType == "application/pdf"
+            val epub = contentType == "application/epub+zip" || extension.equals("epub", true)
+            return when {
+                linkMode == "linked_url" -> R.drawable.attachment_web_link_24dp
+                linkMode == "linked_file" -> when {
+                    pdf -> R.drawable.attachment_pdf_link_24dp
+                    epub -> R.drawable.attachment_epub_link_24dp
+                    else -> R.drawable.attachment_link_24dp
+                }
+                pdf -> R.drawable.pdf_24dp
+                epub -> R.drawable.attachment_epub_24dp
+                contentType == "text/html" -> R.drawable.attachment_snapshot_24dp
+                contentType == "image/vnd.djvu" -> R.drawable.djvu_icon
+                else -> R.drawable.document_24dp
+            }
+        }
+
         @JvmStatic
         fun newInstance(itemKey: String): ItemAttachmentEntry {
             val fragment = ItemAttachmentEntry()

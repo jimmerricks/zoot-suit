@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zotero's note icon (chrome/skin/default/zotero/item-type/28/light), AGPLv3, converted -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <path
+        android:pathData="M18.717 28L26 20.717V0H3V28H18.717Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5" />
+    <path
+        android:pathData="M4 27V1H25V20.302L18.302 27H4Z"
+        android:fillColor="#FFFFFF" />
+    <path
+        android:pathData="M19 26.302V21H24.302L19 26.302Z"
+        android:fillColor="#000000"
+        android:fillAlpha="0.08" />
+    <path
+        android:pathData="M26 20.717V0H3V28H18.717L26 20.717ZM19 21H24.3L19 26.3V21ZM25 20H18V27H4V1H25V20Z"
+        android:fillColor="#000000"
+        android:fillAlpha="0.2" />
+    <path
+        android:pathData="M25 1V4H4V1H25ZM26 0H3V5H26V0Z"
+        android:fillColor="#FAA700" />
+    <path
+        android:pathData="M25 1H4V4H25V1Z"
+        android:fillColor="#FAA700"
+        android:fillAlpha="0.4" />
+</vector>

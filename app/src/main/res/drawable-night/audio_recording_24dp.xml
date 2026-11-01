@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zotero's audio-recording icon (chrome/skin/default/zotero/item-type/28/dark), AGPLv3, converted -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <path
+        android:pathData="M15 22.975V27H20V28H9V27H14V22.975C10.092 22.717 7 19.474 7 15.5V10H8V15.5C8 19.084 10.916 22 14.5 22C18.084 22 21 19.084 21 15.5V10H22V15.5C22 19.473 18.908 22.716 15 22.975ZM10 15.5V4.5C10 2.015 12.015 0 14.5 0C16.985 0 19 2.015 19 4.5V15.5C19 17.985 16.985 20 14.5 20C12.015 20 10 17.985 10 15.5ZM11 15.5C11 17.43 12.57 19 14.5 19C16.43 19 18 17.43 18 15.5V4.5C18 2.57 16.43 1 14.5 1C12.57 1 11 2.57 11 4.5V15.5Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6" />
+    <path
+        android:pathData="M18 4.5C18 2.567 16.433 1 14.5 1C12.567 1 11 2.567 11 4.5V15.5C11 17.433 12.567 19 14.5 19C16.433 19 18 17.433 18 15.5V4.5Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.12" />
+</vector>

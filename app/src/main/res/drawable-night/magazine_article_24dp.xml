@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zotero's magazine-article icon (chrome/skin/default/zotero/item-type/28/dark), AGPLv3, converted -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <path
+        android:pathData="M6 24V5H4V27H14V24H6Z"
+        android:fillColor="#4072E5"
+        android:fillAlpha="0.2" />
+    <path
+        android:pathData="M6.5 23.5V0.5H12.5C13.603 0.5 14.5 1.352 14.5 2.4V23.5H6.5Z"
+        android:fillColor="#4072E5"
+        android:fillAlpha="0.4" />
+    <path
+        android:pathData="M16 7V8H21V15H16V16H22V7H16Z"
+        android:fillColor="#39BF68"
+        android:fillAlpha="0.85" />
+    <path
+        android:pathData="M15 4V2.4C15 1.074 13.881 0 12.5 0H6V4H3V28H25V4H15ZM7 1H12.5C13.327 1 14 1.628 14 2.4V23.511C13.581 23.194 13.065 23 12.5 23H7V1ZM4 27V5H6V24H12.5C13.327 24 14 24.673 14 25.5C14 26.327 13.327 27 12.5 27H4ZM24 27H14.489C14.806 26.581 15 26.065 15 25.5V5H24V27Z"
+        android:fillColor="#4072E5" />
+    <path
+        android:pathData="M16 18H22V19H16V18ZM16 22H22V21H16V22Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6" />
+    <path
+        android:pathData="M21 8H16V15H21V8Z"
+        android:fillColor="#39BF68"
+        android:fillAlpha="0.34" />
+</vector>

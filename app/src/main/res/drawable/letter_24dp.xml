@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zotero's letter icon (chrome/skin/default/zotero/item-type/28/light), AGPLv3, converted -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <path
+        android:pathData="M28 3H0V24H28V3Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5" />
+    <path
+        android:pathData="M27 4H1V23H27V4Z"
+        android:fillColor="#FFFFFF" />
+    <path
+        android:pathData="M0 3V24H28V3H0ZM15.5 14.79C15.1009 15.1878 14.5605 15.4111 13.997 15.4111C13.4335 15.4111 12.8931 15.1878 12.494 14.79L1.707 4H26.293L15.5 14.79ZM9.793 13.5L1 22.293V4.707L9.793 13.5ZM10.5 14.207L11.79 15.497C12.3762 16.083 13.1711 16.4122 14 16.4122C14.8289 16.4122 15.6238 16.083 16.21 15.497L17.5 14.207L26.293 23H1.707L10.5 14.207ZM18.207 13.5L27 4.707V22.293L18.207 13.5Z"
+        android:fillColor="#000000"
+        android:fillAlpha="0.2" />
+</vector>

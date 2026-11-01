@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zotero's dictionary-entry icon (chrome/skin/default/zotero/item-type/28/dark), AGPLv3, converted -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <path
+        android:pathData="M19 1.698V7H24.302L19 1.698Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.24" />
+    <path
+        android:pathData="M18.717 0H3V28H26V7.283L18.717 0ZM19 1.698L24.302 7H19V1.698ZM25 27H4V1H18V8H25V27Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6" />
+    <path
+        android:pathData="M20.025 23L15.865 10H13.135L8.975 23H7V24H12V23H10.025L10.985 20H18.014L18.974 23H16.999V24H21.999V23H20.025ZM11.305 19L13.865 11H15.135L17.695 19H11.305Z"
+        android:fillColor="#DB2C3A"
+        android:fillAlpha="0.9" />
+</vector>

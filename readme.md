@@ -82,6 +82,8 @@ Android version, device, and whether you use WebDAV or Zotero File Storage.
 
 - **Licence:** GPLv3, see [LICENSE](LICENSE). Upstream ships no licence file; its
   author states GPLv3 in its terms of use.
+  The item-type icons come from Zotero under the AGPLv3, which section 13 of the GPLv3
+  lets this app combine with; they stay under the AGPLv3.
 - [Privacy policy](https://jimmerricks.github.io/zoot-suit/privacy-policy.html)
 - [Terms of use](https://jimmerricks.github.io/zoot-suit/terms-of-use.html)
 
@@ -90,3 +92,6 @@ Android version, device, and whether you use WebDAV or Zotero File Storage.
 - [Michael Johnston](https://github.com/mickstar): Zoo for Zotero
 - Zotero graphical resources: [zotero.org](https://www.zotero.org) (Roy Rosenzweig
   Center for History and New Media)
+- Item-type and attachment icons: Zotero 7's, from
+  [zotero/zotero](https://github.com/zotero/zotero/tree/main/chrome/skin/default/zotero/item-type)
+  (Corporation for Digital Scholarship, AGPLv3), converted to Android vector drawables

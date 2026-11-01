@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zotero's standard icon (chrome/skin/default/zotero/item-type/28/dark), AGPLv3, converted -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <path
+        android:pathData="M19 1.698V7H24.302L19 1.698Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.24" />
+    <path
+        android:pathData="M8 12H7V13H8V12Z"
+        android:fillColor="#39BF68"
+        android:fillAlpha="0.34" />
+    <path
+        android:pathData="M8 17H7V18H8V17Z"
+        android:fillColor="#39BF68"
+        android:fillAlpha="0.34" />
+    <path
+        android:pathData="M8 22H7V23H8V22Z"
+        android:fillColor="#39BF68"
+        android:fillAlpha="0.34" />
+    <path
+        android:pathData="M8 12V13H7V12H8ZM9 11H6V14H9V11Z"
+        android:fillColor="#39BF68"
+        android:fillAlpha="0.85" />
+    <path
+        android:pathData="M8 17V18H7V17H8ZM9 16H6V19H9V16Z"
+        android:fillColor="#39BF68"
+        android:fillAlpha="0.85" />
+    <path
+        android:pathData="M8 22V23H7V22H8ZM9 21H6V24H9V21Z"
+        android:fillColor="#39BF68"
+        android:fillAlpha="0.85" />
+    <path
+        android:pathData="M11 18H16.106C16.497 17.617 16.936 17.283 17.408 17H11V18Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.75" />
+    <path
+        android:pathData="M23 12H11V13H23V12Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.75" />
+    <path
+        android:pathData="M16 7H6V8H16V7Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.75" />
+    <path
+        android:pathData="M11 22V23H14C14 22.66 14.033 22.327 14.08 22H11Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.75" />
+    <path
+        android:pathData="M21 18C18.239 18 16 20.239 16 23C16 25.761 18.239 28 21 28C23.761 28 26 25.761 26 23C26 20.239 23.761 18 21 18ZM20 25.707L17.646 23.353L18.353 22.646L19.999 24.292L23.645 20.646L24.352 21.353L19.998 25.707H20Z"
+        android:fillColor="#39BF68"
+        android:fillAlpha="0.85" />
+    <path
+        android:pathData="M3 0H18.717L26 7.283V23C26 21.8744 25.6279 20.8356 25 19.9999V8H18V1H4V27H17.9999C18.8356 27.6279 19.8744 28 21 28H3V0ZM24.302 7L19 1.698V7H24.302Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6"
+        android:fillType="evenOdd" />
+    <path
+        android:pathData="M21 28C23.761 28 26 25.761 26 23V28H21Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6" />
+</vector>

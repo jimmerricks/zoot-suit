@@ -22,7 +22,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:srcCompat="@drawable/treeitem_2x" />
+        tools:srcCompat="@drawable/document_24dp" />
 
     <TextView
         android:id="@+id/TextView_library_list_title"

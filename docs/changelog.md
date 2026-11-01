@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+Changed:
+- Item-type icons are Zotero 7's, sharp at any size, with their dark-mode versions.
+  Datasets, preprints and standards get their own icons; an item's attachments show
+  Zotero's icon for their kind (PDF, EPUB, web snapshot, linked file, link).
+
 ## 0.4.3
 
 Updates 0.4.2 in place (same app id and signing key).

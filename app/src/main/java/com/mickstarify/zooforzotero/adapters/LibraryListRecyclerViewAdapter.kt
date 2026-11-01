@@ -170,7 +170,7 @@ class LibraryListRecyclerViewAdapter(
                 R.drawable.web_page_24dp
             }
             "attachment" -> {
-                R.drawable.treeitem_attachment_web_link_2x
+                R.drawable.attachment_web_link_24dp
             }
             "report" -> {
                 R.drawable.report_24dp
@@ -238,8 +238,17 @@ class LibraryListRecyclerViewAdapter(
             "dictionaryEntry" -> {
                 R.drawable.dictionary_entry_24dp
             }
+            "dataset" -> {
+                R.drawable.dataset_24dp
+            }
+            "preprint" -> {
+                R.drawable.preprint_24dp
+            }
+            "standard" -> {
+                R.drawable.standard_24dp
+            }
             else -> {
-                R.drawable.treeitem_2x
+                R.drawable.document_24dp
             }
         }
         holder.imageView.setImageResource(iconResource)
@@ -311,7 +320,7 @@ class LibraryListRecyclerViewAdapter(
         holder.textView_title.contentDescription = null
         holder.textView_author.text = ""
         holder.pdfImage.visibility = View.GONE
-        holder.imageView.setImageResource(R.drawable.treeitem_2x)
+        holder.imageView.setImageResource(R.drawable.document_24dp)
         holder.imageView.visibility = if (appearance.typeIcons) View.VISIBLE else View.GONE
         holder.layout.setOnClickListener(null)
         holder.layout.setOnLongClickListener(null)
