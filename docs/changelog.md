@@ -49,10 +49,11 @@ Changed:
   was left in, whether or not they are kept across collections. Before, only the
   collection came back.
 - The toolbar shows syncing the same way at any width: the sync icon turns while a sync
-  runs (it said "Syncing 45%" on tablets), and stands still while edits wait to sync (a
-  cloud on phones, "2 edits to sync" on tablets). The words are its tooltip; a tap opens
-  the sync dialog as before. The spinner that pulled down over the list is gone: pulling
-  down still starts a sync.
+  runs (it said "Syncing 45%" on tablets), and a tap shows its details. The spinner that
+  pulled down over the list is gone: pulling down still starts a sync.
+- A sync button is always in the toolbar, beside search: a tap syncs. With edits waiting
+  to sync it has a dot (it was a cloud on phones, "2 edits to sync" on tablets), and a
+  tap lists them first, with Sync now. Its tooltip says which.
 - Coloured and emoji tags show at the start of an item's second line (creator, year…),
   not before its title, so every title starts in the same place.
 - A double tap on the toolbar takes the list back to its top.

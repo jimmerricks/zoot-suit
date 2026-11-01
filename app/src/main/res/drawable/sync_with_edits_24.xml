@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the toolbar's sync button while edits wait to sync: the sync icon with a dot, so it
+     doesn't look like the button with nothing waiting -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/baseline_sync_white_24" />
+    <item
+        android:width="8dp"
+        android:height="8dp"
+        android:gravity="top|end">
+        <shape android:shape="oval">
+            <solid android:color="#FFC107" />
+        </shape>
+    </item>
+</layer-list>

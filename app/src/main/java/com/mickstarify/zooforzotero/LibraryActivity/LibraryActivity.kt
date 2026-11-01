@@ -377,7 +377,10 @@ class LibraryActivity : AppCompatActivity(),
                 }
             }
 
-            R.id.sync_status, R.id.pending_edits -> showSyncDialog()
+            R.id.sync_status -> showSyncDialog()
+
+            // with edits waiting, the dialog lists them before they go up
+            R.id.sync_now -> if (pendingEdits > 0) showSyncDialog() else viewModel.requestLibraryRefresh()
 
             R.id.clear_search_and_filters -> viewModel.clearSearchAndFilter()
 
@@ -421,7 +424,7 @@ class LibraryActivity : AppCompatActivity(),
 
     private var pendingEdits = 0
 
-    /** Edits waiting to go up; shown in the toolbar as the still sync icon, tapping it opens the sync dialog. */
+    /** Edits waiting to go up: a dot on the toolbar's sync button, which then opens the sync dialog. */
     fun showPendingEdits(count: Int) {
         if (count == pendingEdits) return
         pendingEdits = count
@@ -548,8 +551,8 @@ class LibraryActivity : AppCompatActivity(),
         menu.findItem(R.id.stop_downloads)?.isVisible = viewModel.downloadsActive.value == true
         menu.findItem(R.id.selection_remove_from_collection)?.isVisible =
             viewModel.canEditItems() && !selectedNone && viewModel.currentCollection() != null
-        // the sync and the edits waiting for it are icons at any width, their words the
-        // tooltips: the sync icon turning while one runs, still while edits wait
+        // the sync button is always there, an icon at any width, its words the tooltip:
+        // turning while a sync runs (this item), still otherwise (sync_now, below)
         syncMenuItem = menu.findItem(R.id.sync_status)?.apply {
             isVisible = syncLabel != null
             syncLabel?.let { title = it }
@@ -559,13 +562,12 @@ class LibraryActivity : AppCompatActivity(),
             syncIcon = if (syncLabel != null) turningSyncIcon() else null
             actionView = syncIcon
         }
-        // Android caps the toolbar's buttons by its width, and the sync icon takes a
+        // Android caps the toolbar's buttons by its width, and the sync button takes a
         // place: search (and filter, from 600dp wide) keep theirs beside it rather than move
         // to the menu. Narrower, filter and sort are in the menu always, so they don't move.
-        val pinned = if (syncLabel != null) MenuItem.SHOW_AS_ACTION_ALWAYS else MenuItem.SHOW_AS_ACTION_IF_ROOM
-        menu.findItem(R.id.search)?.setShowAsAction(pinned)
+        menu.findItem(R.id.search)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         if (resources.getBoolean(R.bool.sort_filter_in_toolbar)) {
-            menu.findItem(R.id.library_filter)?.setShowAsAction(pinned)
+            menu.findItem(R.id.library_filter)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         } else {
             menu.findItem(R.id.library_filter)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
             menu.findItem(R.id.filter_menu)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
@@ -577,10 +579,16 @@ class LibraryActivity : AppCompatActivity(),
         // not in the trash, whose items' files aren't counted
         menu.findItem(R.id.manage_attachments)?.isVisible = listSelectable
         menu.findItem(R.id.clear_search_and_filters)?.isVisible = narrowed
-        menu.findItem(R.id.pending_edits)?.apply {
-            // while a sync runs the edits are going up; its details list them
-            isVisible = pendingEdits > 0 && syncLabel == null
-            title = resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)
+        menu.findItem(R.id.sync_now)?.apply {
+            // while a sync runs the turning icon stands in its place; its details list the edits
+            isVisible = syncLabel == null
+            if (pendingEdits > 0) {
+                title = resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)
+                setIcon(R.drawable.sync_with_edits_24)
+            } else {
+                title = getString(R.string.sync)
+                setIcon(R.drawable.baseline_sync_white_24)
+            }
         }
         return super.onPrepareOptionsMenu(menu)
     }
