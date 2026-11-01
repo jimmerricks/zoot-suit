@@ -44,13 +44,6 @@
         android:visible="false"
         app:showAsAction="never" />
 
-    <!-- while a search or filter narrows the list -->
-    <item
-        android:id="@+id/clear_search_and_filters"
-        android:title="@string/clear_search_and_filters"
-        android:visible="false"
-        app:showAsAction="never" />
-
     <!-- the files of every item the list shows; Select items for some of them -->
     <item
         android:id="@+id/manage_attachments"

@@ -102,6 +102,9 @@ class PreferenceManager @Inject constructor(context: Context) {
     /** Whether the filter stays when another collection opens (else it clears). */
     fun keepFilter(): Boolean = sharedPreferences.getBoolean("keep_filter", false)
 
+    /** Whether a tap on the toolbar's title clears the search and filter. Off: one tap could undo a long filter. */
+    fun titleTapClears(): Boolean = sharedPreferences.getBoolean("title_tap_clears", false)
+
     /** A library's search, saved like its filter; "" for none. */
     fun getLibrarySearch(groupId: Int): String =
         sharedPreferences.getString(libraryKey("library_search", groupId), null) ?: ""

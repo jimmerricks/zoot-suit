@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Zoot Suit</string>
-    <string name="clear_search_and_filters">Clear search and filters</string>
     <string name="sync">Sync</string>
+    <string name="search_and_filter_cleared">Search and filter cleared</string>
     <string name="syncing">Syncing…</string>
     <string name="syncing_progress">Syncing %1$d%%</string>
     <string name="sort">Sort</string>

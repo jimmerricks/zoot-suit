@@ -57,6 +57,9 @@ Changed:
 - Coloured and emoji tags show at the start of an item's second line (creator, year…),
   not before its title, so every title starts in the same place.
 - A double tap on the toolbar takes the list back to its top.
+- "Clear search and filters" is no longer in the menu. Settings → Library → "Tap the
+  title to clear search and filter" (off at first) makes a single tap on the toolbar's
+  title clear them; the search and filter screens keep their Clear buttons.
 
 Fixed:
 - A file saved again while it was being uploaded to WebDAV could reach the server with a

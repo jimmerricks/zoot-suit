@@ -75,6 +75,12 @@
             android:key="keep_filter"
             android:summary="Off: the filter clears when you open another collection. On: it stays, for each library separately, until you clear it."
             android:title="Keep the filter across collections" />
+
+        <SwitchPreference app:iconSpaceReserved="false"
+            android:defaultValue="false"
+            android:key="title_tap_clears"
+            android:summary="A tap on the library's name at the top clears the search and filter. Off: clear them in the search and filter screens."
+            android:title="Tap the title to clear search and filter" />
     </PreferenceCategory>
 
     <!-- "Sync method" was here: a list with one entry (Zotero), the default either way -->

@@ -156,7 +156,7 @@ class LibraryActivity : AppCompatActivity(),
     // the list on screen has items and isn't the trash: Select items is offered
     private var listSelectable = false
 
-    // a search or filter is set: Clear search and filters is offered
+    // a search or filter is set: a tap on the title can clear them (titleTapClears)
     private var narrowed = false
 
     private var selecting = false
@@ -382,8 +382,6 @@ class LibraryActivity : AppCompatActivity(),
             // with edits waiting, the dialog lists them before they go up
             R.id.sync_now -> if (pendingEdits > 0) showSyncDialog() else viewModel.requestLibraryRefresh()
 
-            R.id.clear_search_and_filters -> viewModel.clearSearchAndFilter()
-
             R.id.settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)
@@ -578,7 +576,6 @@ class LibraryActivity : AppCompatActivity(),
         menu.findItem(R.id.start_selection)?.isVisible = listSelectable
         // not in the trash, whose items' files aren't counted
         menu.findItem(R.id.manage_attachments)?.isVisible = listSelectable
-        menu.findItem(R.id.clear_search_and_filters)?.isVisible = narrowed
         menu.findItem(R.id.sync_now)?.apply {
             // while a sync runs the turning icon stands in its place; its details list the edits
             isVisible = syncLabel == null
@@ -879,15 +876,24 @@ class LibraryActivity : AppCompatActivity(),
     private fun setupToolbar() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-        // a double tap on the toolbar (its title, not a button) goes back to the list's top
-        val doubleTap = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+        // on the toolbar's title (not a button): a double tap goes back to the list's top; a
+        // single tap, if Settings say so, clears the search and filter (confirmed: not the
+        // first tap of a double)
+        val taps = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (!narrowed || selecting || !viewModel.titleTapClears()) return false
+                viewModel.clearSearchAndFilter()
+                makeToastAlert(getString(R.string.search_and_filter_cleared))
+                return true
+            }
+
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 (supportFragmentManager.findFragmentByTag(AvailableScreens.LIBRARY_LISTVIEW_SCREEN.name)
                         as? LibraryListFragment)?.scrollToTop()
                 return true
             }
         })
-        toolbar.setOnTouchListener { _, event -> doubleTap.onTouchEvent(event); false }
+        toolbar.setOnTouchListener { _, event -> taps.onTouchEvent(event); false }
     }
 }
 
