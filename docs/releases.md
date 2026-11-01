@@ -47,7 +47,8 @@ are git-ignored.
 - Group libraries are requested read-only (`all_groups=read`): the app writes only to
   your personal library.
 - The callback is `zootsuit://oauth_callback`, caught by the sign-in WebView; no other
-  app can receive it. Zotero's registration form only accepts http(s) callbacks, so
+  app can receive it. The WebView loads only zotero.org (and its subdomains) over
+  https; other links open in the browser and other schemes are blocked. Zotero's registration form only accepts http(s) callbacks, so
   the registered one is a placeholder and Zotero accepts the app's own per request.
   If Zotero ever requires them to match, the callback will move to an https URL the
   WebView intercepts.
