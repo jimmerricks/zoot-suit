@@ -37,10 +37,13 @@
             android:name="org.apache.http.legacy"
             android:required="false" />
 
+        <!-- singleTask, not singleInstance: one library screen, but in the app's task, so
+             Settings and WebDAV setup open above it and Back from them returns to it (alone
+             in its task, it left Settings in another task, whose Back went home) -->
         <activity
             android:name=".LibraryActivity.LibraryActivity"
             android:label="@string/title_activity_library"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.ZooForZotero.NoActionBar"
             android:exported="false" />
         <activity

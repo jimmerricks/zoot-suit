@@ -74,6 +74,8 @@ Fixed:
 - An item opened during a first sync, before its attachments had arrived, closed and
   opened again when they came, scrolled to the bottom. They now appear in the open
   dialog, which stays where it was.
+- Back in Settings closed the app instead of returning to the library, after you'd
+  switched to another app and back.
 - The item screen no longer makes numbers (pages, years, ISBNs, DOIs) into links that open
   the phone app. Web and email addresses are still links.
 - "Select items" and "Stop selecting" let the menu close before the toolbar changes:
