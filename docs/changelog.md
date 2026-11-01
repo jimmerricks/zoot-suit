@@ -42,6 +42,9 @@ Changed:
   was, and if space runs short the rest wait for a later start. Opening a file in another
   app, and saving changes back from it, work as before. A file manager no longer sees
   these files: to keep them visible, choose a folder in Settings → Attachments.
+- The sidebar's section titles ("Collections", "Group libraries") look like the headers in
+  Settings and dialogs, and its icons are grey beside the text, coloured only for the
+  library or collection open.
 
 Removed:
 - The crash-report code (ACRA), which was never switched on. Report crashes as GitHub

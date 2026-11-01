@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A sidebar section title; the Group Libraries one collapses, with the chevron at the end. -->
+<!-- A sidebar section title, styled as Settings' headers (SettingsForm.Header); the Group
+     Libraries one collapses, with the chevron at the end. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="48dp"
@@ -15,8 +16,9 @@
         android:layout_weight="1"
         android:ellipsize="end"
         android:maxLines="1"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-        android:textColor="?android:attr/textColorSecondary" />
+        android:fontFamily="sans-serif-medium"
+        android:textColor="?attr/colorAccent"
+        android:textSize="14sp" />
 
     <ImageView
         android:id="@+id/sidebar_heading_chevron"

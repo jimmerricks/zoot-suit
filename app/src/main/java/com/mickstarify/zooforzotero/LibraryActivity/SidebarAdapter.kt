@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
+import com.mickstarify.zooforzotero.common.themeColor
 
 /**
  * The library screen's sidebar. It replaces a NavigationView menu, which can't nest
@@ -84,6 +85,10 @@ class SidebarAdapter(private val listener: Listener) :
         private val title = view.findViewById<TextView>(R.id.sidebar_title)
         private val density = view.resources.displayMetrics.density
         private val normalTextColors = title.textColors
+        // grey beside the text, as Material's navigation drawer; primary when highlighted
+        private val normalIconColors = ColorStateList.valueOf(
+            itemView.context.themeColor(android.R.attr.textColorSecondary)
+        )
 
         private fun show(
             text: String, iconRes: Int, selected: Boolean, bold: Boolean, depth: Int = 0,
@@ -97,7 +102,7 @@ class SidebarAdapter(private val listener: Listener) :
             if (highlight) title.setTextColor(primary) else title.setTextColor(normalTextColors)
             title.setTypeface(null, if (highlight) Typeface.BOLD else Typeface.NORMAL)
             ImageViewCompat.setImageTintList(
-                icon, if (highlight) ColorStateList.valueOf(primary) else normalTextColors
+                icon, if (highlight) ColorStateList.valueOf(primary) else normalIconColors
             )
             // a collection's chevron column is 40dp; other rows have none and start at 16dp.
             // 16dp more per level of the tree.
