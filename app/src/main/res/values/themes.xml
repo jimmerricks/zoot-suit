@@ -23,6 +23,12 @@
         <item name="popupTheme">@style/ThemeOverlay.AppCompat.DayNight</item>
         <item name="titleTextColor">@android:color/white</item>
         <item name="subtitleTextColor">@android:color/white</item>
+        <!-- ☰ centred 28dp from the left edge, as ⋮ is from the right; the title where
+             the library list's titles start (comfortable rows) -->
+        <item name="android:paddingStart">0dp</item>
+        <item name="android:paddingLeft">0dp</item>
+        <item name="contentInsetStartWithNavigation">60dp</item>
+        <item name="titleMarginStart">0dp</item>
     </style>
 
     <style name="ThemeOverlay.ZooForZotero.Toolbar" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">

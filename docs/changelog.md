@@ -4,6 +4,8 @@
 
 Changed:
 - Settings: Syncing comes before Attachments.
+- The toolbar is spaced like the list below it: the menu button as far from the left
+  edge as ⋮ is from the right, and the title closer to it.
 
 ## 0.4.2
 
