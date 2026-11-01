@@ -37,17 +37,18 @@
         app:showAsAction="ifRoom" />
 
 
-    <!-- the files of every item the list shows; Select items for some of them -->
-    <item
-        android:id="@+id/manage_attachments"
-        android:title="@string/manage_attachments"
-        android:visible="false"
-        app:showAsAction="never" />
-
-    <!-- the same as a long press on an item, with nothing chosen yet -->
+    <!-- the same as a long press on an item, with nothing chosen yet; first of the menu's
+         own entries (filter and sort, above, are toolbar buttons from 600dp wide) -->
     <item
         android:id="@+id/start_selection"
         android:title="@string/start_selection"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <!-- the files of every item the list shows; Select items, above, for some of them -->
+    <item
+        android:id="@+id/manage_attachments"
+        android:title="@string/manage_attachments"
         android:visible="false"
         app:showAsAction="never" />
 

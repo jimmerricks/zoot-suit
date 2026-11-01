@@ -62,6 +62,8 @@ Changed:
   title clear them; the search and filter screens keep their Clear buttons.
 - "Stop downloads" is no longer in the menu: Manage attachments shows the downloads at
   work, with Stop.
+- The library's menu is Filter and Sort (on phones), Select items, Manage attachments,
+  Settings: nothing in it comes and goes any more.
 
 Fixed:
 - A file saved again while it was being uploaded to WebDAV could reach the server with a
