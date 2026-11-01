@@ -11,7 +11,7 @@ import com.mickstarify.zooforzotero.R
 
 /**
  * Sort order for the library list, laid out like [LibraryFilterDialog]. Choices only
- * change the dialog; Done saves them and re-sorts the list once (re-sorting a large
+ * change the dialog; Apply saves them and re-sorts the list once (re-sorting a large
  * library on every tap was slow). Cancel (or Back) leaves the order as it was.
  * The order belongs to the library [groupId] (My Library = GroupInfo.NO_GROUP_ID).
  */
@@ -49,7 +49,7 @@ class LibrarySortDialog(
         AlertDialog.Builder(context)
             .setTitle("Sort")
             .setView(view)
-            .setPositiveButton("Done") { _, _ -> apply() }
+            .setPositiveButton("Apply") { _, _ -> apply() }
             .setNegativeButton("Cancel", null)
             .show()
     }

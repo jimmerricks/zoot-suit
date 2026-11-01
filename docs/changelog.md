@@ -19,6 +19,10 @@ Changed:
 - Settings → Attachments no longer has "Remove all files from this device": Manage
   attachments in each library's menu does it, with a choice of kinds and the edited
   files named before anything is removed.
+- Dialog buttons follow one pattern: the button that acts names what it does (Apply,
+  Add, Remove, Download), Cancel backs out of anything that would change something, and
+  Close leaves a dialog that only shows things or acts through its own buttons. Filter
+  and Sort say Apply rather than Done; removal prompts say Cancel rather than Keep.
 - "N edits to sync" and "Syncing 45%" open the same sync dialog: the edits waiting, then
   the running or last sync stage by stage (or when the library last synced), with Sync
   now while no sync runs. When a sync ends, the dialog lists what is still waiting.

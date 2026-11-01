@@ -27,7 +27,7 @@ import com.mickstarify.zooforzotero.R
 /**
  * Filter for the library list: item and device conditions and tags, all ticked conditions
  * must hold. One list scrolls them all; while the tag search is in use, it keeps its section
- * at the top with the matching tags below, above the keyboard. Ticks only change the dialog; the list is filtered when Done is tapped, since
+ * at the top with the matching tags below, above the keyboard. Ticks only change the dialog; the list is filtered when Apply is tapped, since
  * redrawing a large library on every tick was slow. Clear removes the filter at once;
  * Cancel (or Back) leaves the list as it was.
  *
@@ -193,7 +193,7 @@ class LibraryFilterDialog(
         val dialog = AlertDialog.Builder(context)
             .setTitle("Filter")
             .setView(list)
-            .setPositiveButton("Done") { _, _ -> if (filter != initial) onApply(filter) }
+            .setPositiveButton("Apply") { _, _ -> if (filter != initial) onApply(filter) }
             .setNegativeButton("Cancel", null)
             .setNeutralButton("Clear") { _, _ -> if (initial.isActive) onApply(LibraryFilter()) }
             .create()

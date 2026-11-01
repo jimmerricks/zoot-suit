@@ -236,7 +236,7 @@ class LibraryAttachments(
             ui.createYesNoPrompt(
                 "Different from Zotero's copy",
                 "The file on this device differs from the one in Zotero. Download Zotero's version?",
-                "Download", "Open mine", {
+                "Download", "Open my copy", {
                     ui.updateAttachmentDownloadProgress(0, -1)
                     downloadAttachment(item)
                 }, {
@@ -295,7 +295,7 @@ class LibraryAttachments(
                 "Newer version in Zotero",
                 "This file changed in Zotero after you downloaded it, and your copy has " +
                         "edits of its own. Downloading the newer version replaces your edits.",
-                "Download newer", "Keep my copy", {
+                "Download newer", "Cancel", {
                     ui.updateAttachmentDownloadProgress(0, -1)
                     downloadAttachment(item, openWhenDone = false)
                 }, {}
@@ -646,12 +646,12 @@ class LibraryAttachments(
                         "Remove your edits?",
                         "This copy has edits that haven't been uploaded. Removing it loses them." +
                                 (inFolder?.let { "\n\n$it" } ?: ""),
-                        "Remove", "Keep", delete, {}
+                        "Remove", "Cancel", delete, {}
                     )
                     inFolder != null -> ui.createYesNoPrompt(
                         "Remove from this device?",
                         "$inFolder\n\nIt stays in Zotero and can be downloaded again.",
-                        "Remove", "Keep", delete, {}
+                        "Remove", "Cancel", delete, {}
                     )
                     else -> delete()
                 }
