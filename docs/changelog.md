@@ -58,6 +58,8 @@ Fixed:
 - An item opened during a first sync, before its attachments had arrived, closed and
   opened again when they came, scrolled to the bottom. They now appear in the open
   dialog, which stays where it was.
+- The item screen no longer makes numbers (pages, years, ISBNs, DOIs) into links that open
+  the phone app. Web and email addresses are still links.
 
 Removed:
 - The crash-report code (ACRA), which was never switched on. Report crashes as GitHub

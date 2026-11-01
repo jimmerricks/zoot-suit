@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- One field of an item (also each creator), as in Zotero's info pane: its name in a
-     fixed-width column, the value selectable beside it. -->
+     fixed-width column, the value selectable beside it. Web and email addresses are links;
+     numbers aren't ("all" made pages, years and ISBNs into phone numbers). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -22,7 +23,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:autoLink="all"
+        android:autoLink="web|email"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         android:textIsSelectable="true" />
 </LinearLayout>
