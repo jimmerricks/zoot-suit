@@ -347,12 +347,16 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             if (id == GroupInfo.NO_GROUP_ID) "My Library" else parts.groups.getGroupById(id)?.name ?: "a group library"
         },
         lastSynced = library.library(status.groupID).getLastSyncedTimestamp(),
-        formatTime = {
-            DateUtils.formatDateTime(context, it, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME)
-        },
+        formatTime = ::formatTime,
     )
 
-    /** The edits waiting to sync, a line per item, for the dialog behind "N edits to sync". */
+    /** When the open library last finished a sync, for the sync dialog before any sync this session. */
+    fun lastSyncedLine() = SyncDetails.lastSyncedLine(library.library(currentLibraryId()).getLastSyncedTimestamp(), ::formatTime)
+
+    private fun formatTime(ms: Long) =
+        DateUtils.formatDateTime(context, ms, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_TIME)
+
+    /** The edits waiting to sync, a line per item, for the sync dialog. */
     fun describePendingEdits(onResult: (List<String>) -> Unit) = parts.deviceState.describePending(onResult)
 
     override fun showPendingEdits(count: Int) {

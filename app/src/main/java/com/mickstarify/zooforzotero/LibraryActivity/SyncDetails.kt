@@ -40,7 +40,7 @@ class SyncDetails(
                     "You can use the library meanwhile. Filters, PDF icons and note search fill in " +
                             "as attachments and notes arrive."
                 } else null,
-                if (lastSynced > 0) "Last finished sync: ${formatTime(lastSynced)}" else "Not synced before",
+                lastSyncedLine(lastSynced, formatTime),
             )
             return (lines + "" + after).joinToString("\n")
         }
@@ -68,5 +68,11 @@ class SyncDetails(
         }
         Phase.UP_TO_DATE -> "up to date"
         Phase.FAILED -> "failed (${state.error ?: "unknown error"})"
+    }
+
+    companion object {
+        /** When a library last finished a sync ([lastSynced] in ms, 0 for never). */
+        fun lastSyncedLine(lastSynced: Long, formatTime: (Long) -> String) =
+            if (lastSynced > 0) "Last finished sync: ${formatTime(lastSynced)}" else "Not synced before"
     }
 }

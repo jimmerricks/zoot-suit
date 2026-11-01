@@ -14,6 +14,9 @@ Changed:
   on the kinds ticked, and while downloads run it shows how far they are, with Stop. It
   copes with a whole library selected: the downloads are queued and the files removed
   off the main thread, with progress.
+- "N edits to sync" and "Syncing 45%" open the same sync dialog: the edits waiting, then
+  the running or last sync stage by stage (or when the library last synced), with Sync
+  now while no sync runs. When a sync ends, the dialog lists what is still waiting.
 - The sign-in screens are built like the rest of the app (they used Jetpack Compose,
   which the app now leaves out): they look the same, the API key field no longer opens
   the keyboard before it's tapped, and Zotero's login page survives turning the device.

@@ -55,9 +55,6 @@ import dagger.hilt.android.AndroidEntryPoint
 
 private const val TAG = "LibraryActivity"
 
-// lines in the "N edits to sync" dialog; a bulk edit can make thousands
-private const val MAX_EDIT_LINES = 100
-
 @AndroidEntryPoint
 class LibraryActivity : AppCompatActivity(),
     SidebarAdapter.Listener,
@@ -394,9 +391,7 @@ class LibraryActivity : AppCompatActivity(),
                 }
             }
 
-            R.id.sync_status -> showSyncDetails()
-
-            R.id.pending_edits -> showPendingEditsDialog()
+            R.id.sync_status, R.id.pending_edits -> showSyncDialog()
 
             R.id.clear_search_and_filters -> viewModel.clearSearchAndFilter()
 
@@ -461,30 +456,25 @@ class LibraryActivity : AppCompatActivity(),
             syncLabel = label
             syncMenuItem?.title = label
         }
-        if (status != null) syncDetailsDialog?.let { showSyncDetails(it, status) }
+        if (status != null) syncDialog?.update(status)
     }
 
     // open while the user reads it; redrawn as the sync goes on
-    private var syncDetailsDialog: AlertDialog? = null
+    private var syncDialog: SyncDialog? = null
 
-    /** The running (or last) sync's stages, from the toolbar's "Syncing n/m". */
-    private fun showSyncDetails() {
-        val status = viewModel.syncStatus.value ?: return
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(" ")
-            .setMessage(" ") // set now, so the message can change once it's shown
-            .setPositiveButton("Close", null)
-            .setOnDismissListener { syncDetailsDialog = null }
-            .create()
-        syncDetailsDialog = dialog
-        showSyncDetails(dialog, status)
-        dialog.show()
-    }
-
-    private fun showSyncDetails(dialog: AlertDialog, status: SyncStatus) {
-        val details = viewModel.syncDetails(status)
-        dialog.setTitle(details.title)
-        dialog.setMessage(details.message)
+    /** The sync dialog (SyncDialog), from either of the toolbar's sync buttons. */
+    private fun showSyncDialog() {
+        syncDialog?.dismiss()
+        syncDialog = SyncDialog(
+            this,
+            details = viewModel::syncDetails,
+            lastSynced = viewModel::lastSyncedLine,
+            editCount = { pendingEdits },
+            describeEdits = { onResult ->
+                viewModel.describePendingEdits { if (!isFinishing && !isDestroyed) onResult(it) }
+            },
+            syncNow = viewModel::requestLibraryRefresh,
+        ).apply { show(viewModel.syncStatus.value) }
     }
 
     // open while the user reads it; follows the bulk downloads
@@ -499,39 +489,9 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     override fun onDestroy() {
-        syncDetailsDialog?.dismiss() // its window would leak with the activity (rotation)
+        syncDialog?.dismiss() // its window would leak with the activity (rotation)
         manageAttachmentsDialog?.dismiss()
         super.onDestroy()
-    }
-
-    /** What "N edits to sync" would send, with Sync now: attachment uploads are worth a look first. */
-    private fun showPendingEditsDialog() {
-        viewModel.describePendingEdits { lines ->
-            if (isFinishing || isDestroyed) return@describePendingEdits
-            val shown = lines.take(MAX_EDIT_LINES).joinToString("\n") { "• $it" }
-            val more = lines.size - MAX_EDIT_LINES
-            val dialog = AlertDialog.Builder(this)
-                .setTitle(resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits))
-                .setMessage(
-                    when {
-                        lines.isEmpty() -> "Nothing is waiting any more."
-                        more > 0 -> "$shown\n…and $more more items."
-                        else -> shown
-                    }
-                )
-                .setPositiveButton("Sync now", null) // set below: the button would close the dialog
-                .setNegativeButton("Close", null)
-                .setOnDismissListener { if (syncDetailsDialog === it) syncDetailsDialog = null }
-                .show()
-            // Sync now turns the dialog into the sync's details, open until Close
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { button ->
-                button.visibility = View.GONE
-                dialog.setTitle(getString(R.string.syncing))
-                dialog.setMessage("Starting…")
-                syncDetailsDialog = dialog
-                viewModel.requestLibraryRefresh()
-            }
-        }
     }
 
     /** Attachment keys whose file is on this device / has edits to sync, for the list's PDF icons. */
