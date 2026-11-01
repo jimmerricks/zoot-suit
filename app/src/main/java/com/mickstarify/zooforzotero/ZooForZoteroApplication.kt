@@ -19,14 +19,13 @@ class ZooForZoteroApplication : Application() {
         // off in debug builds, and when no address is configured (apikeys.properties)
         if (!BuildConfig.DEBUG && BuildConfig.crash_report_email.isNotBlank()) {
             initAcra {
-            //core configuration:
+            // no LOGCAT: release logs name items, attachment files and WebDAV URLs
             reportContent = listOf(
                 ReportField.APP_VERSION_CODE,
                 ReportField.ANDROID_VERSION,
                 ReportField.PHONE_MODEL,
                 ReportField.CUSTOM_DATA,
-                ReportField.STACK_TRACE,
-                ReportField.LOGCAT
+                ReportField.STACK_TRACE
             )
 
             reportFormat = StringFormat.JSON
