@@ -187,7 +187,7 @@ class ZoteroDB(
             Log.e("Zotero", "Error database unloaded.")
             this.loadItemsFromDatabase()
                 .subscribeOn(Schedulers.io())
-                .subscribe()
+                .subscribe({}, { Log.e("Zotero", "reloading the database failed: $it") })
             return emptyList()
         }
 
