@@ -30,13 +30,8 @@ class ItemNoteEntry() : Fragment() {
         onAttachToParentFragment(parentFragment)
     }
 
-    fun stripHtml(html: String): String {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY).toString()
-        } else {
-            return Html.fromHtml(html).toString()
-        }
-    }
+    fun stripHtml(html: String): String =
+        Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY).toString()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.DocumentsContract
 import android.util.Log
 import androidx.core.content.FileProvider
@@ -168,17 +167,7 @@ class AttachmentStorageManager @Inject constructor(
 
     fun getAttachmentUri(item: Item): Uri {
         if (storageMode == StorageMode.EXTERNAL_CACHE) {
-            val file = getAttachmentFile(item)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                return FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider.app",
-                    file
-                )
-            } else {
-                return Uri.fromFile(file)
-            }
-
+            return fileProviderUri(getAttachmentFile(item))
         } else if (storageMode == StorageMode.CUSTOM) {
             return findCustomAttachment(item)?.uri ?: throw FileNotFoundException()
         }
@@ -222,42 +211,21 @@ class AttachmentStorageManager @Inject constructor(
         )
     }
 
-    fun openAttachment(attachment: Item): Intent {
-        var intent = Intent(Intent.ACTION_VIEW)
-        var attachmentUri = getAttachmentUri(attachment)
-        Log.d("zotero", "opening PDF with Uri $attachmentUri")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            intent = Intent(Intent.ACTION_VIEW)
-            intent.data = attachmentUri
-            intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        } else {
-            intent.setDataAndType(attachmentUri, attachment.data["contentType"])
-            intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY
-            intent = Intent.createChooser(intent, "Open with")
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-        }
-        return intent
-    }
+    fun openAttachment(attachment: Item): Intent =
+        openAttachment(getAttachmentUri(attachment), attachment.data["contentType"] ?: "")
 
     fun openAttachment(uri: Uri, contentType: String = ""): Intent {
-        var intent = Intent(Intent.ACTION_VIEW)
         Log.d("zotero", "opening PDF with Uri $uri")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            intent = Intent(Intent.ACTION_VIEW)
-            intent.data = uri
-            intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        } else {
-            intent.setDataAndType(uri, contentType)
-            intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY
-            intent = Intent.createChooser(intent, "Open with")
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-        }
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.data = uri
+        intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         return intent
     }
+
+    /** [file], in the app's storage, as a content:// URI other apps can be granted. */
+    private fun fileProviderUri(file: File): Uri =
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider.app", file)
 
 
     fun testStorage(): Boolean {
@@ -518,16 +486,7 @@ class AttachmentStorageManager @Inject constructor(
                 Log.d("zotero", "checking path $path")
                 var document = File(context.externalCacheDir, path)
                 if (document.exists()) {
-                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.fileprovider.app",
-                            document
-                        )
-                    } else {
-                        Uri.fromFile(document)
-                    }
-                    return openAttachment(uri, item.data["contentType"] ?: "")
+                    return openAttachment(fileProviderUri(document), item.data["contentType"] ?: "")
                 }
             }
 

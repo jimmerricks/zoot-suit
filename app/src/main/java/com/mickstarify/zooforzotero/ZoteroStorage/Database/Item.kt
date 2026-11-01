@@ -149,13 +149,8 @@ class Item : Parcelable {
         allData = HashMap(fields)
     }
 
-    private fun stripHtml(html: String): String {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY).toString()
-        } else {
-            return Html.fromHtml(html).toString()
-        }
-    }
+    private fun stripHtml(html: String): String =
+        Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY).toString()
 
     fun getTitle(): String {
         val title = when (itemType) {
