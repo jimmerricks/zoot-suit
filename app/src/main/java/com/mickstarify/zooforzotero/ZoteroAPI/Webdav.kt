@@ -14,21 +14,22 @@ import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
-import net.lingala.zip4j.ZipFile
 import okhttp3.Authenticator
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.ResponseBody
-import okio.buffer
-import okio.sink
-import okio.source
+import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.security.SecureRandom
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
@@ -111,10 +112,7 @@ class Webdav(
                 // cancelled: the zip is partial, and the copy on the device stays as it was
                 if (emitter.isDisposed) return@create
                 emitter.onNext(DownloadProgress(total, -1, prop.mtime, prop.hash))
-                val zip = ZipFile(zipFile)
-                val entry = zip.fileHeaders.firstOrNull { !it.isDirectory }
-                    ?: throw IOException("$key.zip is empty")
-                zip.extractFile(entry, extracted.parent, extracted.name)
+                unzipFirstFile(zipFile, extracted)
                 attachmentStorageManager.writeAttachmentFromFile(extracted, attachment)
                 emitter.onComplete()
             } catch (e: Exception) {
@@ -144,20 +142,14 @@ class Webdav(
         mtime: Long
     ): Completable {
         return Completable.fromAction {
-            // zip the file under its real name, as Zotero does
-            val fileInputStream =
-                attachmentStorageManager.getItemInputStream(attachment).source()
-            val filename = attachmentStorageManager.getFilenameForItem(attachment)
-            val tempFile = attachmentStorageManager.createTempFile(filename)
-            val sinkBuffer = tempFile.outputStream().sink().buffer()
-            sinkBuffer.writeAll(fileInputStream)
-            sinkBuffer.close()
-            fileInputStream.close()
-
+            // one entry, the file under its real name, as Zotero does
             val zipFile =
                 attachmentStorageManager.createTempFile("${attachment.itemKey.uppercase()}_NEW.zip")
-            ZipFile(zipFile).addFile(tempFile)
-            tempFile.delete()
+            zipOneFile(
+                attachmentStorageManager.getFilenameForItem(attachment),
+                attachmentStorageManager.getItemInputStream(attachment),
+                zipFile
+            )
 
             try {
                 if (backupBeforeReplace) {
@@ -266,6 +258,32 @@ internal fun serverOnly(address: String, delegate: Authenticator): Authenticator
         } else {
             Log.w("zotero", "WebDAV: not sending the login to ${response.request.url.host}")
             null
+        }
+    }
+}
+
+/**
+ * Writes [zip] with one entry, [name], holding [input] (which it closes): how Zotero
+ * stores an attachment on a WebDAV server, KEY.zip.
+ */
+internal fun zipOneFile(name: String, input: InputStream, zip: File) {
+    ZipOutputStream(zip.outputStream().buffered()).use { out ->
+        out.putNextEntry(ZipEntry(name))
+        input.use { it.copyTo(out, 65536) }
+        out.closeEntry()
+    }
+}
+
+/**
+ * Writes the first file in [zip] to [dest]. Zotero's zips hold one; the entry's own name
+ * isn't used, so it can't point outside [dest]'s folder.
+ */
+internal fun unzipFirstFile(zip: File, dest: File) {
+    ZipFile(zip).use { archive ->
+        val entry = archive.entries().asSequence().firstOrNull { !it.isDirectory }
+            ?: throw IOException("${zip.name} is empty")
+        archive.getInputStream(entry).use { input ->
+            dest.outputStream().use { input.copyTo(it, 65536) }
         }
     }
 }

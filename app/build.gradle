@@ -183,9 +183,6 @@ dependencies {
     // Bulk attachment downloads in the background, carried on after the app is stopped
     implementation 'androidx.work:work-runtime-ktx:2.10.1'
 
-    // Other utilities
-    implementation 'net.lingala.zip4j:zip4j:2.11.5'
-
 //    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
 
     // TEST DEPENDENCIES
