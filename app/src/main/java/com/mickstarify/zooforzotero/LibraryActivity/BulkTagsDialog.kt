@@ -1,12 +1,10 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
-import android.app.AlertDialog
 import android.content.Context
 import android.text.Editable
 import android.text.Spanned
 import android.text.TextWatcher
 import android.text.style.ForegroundColorSpan
-import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -16,10 +14,12 @@ import android.view.inputmethod.EditorInfo
 import android.widget.CheckedTextView
 import android.widget.EditText
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.LibraryActivity.BulkTagChoices.State
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.themeColor
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 
 /**
@@ -55,18 +55,21 @@ class BulkTagsDialog(
     private var rows: List<Row> = emptyList()
 
     fun show(): (List<String>) -> Unit {
-        val inflater = LayoutInflater.from(context)
+        val builder = AlertDialog.Builder(context)
+        // the dialog's theme, for the rows' colours
+        val themed = builder.context
+        val inflater = LayoutInflater.from(themed)
         val view = inflater.inflate(R.layout.dialog_bulk_tags, null)
         val hint = view.findViewById<TextView>(R.id.textView_bulk_tags_hint)
         val field = view.findViewById<EditText>(R.id.editText_bulk_tags)
         val empty = view.findViewById<TextView>(R.id.textView_bulk_tags_empty)
         val list = view.findViewById<RecyclerView>(R.id.recyclerView_bulk_tags)
-        list.layoutManager = LinearLayoutManager(context)
+        list.layoutManager = LinearLayoutManager(themed)
         // a tap redraws the rows; no fading in and out for that
         list.itemAnimator = null
 
-        val accent = themeColor(androidx.appcompat.R.attr.colorAccent)
-        val secondary = themeColor(android.R.attr.textColorSecondary)
+        val accent = themed.themeColor(androidx.appcompat.R.attr.colorAccent)
+        val secondary = themed.themeColor(android.R.attr.textColorSecondary)
         hint.text = (if (count == 1) "The tags of the selected item." else "The tags of the %,d selected items.".format(count)) +
                 " Tap one to put it on all of them, again to take it off all of them."
 
@@ -158,8 +161,8 @@ class BulkTagsDialog(
             true
         }
 
-        dialog = AlertDialog.Builder(context)
-            .setTitle("Add and remove tags")
+        dialog = builder
+            .setTitle(context.getString(R.string.add_and_remove_tags))
             .setView(view)
             .setPositiveButton("Apply") { _, _ ->
                 if (choices.hasChanges) onApply(choices.toAdd, choices.toRemove)
@@ -198,10 +201,4 @@ class BulkTagsDialog(
     }
 
     private fun items(n: Int) = if (n == 1) "1 item" else "%,d items".format(n)
-
-    private fun themeColor(attr: Int): Int {
-        val value = TypedValue()
-        context.theme.resolveAttribute(attr, value, true)
-        return if (value.resourceId != 0) context.getColor(value.resourceId) else value.data
-    }
 }
