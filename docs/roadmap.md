@@ -13,7 +13,42 @@ larger work behind them.
   filter, sort and sync have been checked on an Android 16 emulator; predictive Back,
   edge-to-edge display, rotation, the item view and attachments still need a
   systematic pass. Android 15 is untested.
-- **Tablet layouts.** There are no layouts for large screens yet.
+- **Tablet layouts.** There are no layouts for large screens yet: the sidebar overlays
+  the list, and a wide screen could show the list and an item side by side.
+- **Downloaded files private on Android 7 to 9.** "App storage" is the app's folder in
+  shared storage, which on Android 7 to 9 any app with storage permission can read.
+  Moving it to the app's private storage needs the files already downloaded moved
+  with it, once, on update.
+- **Tested on a real device.** So far the app is tested on emulators (Android 7.0, 14
+  and 16).
+
+## Open work
+
+Smaller items, none blocking a release:
+
+- **Not yet tested:** a WebDAV server that redirects to another host (the login now
+  goes only to the host set up, so such a server needs its final address entered);
+  leaving a group library (its items are now removed from the device); tag colours
+  and kept searches in group libraries; Android 15.
+- **WebDAV over `http`:** the password goes unencrypted, and Basic authentication
+  sends it as is. A warning in WebDAV setup is planned, worded together with the
+  rest of the setup screen.
+- **Crash reports** are off. Turning them on needs a line in the privacy policy (what a
+  report holds is in `releases.md`); if they stay off, ACRA can go (about 70 KB).
+- **Size:** the release APK is about 2.6 MB. Keeping only the classes Gson, Room and
+  Hilt reach by reflection, instead of all of the app's own, would save a few hundred
+  KB more; the navigation library is used for a single screen.
+- **Uploads:** a file is hashed before it is streamed, so one saved during an upload
+  can end up on WebDAV with a `.prop` that doesn't match it (Zotero's own storage
+  rejects such an upload).
+- **Code:** the download-and-check logic exists twice (single and bulk downloads);
+  RxJava is being replaced by coroutines part by part; the library screen's dialogs
+  and navigation still go presenter to view rather than through the ViewModel; the
+  library list's derived maps are rebuilt just after a new list is published, so they
+  can briefly disagree with it; lint reports about 150 warnings (mostly hardcoded text).
+- **Library screen:** tag views and searches are not restored after a restart (the
+  collection is); whether `singleTask` would serve the library screen better than
+  `singleInstance` needs testing with external PDF viewers.
 
 ## Known limitations
 
@@ -25,10 +60,8 @@ larger work behind them.
   replayed onto Zotero's copy at sync, 50 items to a request, so editing other fields
   can reuse the same path; it needs an editor and a way to settle a field changed both
   here and elsewhere (detected, not yet shown).
-- The Zotero File Storage upload path has had less testing than WebDAV. Known gaps:
-  an optional `x-amz-security-token` is modelled as required, first uploads send
-  `If-Match: *` where `If-None-Match: *` is correct, and one status check expects
-  `421` instead of `412`.
+- The Zotero File Storage upload path has had less testing than WebDAV (uploads and a
+  conflict were tested against a test account).
 
 ## Architecture
 
@@ -60,8 +93,8 @@ Planned, one small, behaviour-preserving step at a time, each checked on a devic
    `oauth.signpost` and its Apache HttpComponents dependency.
 
 Deferred for now: removing `allowMainThreadQueries()` from Room (needs every
-blocking query off the main thread first) and enabling R8 minification (needs keep
-rules for the Gson/Retrofit models).
+blocking query off the main thread first). Release builds are shrunk with R8, keeping
+all of the app's own classes (`proguard-rules.pro`).
 
 ## Constraints
 
@@ -81,4 +114,5 @@ For the library screen's search, filter and sort:
 Large libraries: the list, sort and search run in the database (0.2.0); a first sync
 fetches four pages at once and opens the library before attachments and notes (0.2.1). Left:
 the edit check at each start still looks at every downloaded file once (about 1 ms
-each), and R8 minification would make the APK smaller.
+each); paging the startup query by key would keep each result within one cursor
+window; a snapshot of the loaded library would make the start faster still.
