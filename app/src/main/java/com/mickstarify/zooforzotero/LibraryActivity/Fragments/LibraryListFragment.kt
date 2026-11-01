@@ -38,6 +38,9 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
 
     companion object {
         fun newInstance() = LibraryListFragment()
+
+        /** A payload for rows whose selection changed: rebound in place, not crossfaded. */
+        private const val SELECTION_CHANGED = "selection"
     }
 
     private lateinit var viewModel: LibraryListViewModel
@@ -111,8 +114,10 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
 
         viewModel.getSelection().observe(viewLifecycleOwner) { selection ->
             adapter.selection = selection
-            // only the rows on screen are bound again
-            adapter.notifyItemRangeChanged(0, adapter.itemCount)
+            // only the rows on screen are bound again. With a payload each keeps its view:
+            // without, the change animation inflated a second row per row to crossfade,
+            // which held the main thread long enough (~0.5 s) to freeze the closing menu
+            adapter.notifyItemRangeChanged(0, adapter.itemCount, SELECTION_CHANGED)
         }
 
         viewModel.getAttachmentStates().observe(viewLifecycleOwner) { states ->
