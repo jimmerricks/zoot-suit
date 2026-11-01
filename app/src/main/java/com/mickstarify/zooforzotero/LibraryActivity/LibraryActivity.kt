@@ -129,7 +129,6 @@ class LibraryActivity : AppCompatActivity(),
         viewModel.sidebar.observe(this) { showSidebar(it) }
         viewModel.pendingEdits.observe(this) { showPendingEdits(it) }
         viewModel.syncStatus.observe(this) { showSyncStatus(it) }
-        viewModel.downloadsActive.observe(this) { invalidateOptionsMenu() }
         viewModel.downloadProgress.observe(this) { manageAttachmentsDialog?.showDownloads(it) }
         libraryListViewModel.getItems().observe(this) { pages ->
             val none = pages.size == 0 && !viewModel.isListNarrowed()
@@ -353,7 +352,6 @@ class LibraryActivity : AppCompatActivity(),
                 val count = viewModel.listedKeys().size
                 viewModel.countListedAttachments { counts -> showManageAttachments(count, listed = true, counts) }
             }
-            R.id.stop_downloads -> viewModel.stopDownloads()
             R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
             R.id.invert_selection -> libraryListViewModel.changeSelection { invert(it) }
             R.id.end_selection -> afterMenuCloses { libraryListViewModel.changeSelection { end() } }
@@ -546,7 +544,6 @@ class LibraryActivity : AppCompatActivity(),
         // the actions need something selected; choosing (select all, invert) stays
         menu.setGroupVisible(R.id.selection_edits, viewModel.canEditItems() && !selectedNone)
         menu.setGroupVisible(R.id.selection_files, !selectedNone)
-        menu.findItem(R.id.stop_downloads)?.isVisible = viewModel.downloadsActive.value == true
         menu.findItem(R.id.selection_remove_from_collection)?.isVisible =
             viewModel.canEditItems() && !selectedNone && viewModel.currentCollection() != null
         // the sync button is always there, an icon at any width, its words the tooltip:

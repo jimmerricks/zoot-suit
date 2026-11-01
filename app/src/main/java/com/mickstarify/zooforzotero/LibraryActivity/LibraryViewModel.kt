@@ -199,9 +199,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     private var filterSummary: String? = null
     private var downloadStatus: String? = null
 
-    /** Bulk downloads at work, for the menu's "Stop downloads". */
-    val downloadsActive = MutableLiveData(false)
-
     /** How far the bulk downloads are ("Downloading 3 of 12"), null when none are at work. */
     val downloadProgress = MutableLiveData<String?>(null)
 
@@ -232,7 +229,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             lastDone = done
             // also a round that ended while the app was away (or killed) is told at start
             if (!active) reportDownloads()
-            if (downloadsActive.value != active) downloadsActive.value = active
         }
     }
 

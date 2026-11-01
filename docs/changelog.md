@@ -60,6 +60,8 @@ Changed:
 - "Clear search and filters" is no longer in the menu. Settings → Library → "Tap the
   title to clear search and filter" (off at first) makes a single tap on the toolbar's
   title clear them; the search and filter screens keep their Clear buttons.
+- "Stop downloads" is no longer in the menu: Manage attachments shows the downloads at
+  work, with Stop.
 
 Fixed:
 - A file saved again while it was being uploaded to WebDAV could reach the server with a
