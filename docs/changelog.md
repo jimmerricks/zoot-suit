@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+Changed:
+- Settings: Syncing comes before Attachments.
+
 ## 0.4.2
 
 Updates 0.4.1 in place (same app id and signing key).

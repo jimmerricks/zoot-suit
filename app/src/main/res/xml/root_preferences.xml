@@ -14,8 +14,8 @@
   ~ limitations under the License.
   -->
 
-<!-- Order: how the list looks first, then what's used most (the library list, its
-     attachments), then where files sync to and how, and signing out last. -->
+<!-- Order: how the list looks first, then what's used most (the library list), then
+     syncing, the attachments and where their files sync to, and signing out last. -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -77,6 +77,22 @@
             android:title="Keep the filter across collections" />
     </PreferenceCategory>
 
+    <!-- "Sync method" was here: a list with one entry (Zotero), the default either way -->
+    <PreferenceCategory app:iconSpaceReserved="false" app:title="@string/syncing_header">
+        <SwitchPreference app:iconSpaceReserved="false"
+            android:defaultValue="false"
+            android:key="group_library_sync_enabled"
+            android:summary="Show and sync group libraries. Your API key needs read access to groups."
+            android:title="Group libraries" />
+
+        <EditTextPreference app:iconSpaceReserved="false"
+            android:key="http_write_timeout"
+            android:title="Upload timeout (ms)"
+            android:defaultValue="60000"
+            android:summary="How long an upload may take before it is given up. 0 waits forever."
+            android:inputType="number" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:iconSpaceReserved="false" android:title="Attachments">
         <ListPreference app:iconSpaceReserved="false"
             app:defaultValue="EXTERNAL_CACHE"
@@ -123,22 +139,6 @@
             android:key="webdav_backup_before_upload"
             android:summary="Before an upload replaces a file on your WebDAV server, keep the old one in zotero-backup next to the zotero folder. Zotero keeps no file history, so this is your only undo. Old copies are not deleted for you."
             android:title="Back up files before uploading" />
-    </PreferenceCategory>
-
-    <!-- "Sync method" was here: a list with one entry (Zotero), the default either way -->
-    <PreferenceCategory app:iconSpaceReserved="false" app:title="@string/syncing_header">
-        <SwitchPreference app:iconSpaceReserved="false"
-            android:defaultValue="false"
-            android:key="group_library_sync_enabled"
-            android:summary="Show and sync group libraries. Your API key needs read access to groups."
-            android:title="Group libraries" />
-
-        <EditTextPreference app:iconSpaceReserved="false"
-            android:key="http_write_timeout"
-            android:title="Upload timeout (ms)"
-            android:defaultValue="60000"
-            android:summary="How long an upload may take before it is given up. 0 waits forever."
-            android:inputType="number" />
     </PreferenceCategory>
 
     <PreferenceCategory app:iconSpaceReserved="false" android:title="Account">
