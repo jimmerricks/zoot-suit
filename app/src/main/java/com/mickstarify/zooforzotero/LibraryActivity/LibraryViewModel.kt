@@ -260,6 +260,13 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     fun countSelectedAttachments(onResult: (Map<AttachmentKind, AttachmentCounts>) -> Unit) =
         parts.attachments.countAttachments(selectedKeys(), onResult)
 
+    /** The keys of the items the list shows (its place, search and filter), in order. */
+    fun listedKeys(): List<String> = libraryListViewModel.getItems().value?.rows?.keys ?: emptyList()
+
+    /** The attachments of all the items the list shows, as [countSelectedAttachments] counts the selection's. */
+    fun countListedAttachments(onResult: (Map<AttachmentKind, AttachmentCounts>) -> Unit) =
+        parts.attachments.countAttachments(listedKeys(), onResult)
+
     fun downloadAttachments(attachments: List<Item>) = parts.attachments.downloadAttachments(attachments)
 
     fun findEditedFiles(files: List<Item>, onResult: (List<Item>) -> Unit) = parts.attachments.findEdited(files, onResult)

@@ -19,14 +19,16 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentCounts
 import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
 
 /**
- * "Manage attachments" for the items selected in the list: their stored files by kind
+ * "Manage attachments" for the items selected in the list, or (from the main menu) all the
+ * items the list shows: their stored files by kind
  * (PDFs, HTML snapshots, others), each with how many are on this device, ticked to be
  * acted on; Download fetches the ticked kinds' missing files in the background, Remove
  * takes their copies off this device (after asking). While bulk downloads are at work it
  * says how far they are, with a button to stop them. Counts and lists only: as cheap for
  * the whole library as for one item.
  *
- * @param count the number of items selected
+ * @param count the number of items acted on
+ * @param listed the items are those the list shows, not a selection
  * @param counts the selection's stored files by kind (AttachmentCounts.of); kinds without any are left out
  * @param onDownload the ticked kinds' files not on this device
  * @param onRemove the ticked kinds' files on this device
@@ -35,6 +37,7 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
 class ManageAttachmentsDialog(
     private val context: Context,
     private val count: Int,
+    private val listed: Boolean,
     private val counts: Map<AttachmentKind, AttachmentCounts>,
     private val onDownload: (List<Item>) -> Unit,
     private val onRemove: (List<Item>) -> Unit,
@@ -62,10 +65,15 @@ class ManageAttachmentsDialog(
         view.findViewById<Button>(R.id.button_stop_downloads).setOnClickListener { onStop() }
 
         val all = counts.values.fold(AttachmentCounts(emptyList(), emptyList())) { a, b -> a + b }
-        val items = if (count == 1) "the selected item" else "the %,d selected items".format(count)
+        val items = when {
+            listed && count == 1 -> "the item listed"
+            listed -> "the %,d items listed".format(count)
+            count == 1 -> "the selected item"
+            else -> "the %,d selected items".format(count)
+        }
         hint.text = if (counts.isEmpty()) {
-            (if (count == 1) "The selected item has no files stored in Zotero."
-            else "None of the %,d selected items has files stored in Zotero.".format(count)) +
+            (if (count == 1) "${items.replaceFirstChar { it.uppercase() }} has no files stored in Zotero."
+            else "None of $items has files stored in Zotero.") +
                     " Links and linked files stay where they are."
         } else {
             val here = if (all.onDevice.isEmpty()) "none" else "%,d".format(all.onDevice.size)

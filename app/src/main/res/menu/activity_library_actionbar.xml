@@ -48,6 +48,13 @@
         android:visible="false"
         app:showAsAction="never" />
 
+    <!-- the files of every item the list shows; Select items for some of them -->
+    <item
+        android:id="@+id/manage_attachments"
+        android:title="@string/manage_attachments"
+        android:visible="false"
+        app:showAsAction="never" />
+
     <!-- the same as a long press on an item, with nothing chosen yet -->
     <item
         android:id="@+id/start_selection"

@@ -51,6 +51,8 @@ import com.mickstarify.zooforzotero.SettingsActivity
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentCounts
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
 import dagger.hilt.android.AndroidEntryPoint
 
 private const val TAG = "LibraryActivity"
@@ -356,16 +358,11 @@ class LibraryActivity : AppCompatActivity(),
                 }
             }
             R.id.selection_attachments -> viewModel.countSelectedAttachments { counts ->
-                if (isFinishing || isDestroyed) return@countSelectedAttachments
-                val count = libraryListViewModel.getSelection().value!!.size
-                manageAttachmentsDialog = ManageAttachmentsDialog(this, count, counts,
-                    onDownload = { viewModel.downloadAttachments(it) },
-                    onRemove = { files -> confirmRemoveFiles(files) },
-                    onStop = { viewModel.stopDownloads() },
-                ).apply {
-                    show()
-                    showDownloads(viewModel.downloadProgress.value)
-                }
+                showManageAttachments(libraryListViewModel.getSelection().value!!.size, listed = false, counts)
+            }
+            R.id.manage_attachments -> {
+                val count = viewModel.listedKeys().size
+                viewModel.countListedAttachments { counts -> showManageAttachments(count, listed = true, counts) }
             }
             R.id.stop_downloads -> viewModel.stopDownloads()
             R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
@@ -480,6 +477,19 @@ class LibraryActivity : AppCompatActivity(),
     // open while the user reads it; follows the bulk downloads
     private var manageAttachmentsDialog: ManageAttachmentsDialog? = null
 
+    /** "Manage attachments" for [count] items, the selection or ([listed]) the whole list. */
+    private fun showManageAttachments(count: Int, listed: Boolean, counts: Map<AttachmentKind, AttachmentCounts>) {
+        if (isFinishing || isDestroyed) return
+        manageAttachmentsDialog = ManageAttachmentsDialog(this, count, listed, counts,
+            onDownload = { viewModel.downloadAttachments(it) },
+            onRemove = { files -> confirmRemoveFiles(files) },
+            onStop = { viewModel.stopDownloads() },
+        ).apply {
+            show()
+            showDownloads(viewModel.downloadProgress.value)
+        }
+    }
+
     /** Removes [files] from this device after asking, saying which have edits not uploaded. */
     private fun confirmRemoveFiles(files: List<Item>) {
         viewModel.findEditedFiles(files) { edited ->
@@ -537,6 +547,8 @@ class LibraryActivity : AppCompatActivity(),
             menu.findItem(id)?.isVisible = !nothingToNarrow
         }
         menu.findItem(R.id.start_selection)?.isVisible = listSelectable
+        // not in the trash, whose items' files aren't counted
+        menu.findItem(R.id.manage_attachments)?.isVisible = listSelectable
         menu.findItem(R.id.clear_search_and_filters)?.isVisible = narrowed
         menu.findItem(R.id.pending_edits)?.apply {
             // while a sync runs the edits are going up; its details list them

@@ -14,6 +14,8 @@ Changed:
   on the kinds ticked, and while downloads run it shows how far they are, with Stop. It
   copes with a whole library selected: the downloads are queued and the files removed
   off the main thread, with progress.
+- "Manage attachments" is also in the library's menu, where it acts on every item the list
+  shows: the whole library, a collection, or what a search or filter leaves.
 - "N edits to sync" and "Syncing 45%" open the same sync dialog: the edits waiting, then
   the running or last sync stage by stage (or when the library last synced), with Sync
   now while no sync runs. When a sync ends, the dialog lists what is still waiting.
