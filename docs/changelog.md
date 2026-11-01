@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+Added:
+- Settings → About: the version (tap to copy it with the Android version and device),
+  Report a problem (a GitHub issue with those filled in), source code and licence.
+
 Changed:
 - Settings: Syncing comes before Attachments.
 - The toolbar is spaced like the list below it: the menu button as far from the left

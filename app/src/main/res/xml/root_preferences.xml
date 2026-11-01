@@ -15,7 +15,7 @@
   -->
 
 <!-- Order: how the list looks first, then what's used most (the library list), then
-     syncing, the attachments and where their files sync to, and signing out last. -->
+     syncing, the attachments and where their files sync to, signing out, and About last. -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -145,5 +145,27 @@
         <Preference app:iconSpaceReserved="false"
             android:key="sign_out"
             android:title="Sign out" />
+    </PreferenceCategory>
+
+    <!-- version summary and taps: SettingsFragment, About.kt -->
+    <PreferenceCategory app:iconSpaceReserved="false" android:title="About">
+        <Preference app:iconSpaceReserved="false"
+            android:key="about_version"
+            android:title="Version" />
+
+        <Preference app:iconSpaceReserved="false"
+            android:key="about_report"
+            android:summary="On GitHub. The app and Android version are filled in for you."
+            android:title="Report a problem" />
+
+        <Preference app:iconSpaceReserved="false"
+            android:key="about_source"
+            android:summary="github.com/jimmerricks/zoot-suit"
+            android:title="Source code" />
+
+        <Preference app:iconSpaceReserved="false"
+            android:key="about_licence"
+            android:summary="GNU GPL 3.0. Based on Zoo for Zotero by Michael Johnston."
+            android:title="Licence" />
     </PreferenceCategory>
 </PreferenceScreen>

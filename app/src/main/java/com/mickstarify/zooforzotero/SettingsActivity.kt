@@ -101,6 +101,7 @@ class SettingsActivity : AppCompatActivity() {
             val settings = requireActivity() as SettingsActivity
             findPreference<Preference>("sign_out")?.summary =
                 "Signed in as ${settings.authenticationStorage.getUsername()}"
+            findPreference<Preference>("about_version")?.summary = About.version
 
             findPreference<ListPreference>("attachment_sync_location")
                 ?.setOnPreferenceChangeListener { pref, newValue ->
@@ -226,6 +227,18 @@ class SettingsActivity : AppCompatActivity() {
                 return true
             } else if (preference.key == "sign_out") {
                 (requireActivity() as SettingsActivity).confirmSignOut()
+                return true
+            } else if (preference.key == "about_version") {
+                About.copyVersion(requireContext())
+                return true
+            } else if (preference.key == "about_report") {
+                About.open(requireContext(), About.reportUrl())
+                return true
+            } else if (preference.key == "about_source") {
+                About.open(requireContext(), About.REPO)
+                return true
+            } else if (preference.key == "about_licence") {
+                About.open(requireContext(), About.LICENCE)
                 return true
             } else {
                 return super.onPreferenceTreeClick(preference)
