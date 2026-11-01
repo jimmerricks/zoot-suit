@@ -29,9 +29,6 @@ Smaller items, none blocking a release:
 - **Size:** the release APK is about 2.6 MB. Keeping only the classes Gson, Room and
   Hilt reach by reflection, instead of all of the app's own, would save a few hundred
   KB more; the navigation library is used for a single screen.
-- **Uploads:** a file is hashed before it is streamed, so one saved during an upload
-  can end up on WebDAV with a `.prop` that doesn't match it (Zotero's own storage
-  rejects such an upload).
 - **Code:** the download-and-check logic exists twice (single and bulk downloads);
   RxJava is being replaced by coroutines part by part; the library screen's dialogs
   and navigation still go presenter to view rather than through the ViewModel; the

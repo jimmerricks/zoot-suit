@@ -46,6 +46,11 @@ Changed:
   Settings and dialogs, and its icons are grey beside the text, coloured only for the
   library or collection open.
 
+Fixed:
+- A file saved again while it was being uploaded to WebDAV could reach the server with a
+  `.prop` describing the earlier version. The upload now checks the bytes it zipped and,
+  if they changed, sends nothing and tries again at the next sync.
+
 Removed:
 - The crash-report code (ACRA), which was never switched on. Report crashes as GitHub
   issues.

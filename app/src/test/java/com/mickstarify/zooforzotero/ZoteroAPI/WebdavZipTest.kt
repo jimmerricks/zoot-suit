@@ -1,5 +1,6 @@
 package com.mickstarify.zooforzotero.ZoteroAPI
 
+import com.mickstarify.zooforzotero.ZoteroStorage.md5Hex
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -29,6 +30,14 @@ class WebdavZipTest {
         val out = tmp.newFile("out")
         unzipFirstFile(zip, out)
         assertArrayEquals(bytes, out.readBytes())
+    }
+
+    @Test
+    fun `zipping returns the md5 of the bytes zipped`() {
+        val zip = tmp.newFile("KEY.zip")
+        val md5 = zipOneFile("a.pdf", bytes.inputStream(), zip)
+        assertEquals(md5Hex(bytes.inputStream()), md5)
+        assertEquals(32, md5.length)
     }
 
     @Test

@@ -23,6 +23,8 @@ import okhttp3.ResponseBody
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.security.DigestInputStream
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
@@ -150,13 +152,16 @@ class Webdav(
             // one entry, the file under its real name, as Zotero does
             val zipFile =
                 attachmentStorageManager.createTempFile("${attachment.itemKey.uppercase()}_NEW.zip")
-            zipOneFile(
+            val zipped = zipOneFile(
                 attachmentStorageManager.getFilenameForItem(attachment),
                 attachmentStorageManager.getItemInputStream(attachment),
                 zipFile
             )
 
             try {
+                // saved again since [md5] was taken: the .prop (and the md5 patched onto the
+                // item after) would describe another file than the zip. Nothing sent yet.
+                if (zipped != md5) throw FileChangedDuringUploadException()
                 if (backupBeforeReplace) {
                     uploader.backupCurrent(attachment.itemKey)
                 }
@@ -269,14 +274,17 @@ internal fun serverOnly(address: String, delegate: Authenticator): Authenticator
 
 /**
  * Writes [zip] with one entry, [name], holding [input] (which it closes): how Zotero
- * stores an attachment on a WebDAV server, KEY.zip.
+ * stores an attachment on a WebDAV server, KEY.zip. Returns the md5 (lower-case hex) of
+ * the bytes zipped, which is what the .prop has to describe.
  */
-internal fun zipOneFile(name: String, input: InputStream, zip: File) {
+internal fun zipOneFile(name: String, input: InputStream, zip: File): String {
+    val digest = MessageDigest.getInstance("MD5")
     ZipOutputStream(zip.outputStream().buffered()).use { out ->
         out.putNextEntry(ZipEntry(name))
-        input.use { it.copyTo(out, 65536) }
+        DigestInputStream(input, digest).use { it.copyTo(out, 65536) }
         out.closeEntry()
     }
+    return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
 }
 
 /**

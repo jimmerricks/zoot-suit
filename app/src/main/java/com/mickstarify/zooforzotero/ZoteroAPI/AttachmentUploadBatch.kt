@@ -3,6 +3,9 @@ package com.mickstarify.zooforzotero.ZoteroAPI
 /** Thrown before any upload when the local file fails [AttachmentFileCheck]. */
 class DamagedAttachmentException(message: String) : RuntimeException(message)
 
+/** Thrown before anything reaches the server when the file was saved while it was read. */
+class FileChangedDuringUploadException : RuntimeException("the file changed while it was read")
+
 /**
  * Bookkeeping for uploading several edited attachments in one go. Uploads run one after
  * another; a refused or failed file doesn't stop the rest, and the user gets one summary.
@@ -32,6 +35,9 @@ object AttachmentUploadBatch {
                     "copy is still on this device."
         is DamagedAttachmentException ->
             "it wasn't uploaded because ${e.message}. Reopen it in your PDF viewer to check."
+        is FileChangedDuringUploadException ->
+            "it was saved again while being uploaded, so nothing was sent. It will be " +
+                    "uploaded at the next sync."
         is java.io.FileNotFoundException -> "the file is no longer on this device."
         is PreconditionFailedException ->
             "the server's copy is newer. Sync, after saving your annotated copy elsewhere."
