@@ -48,6 +48,8 @@ Changed:
 - The app reopens with the search and filter it was left with, in the collection it
   was left in, whether or not they are kept across collections. Before, only the
   collection came back.
+- On a phone held upright, the toolbar's sync icon turns while a sync runs, in place of
+  the spinner that pulled down over the list. Pulling down still starts a sync.
 
 Fixed:
 - A file saved again while it was being uploaded to WebDAV could reach the server with a

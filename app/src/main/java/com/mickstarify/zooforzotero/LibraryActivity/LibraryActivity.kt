@@ -14,6 +14,9 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.animation.Animation
+import android.view.animation.LinearInterpolator
+import android.view.animation.RotateAnimation
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
@@ -26,6 +29,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.appcompat.widget.TooltipCompat
 import androidx.core.content.getSystemService
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
@@ -436,8 +440,32 @@ class LibraryActivity : AppCompatActivity(),
             // only the count: rebuilding the menu for each page would close it while open
             syncLabel = label
             syncMenuItem?.title = label
+            syncMenuItem?.actionView?.let { labelSyncIcon(it, label) }
         }
         if (status != null) syncDialog?.update(status)
+    }
+
+    private var syncIcon: View? = null
+
+    /** The sync button on a phone upright: the sync icon turning, tapping it opens the dialog. */
+    private fun turningSyncIcon(): View =
+        layoutInflater.inflate(R.layout.sync_status_action, null).apply {
+            labelSyncIcon(this, syncLabel)
+            setOnClickListener { showSyncDialog() }
+            // anticlockwise, the way the icon's arrows point
+            startAnimation(RotateAnimation(
+                0f, -360f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f
+            ).apply {
+                duration = 1200
+                repeatCount = Animation.INFINITE
+                interpolator = LinearInterpolator()
+            })
+        }
+
+    // an action view shows no title: the label goes in its tooltip and for TalkBack
+    private fun labelSyncIcon(icon: View, label: String?) {
+        icon.contentDescription = label
+        TooltipCompat.setTooltipText(icon, label)
     }
 
     // open while the user reads it; redrawn as the sync goes on
@@ -514,7 +542,12 @@ class LibraryActivity : AppCompatActivity(),
         syncMenuItem = menu.findItem(R.id.sync_status)?.apply {
             isVisible = syncLabel != null
             syncLabel?.let { title = it }
-            if (asIcons) setIcon(R.drawable.baseline_sync_white_24)
+            // the icon turns while the sync runs, in place of the list's pull-down spinner.
+            // A view removed mid-animation is drawn by its parent until the animation ends,
+            // which this one never does: stop the old icon before the menu drops it.
+            syncIcon?.clearAnimation()
+            syncIcon = if (asIcons && syncLabel != null) turningSyncIcon() else null
+            actionView = syncIcon
         }
         // Android caps the toolbar's buttons by its width, and the sync label takes a
         // place: search (and filter, from 600dp wide) keep theirs beside it rather than move
