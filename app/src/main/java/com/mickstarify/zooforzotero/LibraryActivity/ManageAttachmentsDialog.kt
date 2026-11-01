@@ -57,6 +57,7 @@ class ManageAttachmentsDialog(
         // the dialog's theme, for the rows' colours
         val themed = builder.context
         val view = LayoutInflater.from(themed).inflate(R.layout.dialog_manage_attachments, null)
+        val scope = view.findViewById<TextView>(R.id.textView_attachments_scope)
         val hint = view.findViewById<TextView>(R.id.textView_attachments_hint)
         val kinds = view.findViewById<LinearLayout>(R.id.layout_attachment_kinds)
         downloadsHeader = view.findViewById(R.id.textView_downloads_header)
@@ -65,19 +66,20 @@ class ManageAttachmentsDialog(
         view.findViewById<Button>(R.id.button_stop_downloads).setOnClickListener { onStop() }
 
         val all = counts.values.fold(AttachmentCounts(emptyList(), emptyList())) { a, b -> a + b }
-        val items = when {
-            listed && count == 1 -> "the item listed"
-            listed -> "the %,d items listed".format(count)
-            count == 1 -> "the selected item"
-            else -> "the %,d selected items".format(count)
+        val items = if (count == 1) "1 item" else "%,d items".format(count)
+        scope.text = when {
+            listed && count == 1 -> "Applies to 1 item: the one listed"
+            listed -> "Applies to $items: all those listed"
+            count == 1 -> "Applies to 1 item: the one selected"
+            else -> "Applies to $items: those selected"
         }
         hint.text = if (counts.isEmpty()) {
-            (if (count == 1) "${items.replaceFirstChar { it.uppercase() }} has no files stored in Zotero."
-            else "None of $items has files stored in Zotero.") +
+            (if (count == 1) "It has no files stored in Zotero." else "None of them has files stored in Zotero.") +
                     " Links and linked files stay where they are."
         } else {
             val here = if (all.onDevice.isEmpty()) "none" else "%,d".format(all.onDevice.size)
-            "The files of $items: %,d, $here on this device. Links and linked files aren't counted.".format(all.total)
+            val files = if (all.total == 1) "1 file" else "%,d files".format(all.total)
+            "${if (count == 1) "Its" else "Their"} $files: $here on this device. Links and linked files aren't counted."
         }
 
         val secondary = themed.themeColor(android.R.attr.textColorSecondary)

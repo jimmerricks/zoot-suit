@@ -15,6 +15,14 @@
         android:paddingTop="4dp"
         android:paddingEnd="20dp">
 
+        <!-- what the buttons act on: "Applies to 10,306 items: all those listed" -->
+        <TextView
+            android:id="@+id/textView_attachments_scope"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Subhead" />
+
         <TextView
             android:id="@+id/textView_attachments_hint"
             android:layout_width="match_parent"
