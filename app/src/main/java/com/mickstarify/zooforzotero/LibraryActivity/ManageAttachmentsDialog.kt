@@ -64,7 +64,9 @@ class ManageAttachmentsDialog(
         val all = counts.values.fold(AttachmentCounts(emptyList(), emptyList())) { a, b -> a + b }
         val items = if (count == 1) "the selected item" else "the %,d selected items".format(count)
         hint.text = if (counts.isEmpty()) {
-            "None of $items has files stored in Zotero. Links and linked files stay where they are."
+            (if (count == 1) "The selected item has no files stored in Zotero."
+            else "None of the %,d selected items has files stored in Zotero.".format(count)) +
+                    " Links and linked files stay where they are."
         } else {
             val here = if (all.onDevice.isEmpty()) "none" else "%,d".format(all.onDevice.size)
             "The files of $items: %,d, $here on this device. Links and linked files aren't counted.".format(all.total)

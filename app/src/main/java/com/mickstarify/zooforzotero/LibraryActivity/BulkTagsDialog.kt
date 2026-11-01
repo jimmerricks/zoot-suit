@@ -70,8 +70,8 @@ class BulkTagsDialog(
 
         val accent = themed.themeColor(androidx.appcompat.R.attr.colorAccent)
         val secondary = themed.themeColor(android.R.attr.textColorSecondary)
-        hint.text = (if (count == 1) "The tags of the selected item." else "The tags of the %,d selected items.".format(count)) +
-                " Tap one to put it on all of them, again to take it off all of them."
+        hint.text = if (count == 1) "The tags of the selected item. Tap one to add or remove it."
+        else "The tags of the %,d selected items. Tap one to put it on all of them, again to take it off all of them.".format(count)
 
         lateinit var dialog: AlertDialog
         lateinit var render: () -> Unit
