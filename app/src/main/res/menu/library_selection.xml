@@ -15,6 +15,22 @@
         android:title="@string/invert_selection"
         app:showAsAction="always" />
 
+    <!-- always there, like ✕ and Back; first, so it never moves (and on a tablet in the
+         place of the library menu's Select items) -->
+    <item
+        android:id="@+id/end_selection"
+        android:title="@string/end_selection"
+        app:showAsAction="never" />
+
+    <!-- the files on this device: in groups too, so before the My Library-only edits,
+         and where the library menu has it -->
+    <group android:id="@+id/selection_files">
+        <item
+            android:id="@+id/selection_attachments"
+            android:title="@string/manage_attachments"
+            app:showAsAction="never" />
+    </group>
+
     <!-- My Library only: edits in groups aren't uploaded -->
     <group android:id="@+id/selection_edits">
         <item
@@ -25,24 +41,10 @@
             android:id="@+id/selection_add_to_collection"
             android:title="@string/add_to_collection"
             app:showAsAction="never" />
-        <!-- only while a collection is open -->
+        <!-- only while a collection is open; last, so hiding it moves nothing -->
         <item
             android:id="@+id/selection_remove_from_collection"
             android:title="@string/remove_from_collection"
             app:showAsAction="never" />
     </group>
-
-    <!-- the files on this device: in groups too -->
-    <group android:id="@+id/selection_files">
-        <item
-            android:id="@+id/selection_attachments"
-            android:title="@string/manage_attachments"
-            app:showAsAction="never" />
-    </group>
-
-    <!-- always there, like ✕ and Back -->
-    <item
-        android:id="@+id/end_selection"
-        android:title="@string/end_selection"
-        app:showAsAction="never" />
 </menu>

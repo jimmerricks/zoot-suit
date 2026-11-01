@@ -64,6 +64,8 @@ Changed:
   work, with Stop.
 - The library's menu is Filter and Sort (on phones), Select items, Manage attachments,
   Settings: nothing in it comes and goes any more.
+- The menu while selecting starts with Stop selecting, then Manage attachments, then the
+  tag and collection actions, so the entries that are always there keep their places.
 
 Fixed:
 - A file saved again while it was being uploaded to WebDAV could reach the server with a
