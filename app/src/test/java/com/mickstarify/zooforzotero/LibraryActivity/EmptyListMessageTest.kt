@@ -38,7 +38,7 @@ class EmptyListMessageTest {
 
     @Test
     fun `an empty place says which kind`() {
-        assertEquals("This collection is empty.", EmptyListMessage.forList("", none, true, "ABCD1234").text)
+        assertEquals("This collection is empty. Pull down to sync.", EmptyListMessage.forList("", none, true, "ABCD1234").text)
         assertEquals(
             "This library has no items yet. Pull down to sync.",
             EmptyListMessage.forList("", none, true, "all").text

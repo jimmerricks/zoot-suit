@@ -44,7 +44,9 @@ data class EmptyListMessage(val text: String, val clearLabel: String? = null) {
                         "unfiled_items" -> "No unfiled items."
                         "zooforzotero_Trash" -> "The trash is empty."
                         "zooforzotero_my_publications" -> "No items in My Publications."
-                        else -> "This collection is empty."
+                        // items added elsewhere arrive with a sync, and nothing else on
+                        // screen says how to start one
+                        else -> "This collection is empty. Pull down to sync."
                     }
                 )
             }

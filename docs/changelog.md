@@ -54,6 +54,8 @@ Changed:
 - While edits wait to sync, the toolbar shows the sync icon with a dot (it was a cloud on
   phones, "2 edits to sync" on tablets); a tap lists them, with Sync now. With nothing
   waiting and no sync running there's no sync icon: pull the list down to sync.
+- An empty collection says "Pull down to sync", as an empty library already did: items
+  added elsewhere arrive with a sync.
 - Coloured and emoji tags show at the start of an item's second line (creator, year…),
   not before its title, so every title starts in the same place.
 - A double tap on the toolbar takes the list back to its top.
