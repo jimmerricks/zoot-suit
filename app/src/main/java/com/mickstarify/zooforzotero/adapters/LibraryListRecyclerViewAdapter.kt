@@ -67,9 +67,9 @@ class LibraryListRecyclerViewAdapter(
     ) {
         style(holder)
         val item = items?.get(position) ?: return bindPlaceholder(holder)
-        bindTitle(holder, item)
+        holder.textView_title.text = item.getTitle()
         holder.textView_author.visibility = View.VISIBLE
-        holder.textView_author.text = appearance.secondLine.of(item)
+        bindSecondLine(holder, item)
         val pdfAttachment = item.getPdfAttachment()
         if (pdfAttachment != null) {
             holder.pdfImage.visibility = View.VISIBLE
@@ -255,17 +255,18 @@ class LibraryListRecyclerViewAdapter(
     }
 
     /**
-     * The title, after the item's coloured tags as dots and its emoji tags, as in Zotero's
-     * items list; a screen reader hears the tag names instead of the dots.
+     * The second line (creator, year…), after the item's coloured tags as dots and its emoji
+     * tags; a screen reader hears the tag names instead of the dots. Zotero puts them beside
+     * the title; here they'd push its start along, unlike every other row's.
      */
-    private fun bindTitle(holder: ItemViewHolder, item: Item) {
-        val title = item.getTitle()
+    private fun bindSecondLine(holder: ItemViewHolder, item: Item) {
+        val line = appearance.secondLine.of(item)
         val swatches = if (appearance.tagColors) {
             tagColorsOf(item.getGroup()).swatches(item.getTagList())
         } else emptyList()
         if (swatches.isEmpty()) {
-            holder.textView_title.text = title
-            holder.textView_title.contentDescription = null
+            holder.textView_author.text = line
+            holder.textView_author.contentDescription = null
             return
         }
         val text = SpannableStringBuilder()
@@ -279,9 +280,10 @@ class LibraryListRecyclerViewAdapter(
             text.append("●")
             text.setSpan(ForegroundColorSpan(color), start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
-        holder.textView_title.text = if (text.isEmpty()) title else text.append(' ').append(title)
-        holder.textView_title.contentDescription =
-            "$title. " + (if (swatches.size == 1) "Tag " else "Tags ") + swatches.joinToString(", ") { it.tag }
+        if (text.isNotEmpty() && line.isNotEmpty()) text.append(' ')
+        holder.textView_author.text = text.append(line)
+        val tags = (if (swatches.size == 1) "Tag " else "Tags ") + swatches.joinToString(", ") { it.tag }
+        holder.textView_author.contentDescription = if (line.isEmpty()) tags else "$line. $tags"
     }
 
     /** Sizes and spacing for [appearance]; the comfortable ones are the layout's. */
@@ -317,8 +319,8 @@ class LibraryListRecyclerViewAdapter(
     /** A row whose item is still being read: blank, and does nothing. */
     private fun bindPlaceholder(holder: ItemViewHolder) {
         holder.textView_title.text = ""
-        holder.textView_title.contentDescription = null
         holder.textView_author.text = ""
+        holder.textView_author.contentDescription = null
         holder.pdfImage.visibility = View.GONE
         holder.imageView.setImageResource(R.drawable.document_24dp)
         holder.imageView.visibility = if (appearance.typeIcons) View.VISIBLE else View.GONE
