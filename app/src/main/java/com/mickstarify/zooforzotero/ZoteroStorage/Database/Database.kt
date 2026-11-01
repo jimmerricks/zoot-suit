@@ -103,9 +103,20 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         return db.groupInfoDao().insertGroupInfos(group)
     }
 
-    /** Forgets a group the user is no longer in (its row only). Call off the main thread. */
+    /**
+     * Forgets a group the user is no longer in: its items (their fields, creators, tags
+     * and collection links go with them), collections, download records and row, and its
+     * sync versions, so that rejoining it downloads it whole again. Files already
+     * downloaded stay. Call off the main thread.
+     */
     fun deleteGroup(group: GroupInfo) {
-        db.groupInfoDao().delete(group)
+        db.runInTransaction {
+            db.itemDao().deleteAllForGroup(group.id).blockingAwait()
+            db.collectionDao().deleteForGroup(group.id)
+            db.AttachmentInfoDao().deleteForGroup(group.id)
+            db.groupInfoDao().delete(group)
+        }
+        context.deleteSharedPreferences("zoteroDB_${group.id}")
     }
 
     fun getGroups(): Maybe<List<GroupInfo>> {

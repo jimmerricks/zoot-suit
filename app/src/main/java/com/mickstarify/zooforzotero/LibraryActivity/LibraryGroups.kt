@@ -103,7 +103,11 @@ class LibraryGroups(
                     val current = groupInfo.map { it.id }.toSet()
                     zoteroDatabase.getGroups().blockingGet()
                         ?.filter { it.id !in current }
-                        ?.forEach { zoteroDatabase.deleteGroup(it) }
+                        ?.forEach {
+                            Log.d("zotero", "forgetting group ${it.id}, which the user has left")
+                            zoteroDatabase.deleteGroup(it)
+                            preferences.setTagColors(it.id, null)
+                        }
                 }
 
                 override fun onError(e: Throwable) {

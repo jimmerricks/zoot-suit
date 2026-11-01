@@ -56,6 +56,9 @@ interface AttachmentInfoDao {
     @Query("SELECT * FROM AttachmentInfo WHERE `group`=:groupID")
     fun getAttachmentsForGroup(groupID: Int): Maybe<List<AttachmentInfo>>
 
+    @Query("DELETE FROM AttachmentInfo WHERE `group`=:groupID")
+    fun deleteForGroup(groupID: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAttachments(attachments: List<AttachmentInfo>): Completable
 

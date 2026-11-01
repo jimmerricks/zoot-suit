@@ -91,6 +91,9 @@ interface CollectionDao {
     @Delete
     fun delete(collection: Collection)
 
+    @Query("DELETE FROM Collections WHERE `group`=:groupID")
+    fun deleteForGroup(groupID: Int)
+
     @Transaction
     @Query("DELETE FROM Collections where `key`=:collectionKey")
     fun deleteUsingKey(collectionKey: String)
