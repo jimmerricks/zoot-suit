@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- the toolbar's sync button while edits wait to sync: the sync icon with a dot, so it
-     doesn't look like the button with nothing waiting -->
+<!-- the toolbar's sync icon while edits wait to sync: with a dot, which says something
+     here hasn't gone up yet (still, without one, it would read as a plain sync button) -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@drawable/baseline_sync_white_24" />
     <item

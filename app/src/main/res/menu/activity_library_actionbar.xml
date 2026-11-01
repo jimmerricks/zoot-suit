@@ -10,12 +10,13 @@
         android:visible="false"
         app:showAsAction="always" />
 
-    <!-- while no sync runs: the sync icon, still. Tapping it syncs, or with edits waiting
-         (a dot on the icon) lists them first -->
+    <!-- while edits wait to sync: the sync icon, still, with a dot; tapping it lists them,
+         with Sync now. Otherwise nothing: pulling the list down syncs -->
     <item
-        android:id="@+id/sync_now"
-        android:icon="@drawable/baseline_sync_white_24"
+        android:id="@+id/pending_edits"
+        android:icon="@drawable/sync_with_edits_24"
         android:title="@string/sync"
+        android:visible="false"
         app:showAsAction="always" />
 
     <item
