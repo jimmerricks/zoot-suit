@@ -117,14 +117,11 @@ class SyncManager (
             Log.d("zotero", "sync of ${zoteroDB.groupID} queued behind the running one")
             queued = zoteroDB
             status?.let { begin(it.copy(queued = zoteroDB.groupID)) }
-            syncChangeListener.startSyncAnimation()
             return
         }
 
 
         reportedOffline = false
-        // show our loading animation.
-        syncChangeListener.startSyncAnimation()
 
         Log.d("zotero", "initializing sync for ${zoteroDB.groupID}")
         begin(initialStatus(zoteroDB))
@@ -458,12 +455,9 @@ class SyncManager (
             })
     }
 
-    /** Shows the library while its attachment records and notes download, under the small animation. */
+    /** Shows the library while its attachment records and notes download. */
     private fun openBeforeChildren(db: ZoteroDB) {
-        syncChangeListener.finishLibrarySync(db) {
-            // opening hides the animation; the download may have ended meanwhile
-            if (loadingItems) syncChangeListener.startSyncAnimation()
-        }
+        syncChangeListener.finishLibrarySync(db)
     }
 
     private fun finishGetCollections(db: ZoteroDB) {

@@ -86,14 +86,6 @@ class LibraryListViewModel : ViewModel() {
         this.attachmentClicked.value = attachment
     }
 
-    private val isShowingLoadingAnimation = MutableLiveData<Boolean>(false)
-    fun setIsShowingLoadingAnimation(value: Boolean) {
-        if (isShowingLoadingAnimation.value != value) {
-            isShowingLoadingAnimation.value = value
-        }
-    }
-
-    fun getIsShowingLoadingAnimation(): LiveData<Boolean> = isShowingLoadingAnimation
 
     private val onLibraryRefreshRequested = MutableLiveData<Int>()
     fun onLibraryRefreshRequested() {

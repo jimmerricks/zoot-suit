@@ -255,7 +255,7 @@ class LibrarySync(
             .doOnComplete {
                 Log.d(TAG, "opened library ${db.groupID} in ${(System.nanoTime() - start) / 1_000_000} ms")
                 lists.invalidate() // the sync may have changed anything
-                ui.hideBasicSyncAnimation()
+                ui.showLibraryList()
                 showOpenedLibrary(db)
             }
             .andThen(upkeep)
@@ -264,7 +264,7 @@ class LibrarySync(
             .onErrorComplete {
                 Log.e(TAG, "opening library ${db.groupID} failed: $it")
                 ui.createErrorAlert("Couldn't load the library", "Details: ${it.message ?: it}", {})
-                ui.hideBasicSyncAnimation()
+                ui.showLibraryList()
                 true
             }
             .doAfterTerminate {
@@ -366,10 +366,6 @@ class LibrarySync(
     private fun isPlaceInOpenLibrary(collection: String): Boolean =
         SidebarView.entries.any { it.collectionId == collection } ||
                 library.collection(collection) != null
-
-    override fun startSyncAnimation() {
-        ui.showBasicSyncAnimation()
-    }
 
     override fun createErrorAlert(title: String, message: String, onClick: () -> Unit) {
         ui.createErrorAlert(title, message, onClick)

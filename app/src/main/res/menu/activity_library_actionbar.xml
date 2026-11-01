@@ -2,18 +2,21 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- while a sync runs: its progress; tapping it shows the details -->
+    <!-- while a sync runs: the sync icon turning (an action view), its progress the
+         tooltip; tapping it shows the details -->
     <item
         android:id="@+id/sync_status"
         android:title="@string/syncing"
         android:visible="false"
-        app:showAsAction="always|withText" />
+        app:showAsAction="always" />
 
+    <!-- while edits wait to sync: the sync icon, still; tapping it lists them -->
     <item
         android:id="@+id/pending_edits"
+        android:icon="@drawable/baseline_sync_white_24"
         android:title="@string/sync"
         android:visible="false"
-        app:showAsAction="always|withText" />
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/search"

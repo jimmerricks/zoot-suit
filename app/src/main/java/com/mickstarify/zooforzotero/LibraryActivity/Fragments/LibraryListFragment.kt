@@ -128,11 +128,6 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         val swipeRefresh =
             requireView().findViewById<SwipeRefreshLayout>(R.id.library_swipe_refresh)
         swipeRefresh.setOnRefreshListener(this)
-        // on a phone upright the toolbar's sync icon turns instead (LibraryActivity)
-        val toolbarShowsSync = resources.getBoolean(R.bool.sync_info_as_icons)
-        viewModel.getIsShowingLoadingAnimation().observe(viewLifecycleOwner) {
-            swipeRefresh.isRefreshing = it && !toolbarShowsSync
-        }
         // a sync while selecting would change the list under the selection
         viewModel.getSelection().observe(viewLifecycleOwner) { swipeRefresh.isEnabled = !it.active }
 
@@ -172,11 +167,8 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
     override fun onRefresh() {
         Log.d("Zotero", "got request for refresh")
         viewModel.onLibraryRefreshRequested()
-        // the pull still starts a sync; the toolbar's icon shows it, not the spinner
-        if (resources.getBoolean(R.bool.sync_info_as_icons)) {
-            requireView().findViewById<SwipeRefreshLayout>(R.id.library_swipe_refresh)
-                .isRefreshing = false
-        }
+        // the pull starts a sync; the toolbar's turning icon shows it, not the spinner
+        requireView().findViewById<SwipeRefreshLayout>(R.id.library_swipe_refresh).isRefreshing = false
     }
 
     /** Back to the first row: a glide from nearby, else a jump to near the top first. */

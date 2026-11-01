@@ -374,13 +374,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         commands.send { it.showAttachmentStates(onDevice, edited) }
     }
 
-    override fun showBasicSyncAnimation() {
-        libraryListViewModel.setIsShowingLoadingAnimation(true)
-    }
-
-    override fun hideBasicSyncAnimation() {
-        libraryListViewModel.setIsShowingLoadingAnimation(false)
-        // we are finished loading and should hide the loading screen.
+    override fun showLibraryList() {
         showScreen(AvailableScreens.LIBRARY_LISTVIEW_SCREEN)
     }
 
@@ -396,7 +390,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
 
     fun requestLibraryRefresh() {
-        libraryListViewModel.setIsShowingLoadingAnimation(true)
         parts.sync.refreshLibrary()
     }
 

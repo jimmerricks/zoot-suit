@@ -290,14 +290,11 @@ class LibraryItemEdits(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : CompletableObserver {
                 override fun onComplete() {
-                    ui.hideBasicSyncAnimation()
                     syncItems()
                     ui.makeToastAlert("Note saved.")
                 }
 
-                override fun onSubscribe(d: Disposable) {
-                    ui.showBasicSyncAnimation()
-                }
+                override fun onSubscribe(d: Disposable) {}
 
                 override fun onError(e: Throwable) {
                     if (e is ItemLockedException) {
@@ -318,7 +315,6 @@ class LibraryItemEdits(
                             "Check your connection and try again.\n\nDetails: ${e.message ?: e}"
                         ) {}
                     }
-                    ui.hideBasicSyncAnimation()
                 }
             })
     }

@@ -48,8 +48,11 @@ Changed:
 - The app reopens with the search and filter it was left with, in the collection it
   was left in, whether or not they are kept across collections. Before, only the
   collection came back.
-- On a phone held upright, the toolbar's sync icon turns while a sync runs, in place of
-  the spinner that pulled down over the list. Pulling down still starts a sync.
+- The toolbar shows syncing the same way at any width: the sync icon turns while a sync
+  runs (it said "Syncing 45%" on tablets), and stands still while edits wait to sync (a
+  cloud on phones, "2 edits to sync" on tablets). The words are its tooltip; a tap opens
+  the sync dialog as before. The spinner that pulled down over the list is gone: pulling
+  down still starts a sync.
 - Coloured and emoji tags show at the start of an item's second line (creator, year…),
   not before its title, so every title starts in the same place.
 - A double tap on the toolbar takes the list back to its top.

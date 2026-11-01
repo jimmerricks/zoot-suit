@@ -3,7 +3,6 @@ package com.mickstarify.zooforzotero.ZoteroAPI.Syncing
 import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ZoteroDB
 
 interface OnSyncChangeListener {
-    fun startSyncAnimation()
     fun createErrorAlert(title: String, message: String, onClick: () -> Unit)
     fun makeToastAlert(message: String)
     fun finishLibrarySync(db: ZoteroDB, onFinish: () -> Unit = {})

@@ -30,8 +30,8 @@ interface LibraryUi {
     fun stopUploadingAttachmentProgress()
 
     // syncing
-    fun showBasicSyncAnimation()
-    fun hideBasicSyncAnimation()
+    /** The library is open: the list in place of the loading screen. */
+    fun showLibraryList()
     /** What a sync does now (SyncStatus); also its last state, once it ended. */
     fun showSyncStatus(status: SyncStatus)
 
