@@ -3,6 +3,11 @@
 ## Unreleased
 
 Changed:
+- Selected items: "Add tag" and "Remove tag" are one screen, "Add and remove tags". It
+  lists the tags on the selection, each with a box that shows whether all, some or none
+  of the items have it; a tap puts the tag on all of them, the next takes it off all of
+  them. The field finds any tag in the library or adds a new one, and your coloured tags
+  are listed first. Apply makes every change at once.
 - The sign-in screens are built like the rest of the app (they used Jetpack Compose,
   which the app now leaves out): they look the same, the API key field no longer opens
   the keyboard before it's tapped, and Zotero's login page survives turning the device.

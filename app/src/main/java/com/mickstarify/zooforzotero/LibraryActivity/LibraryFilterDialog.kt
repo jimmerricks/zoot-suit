@@ -209,20 +209,23 @@ class LibraryFilterDialog(
         dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
     }
 
-    /** "tag (count)", a coloured tag after its dot; one with an emoji in its name has no dot, as in the list. */
-    private fun row(tag: String, count: Int): CharSequence {
-        val text = SpannableStringBuilder()
-        val color = tagColors.colorOf(tag)?.takeUnless { TagColors.containsEmoji(tag) }
-            ?.let { runCatching { Color.parseColor(it) }.getOrNull() }
-        if (color != null) {
-            text.append("●")
-            text.setSpan(ForegroundColorSpan(color), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            text.append(' ')
-        }
-        return text.append("$tag ($count)")
-    }
+    /** "tag (count)", a coloured tag after its dot (tagLabel). */
+    private fun row(tag: String, count: Int): CharSequence = tagLabel(tag, tagColors).append(" ($count)")
 
     companion object {
+        /** [tag], after its colour's dot if [colors] gives it one; a tag with an emoji in its name has no dot, as in the list. */
+        fun tagLabel(tag: String, colors: TagColors): SpannableStringBuilder {
+            val text = SpannableStringBuilder()
+            val color = colors.colorOf(tag)?.takeUnless { TagColors.containsEmoji(tag) }
+                ?.let { runCatching { Color.parseColor(it) }.getOrNull() }
+            if (color != null) {
+                text.append("●")
+                text.setSpan(ForegroundColorSpan(color), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                text.append(' ')
+            }
+            return text.append(tag)
+        }
+
         private const val HEADER = 0
         private const val TAG = 1
         private const val SPACER = 2

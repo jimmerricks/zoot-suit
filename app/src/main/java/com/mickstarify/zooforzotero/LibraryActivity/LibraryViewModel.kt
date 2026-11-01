@@ -432,7 +432,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     /** The items selected in the list, in the order chosen. */
     private fun selectedKeys() = libraryListViewModel.getSelection().value!!.keys()
 
-    fun editSelectedTags(tag: String, add: Boolean) = parts.edits.editTags(selectedKeys(), tag, add)
+    fun editSelectedTags(add: List<String>, remove: List<String>) = parts.edits.editTags(selectedKeys(), add, remove)
 
     /** The open collection's key and name, or null if the list isn't a collection. */
     fun currentCollection(): Pair<String, String>? {

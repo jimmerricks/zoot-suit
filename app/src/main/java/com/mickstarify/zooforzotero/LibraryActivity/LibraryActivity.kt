@@ -337,15 +337,13 @@ class LibraryActivity : AppCompatActivity(),
         }
 
         when (item.itemId) {
-            R.id.selection_add_tag -> {
-                val count = libraryListViewModel.getSelection().value!!.size
-                val suggest = SelectionDialogs(this).addTag(count, viewModel.currentTagColors()) { viewModel.editSelectedTags(it, add = true) }
-                viewModel.loadTags { tags -> suggest(tags.map { it.first }) }
-            }
-            R.id.selection_remove_tag -> viewModel.loadSelectedTags { tags ->
+            R.id.selection_tags -> viewModel.loadSelectedTags { tags ->
                 if (isFinishing || isDestroyed) return@loadSelectedTags
                 val count = libraryListViewModel.getSelection().value!!.size
-                SelectionDialogs(this).removeTag(count, tags) { viewModel.editSelectedTags(it, add = false) }
+                val libraryTags = BulkTagsDialog(this, count, tags, viewModel.currentTagColors()) { add, remove ->
+                    viewModel.editSelectedTags(add, remove)
+                }.show()
+                viewModel.loadTags { all -> libraryTags(all.map { it.first }) }
             }
             R.id.selection_add_to_collection -> {
                 val count = libraryListViewModel.getSelection().value!!.size

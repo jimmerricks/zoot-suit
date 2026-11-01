@@ -73,17 +73,18 @@ class LibraryItemEdits(
     }
 
     /**
-     * Adds ([add]) or removes [tag] on each of the items [keys] (the list's selection), on
-     * this device at once, in one go; Zotero gets it with the next sync, like one item's.
+     * Puts the tags [add] on each of the items [keys] (the list's selection) and takes
+     * [remove] off them, on this device at once and in one go; Zotero gets it with the next
+     * sync, like one item's.
      */
-    fun editTags(keys: List<String>, tag: String, add: Boolean) {
+    fun editTags(keys: List<String>, add: List<String>, remove: List<String>) {
         if (state.isUsingGroup()) {
             ui.makeToastAlert("Tags can be edited only in My Library, not in groups.")
             return
         }
-        val edit = ItemEdit(if (add) ItemEditKind.ADD_TAG else ItemEditKind.REMOVE_TAG, tag)
-        recordInBulk(edit, if (add) "Adding the tag…" else "Removing the tag…", { keys }) { changed ->
-            bulkTagMessage(tag, add, changed, keys.size)
+        val edits = add.map { ItemEdit(ItemEditKind.ADD_TAG, it) } + remove.map { ItemEdit(ItemEditKind.REMOVE_TAG, it) }
+        recordInBulk(edits, "Changing the tags of ${items(keys.size)}…", { keys }) { changed ->
+            bulkTagMessage(changed, keys.size)
         }
     }
 
@@ -103,37 +104,45 @@ class LibraryItemEdits(
             val parents = zoteroDatabase.parentsOf(keys)
             keys.filter { parents[it] == null && it in parents }.also { topLevel = it.size }
         }
-        recordInBulk(ItemEdit(kind, collectionKey), if (add) "Adding to the collection…" else "Removing from the collection…", keysToEdit) { changed ->
-            bulkCollectionMessage(collectionName, add, changed, topLevel, keys.size)
+        val edit = ItemEdit(kind, collectionKey)
+        recordInBulk(listOf(edit), if (add) "Adding to the collection…" else "Removing from the collection…", keysToEdit) { changed ->
+            bulkCollectionMessage(collectionName, add, changed.getValue(edit).size, topLevel, keys.size)
         }
     }
 
     /**
-     * Records [edit] for the items [keys] reads (off the main thread), with [progress]
-     * showing meanwhile; then says [message] of how many it changed, and redraws.
+     * Records [edits] for the items [keys] reads (off the main thread), with [progress]
+     * showing meanwhile; then says [message] of what each edit changed, and redraws.
      */
-    private fun recordInBulk(edit: ItemEdit, progress: String, keys: () -> List<String>, message: (Int) -> String) {
+    private fun recordInBulk(
+        edits: List<ItemEdit>,
+        progress: String,
+        keys: () -> List<String>,
+        message: (Map<ItemEdit, List<String>>) -> String,
+    ) {
         ui.showLoadingAlertDialog(progress)
-        Single.fromCallable { itemEdits.recordAll(GroupInfo.NO_GROUP_ID, keys(), edit) }
+        Single.fromCallable { itemEdits.recordAll(GroupInfo.NO_GROUP_ID, keys(), edits) }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ changed ->
                 ui.hideLoadingAlertDialog()
-                ui.makeToastAlert(message(changed.size))
-                if (changed.isEmpty()) return@subscribe
+                ui.makeToastAlert(message(changed))
+                if (changed.values.all { it.isEmpty() }) return@subscribe
                 invalidateList()
-                val collections = edit.kind == ItemEditKind.ADD_TO_COLLECTION ||
-                        edit.kind == ItemEditKind.REMOVE_FROM_COLLECTION
+                val collections = edits.any {
+                    it.kind == ItemEditKind.ADD_TO_COLLECTION || it.kind == ItemEditKind.REMOVE_FROM_COLLECTION
+                }
                 refreshPendingEdits { ui.showEditedItems(collectionsChanged = collections) }
             }, { e ->
                 ui.hideLoadingAlertDialog()
-                Log.e("zotero", "recording ${edit.kind} in bulk failed: $e")
+                Log.e("zotero", "recording ${edits.size} edits in bulk failed: $e")
                 ui.createErrorAlert("Couldn't make the change", "Nothing was changed.\n\nDetails: ${e.message ?: e}") {}
             })
     }
 
+    private fun items(n: Int) = if (n == 1) "1 item" else "%,d items".format(n)
+
     private fun bulkCollectionMessage(name: String, add: Boolean, changed: Int, topLevel: Int, selected: Int): String {
-        fun items(n: Int) = if (n == 1) "1 item" else "$n items"
         val skipped = (selected - topLevel).takeIf { it > 0 }
             ?.let { " ${items(it)} left out: attachments and notes go with their parent." } ?: ""
         return when {
@@ -145,14 +154,18 @@ class LibraryItemEdits(
         }
     }
 
-    private fun bulkTagMessage(tag: String, add: Boolean, changed: Int, selected: Int): String {
-        val items = if (changed == 1) "1 item" else "$changed items"
-        return when {
-            changed == 0 && add -> "All of them have “$tag” already."
-            changed == 0 -> "None of them has “$tag”."
-            add -> "Added “$tag” to $items." + if (changed < selected) " The others had it already." else ""
-            else -> "Removed “$tag” from $items."
+    /**
+     * What a tag change did, from the keys each edit [changed] among [selected] items:
+     * "Added “a” to 3 items. Removed “b” from 12 items.", or that nothing needed changing.
+     */
+    private fun bulkTagMessage(changed: Map<ItemEdit, List<String>>, selected: Int): String {
+        val done = changed.filterValues { it.isNotEmpty() }
+        if (done.isEmpty()) return if (selected == 1) "The item's tags were as chosen already." else "The items' tags were as chosen already."
+        val lines = done.map { (edit, keys) ->
+            if (edit.kind == ItemEditKind.ADD_TAG) "Added \u201c${edit.name}\u201d to ${items(keys.size)}."
+            else "Removed \u201c${edit.name}\u201d from ${items(keys.size)}."
         }
+        return lines.take(3).joinToString(" ") + if (lines.size > 3) " ${lines.size - 3} more tags changed." else ""
     }
 
     /** The tags on the items [keys], each with how many of them carry it, on the main thread. */

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A tag in "Add and remove tags" (BulkTagsDialog): a three-state box at the start (set in
+     code: on all, some or none of the items), the tag, and what applying does to it. -->
+<CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/text1"
+    android:layout_width="match_parent"
+    android:layout_height="40dp"
+    android:checkMark="@null"
+    android:drawablePadding="12dp"
+    android:drawableTint="@color/checkbox_tint"
+    android:ellipsize="end"
+    android:gravity="center_vertical"
+    android:maxLines="1"
+    android:paddingStart="4dp"
+    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+    android:textSize="14sp" />

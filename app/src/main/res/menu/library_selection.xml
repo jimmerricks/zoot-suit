@@ -18,12 +18,8 @@
     <!-- My Library only: edits in groups aren't uploaded -->
     <group android:id="@+id/selection_edits">
         <item
-            android:id="@+id/selection_add_tag"
-            android:title="@string/add_tag"
-            app:showAsAction="never" />
-        <item
-            android:id="@+id/selection_remove_tag"
-            android:title="@string/remove_tag"
+            android:id="@+id/selection_tags"
+            android:title="@string/add_and_remove_tags"
             app:showAsAction="never" />
         <item
             android:id="@+id/selection_add_to_collection"
