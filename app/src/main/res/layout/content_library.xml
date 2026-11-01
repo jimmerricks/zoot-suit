@@ -8,17 +8,14 @@
     tools:showIn="@layout/activity_library"
     tools:context=".LibraryActivity.LibraryActivity">
 
-    <!-- The main content view -->
+    <!-- The main content view: the loading screen or the list (LibraryActivity.showScreen) -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment_container"
-        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:defaultNavHost="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:navGraph="@navigation/nav_graph" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

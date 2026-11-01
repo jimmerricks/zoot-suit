@@ -33,11 +33,10 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.NavController
-import androidx.navigation.NavOptions
-import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.mickstarify.zooforzotero.LibraryActivity.Fragments.LibraryListFragment
+import com.mickstarify.zooforzotero.LibraryActivity.Fragments.LibraryLoadingScreen
 import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemAttachmentEntry
 import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemViewFragment
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListener
@@ -68,8 +67,6 @@ class LibraryActivity : AppCompatActivity(),
     private lateinit var viewModel: LibraryViewModel
     private var itemView: ItemViewFragment? = null
 
-    lateinit var navController: NavController
-    lateinit var navHostFragment: NavHostFragment
 
     private lateinit var libraryListViewModel: LibraryListViewModel
 
@@ -110,10 +107,6 @@ class LibraryActivity : AppCompatActivity(),
 
         libraryListViewModel = ViewModelProvider(this).get(LibraryListViewModel::class.java)
 
-        navHostFragment =
-            supportFragmentManager.findFragmentById(R.id.nav_host_fragment_container) as NavHostFragment
-        navController = navHostFragment.navController
-
         this.setupActionbar()
 
         initUI()
@@ -123,22 +116,6 @@ class LibraryActivity : AppCompatActivity(),
             libraryListViewModel,
             ViewModelProvider(this).get(LibraryLoadingScreenViewModel::class.java)
         )
-
-        navController.addOnDestinationChangedListener { _, destination, _ ->
-            when (destination.id) {
-                R.id.libraryListFragment -> {
-                    libraryListScreenShown()
-                }
-
-                R.id.libraryLoadingScreen -> {
-                    libraryLoadingScreenShown()
-                }
-
-                else -> {
-                    throw (NotImplementedError("Error screen $destination not handled."))
-                }
-            }
-        }
 
         // LibraryViewModel's state outlives this activity; a recreated one just renders it
         viewModel.title.observe(this) { showTitle() }
@@ -161,14 +138,10 @@ class LibraryActivity : AppCompatActivity(),
                 invalidateOptionsMenu()
             }
         }
-        viewModel.screen.observe(this) {
-            showScreen(
-                when (it!!) {
-                    AvailableScreens.LIBRARY_LOADING_SCREEN -> R.id.libraryLoadingScreen
-                    AvailableScreens.LIBRARY_LISTVIEW_SCREEN -> R.id.libraryListFragment
-                }
-            )
-        }
+        // the loading screen until the library is open; a recreated activity gets its
+        // fragment back from the FragmentManager, then the observer finds it in place
+        if (viewModel.screen.value == null) showScreen(AvailableScreens.LIBRARY_LOADING_SCREEN)
+        viewModel.screen.observe(this) { showScreen(it!!) }
     }
 
     // the place on screen holds nothing and no search or filter narrows it (an empty trash,
@@ -261,16 +234,27 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     /**
-     * Shows [destination], the list or the loading screen, as the only screen: navigating
-     * pushed a new fragment each time (list, loading, list again at every start, more at
-     * every sync) on a back stack nothing pops; Back is ours (handleOnBackPressed).
+     * Shows [screen], the list or the loading screen, as the only fragment in the
+     * container, without a back stack: Back is ours (handleOnBackPressed). Replacing the
+     * loading screen fades, as the navigation graph's action did.
      */
-    private fun showScreen(destination: Int) {
-        if (navController.currentDestination?.id == destination) return
-        navController.navigate(
-            destination, null,
-            NavOptions.Builder().setPopUpTo(navController.graph.id, true).build()
-        )
+    private fun showScreen(screen: AvailableScreens) {
+        val fragments = supportFragmentManager
+        val current = fragments.findFragmentById(R.id.nav_host_fragment_container)
+        if (current?.tag != screen.name) {
+            val fragment = when (screen) {
+                AvailableScreens.LIBRARY_LOADING_SCREEN -> LibraryLoadingScreen()
+                AvailableScreens.LIBRARY_LISTVIEW_SCREEN -> LibraryListFragment()
+            }
+            fragments.beginTransaction()
+                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out)
+                .replace(R.id.nav_host_fragment_container, fragment, screen.name)
+                .commitNow()
+        }
+        when (screen) {
+            AvailableScreens.LIBRARY_LOADING_SCREEN -> libraryLoadingScreenShown()
+            AvailableScreens.LIBRARY_LISTVIEW_SCREEN -> libraryListScreenShown()
+        }
     }
 
     private var sidebarSelection: String? = null
