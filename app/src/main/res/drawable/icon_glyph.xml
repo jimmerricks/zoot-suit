@@ -6,7 +6,14 @@
     android:height="72dp"
     android:viewportWidth="72"
     android:viewportHeight="72">
-    <!-- jacket -->
+    <!-- zoomed in on the suit: 1.25x around the upper body, so the shoulders and hem
+         run toward the edges -->
+    <group
+        android:pivotX="36"
+        android:pivotY="34"
+        android:scaleX="1.25"
+        android:scaleY="1.25">
+        <!-- jacket -->
     <path
         android:fillColor="@color/icon_jacket"
         android:pathData="M10,17 L26,10 L36,44 L46,10 L62,17 L60,62 L12,62 Z" />
@@ -36,4 +43,5 @@
     <path
         android:fillColor="@color/icon_background"
         android:pathData="M36,50.5 m-1.8,0 a1.8,1.8 0 1,0 3.6,0 a1.8,1.8 0 1,0 -3.6,0" />
+    </group>
 </vector>
