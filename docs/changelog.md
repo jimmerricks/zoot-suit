@@ -63,6 +63,9 @@ Fixed:
   dialog, which stays where it was.
 - The item screen no longer makes numbers (pages, years, ISBNs, DOIs) into links that open
   the phone app. Web and email addresses are still links.
+- "Select items" and "Stop selecting" let the menu close before the toolbar changes:
+  the closing menu showed the other mode's items for a moment. Selection mode also
+  starts and ends without the pause it had.
 
 Removed:
 - The crash-report code (ACRA), which was never switched on. Report crashes as GitHub

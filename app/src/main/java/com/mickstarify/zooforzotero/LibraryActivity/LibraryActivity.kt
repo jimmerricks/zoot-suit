@@ -356,8 +356,8 @@ class LibraryActivity : AppCompatActivity(),
             R.id.stop_downloads -> viewModel.stopDownloads()
             R.id.select_all -> libraryListViewModel.changeSelection { selectAll(it) }
             R.id.invert_selection -> libraryListViewModel.changeSelection { invert(it) }
-            R.id.end_selection -> libraryListViewModel.changeSelection { end() }
-            R.id.start_selection -> libraryListViewModel.startSelecting()
+            R.id.end_selection -> afterMenuCloses { libraryListViewModel.changeSelection { end() } }
+            R.id.start_selection -> afterMenuCloses { libraryListViewModel.startSelecting() }
 
             R.id.filter_menu -> {
                 showFilterMenu()
@@ -407,6 +407,16 @@ class LibraryActivity : AppCompatActivity(),
 
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    /**
+     * Runs [action] once the menu it was chosen from has faded. Selection mode swaps the
+     * whole menu: swapped at once, the closing menu showed the other mode's items.
+     */
+    private fun afterMenuCloses(action: () -> Unit) {
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        toolbar.dismissPopupMenus()
+        toolbar.postDelayed(action, resources.getInteger(android.R.integer.config_shortAnimTime).toLong())
     }
 
     private var pendingEdits = 0
