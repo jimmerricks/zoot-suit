@@ -48,6 +48,17 @@
             android:label="@string/title_activity_sync_setup"
             android:theme="@style/Theme.ZooForZotero.NoActionBar" />
         <activity
+            android:name=".SyncSetup.ApiKeySetupActivity"
+            android:label="@string/title_activity_sync_setup"
+            android:theme="@style/Theme.ZooForZotero.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
+        <!-- handles rotation itself: recreating it would reload Zotero's login page -->
+        <activity
+            android:name=".SyncSetup.ZoteroSignInActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:label="@string/title_activity_sync_setup"
+            android:theme="@style/Theme.ZooForZotero.NoActionBar" />
+        <activity
             android:name=".MainActivity"
             android:theme="@android:style/Theme.NoDisplay"
             android:exported="true">

@@ -38,7 +38,7 @@ The app is a hybrid of upstream's code and newer layers:
 |---|---|
 | Language, build | Kotlin 2.1, KSP (Room, Hilt), JDK 17+ |
 | Reactive | RxJava 3 in the library and sync core; coroutines and Flow in `domain/` and the newer screens |
-| UI | Fragments/Views for the library screen; Jetpack Compose (Material 3) for newer screens |
+| UI | Views and Fragments (Material Components) throughout; the sign-in screens moved off Jetpack Compose after 0.4.3, which took 1.3 MB of the app |
 | Database | Room 2.7 |
 | Tests | JUnit 5 (with JUnit 4 via Vintage), Turbine, mockito-kotlin |
 

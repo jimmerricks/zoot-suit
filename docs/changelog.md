@@ -3,6 +3,9 @@
 ## Unreleased
 
 Changed:
+- The sign-in screens are built like the rest of the app (they used Jetpack Compose,
+  which the app now leaves out): they look the same, the API key field no longer opens
+  the keyboard before it's tapped, and Zotero's login page survives turning the device.
 - Item-type icons are Zotero 7's, sharp at any size, with their dark-mode versions.
   Datasets, preprints and standards get their own icons; an item's attachments show
   Zotero's icon for their kind (PDF, EPUB, web snapshot, linked file, link).

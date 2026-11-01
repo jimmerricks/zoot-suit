@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The first screen: the two ways to sign in, the policies, Continue. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/sync_setup_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <ImageView
+            android:layout_width="156dp"
+            android:layout_height="156dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/sign_in_logo_background"
+            android:contentDescription="Zoot Suit logo"
+            android:src="@drawable/icon_glyph" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp"
+            android:gravity="center"
+            android:text="Welcome to Zoot Suit"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <include
+            android:id="@+id/sign_in_option_zotero"
+            layout="@layout/sign_in_option" />
+
+        <include
+            android:id="@+id/sign_in_option_api_key"
+            layout="@layout/sign_in_option" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="32dp"
+            android:layout_marginEnd="16dp"
+            android:gravity="center"
+            android:text="@string/app_frontpage_disclaimer"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2" />
+
+        <TextView
+            android:id="@+id/sync_setup_legal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:gravity="center"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/sync_setup_continue"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="32dp"
+            android:text="@string/proceed"
+            android:letterSpacing="0"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            app:cornerRadius="28dp" />
+    </LinearLayout>
+</ScrollView>

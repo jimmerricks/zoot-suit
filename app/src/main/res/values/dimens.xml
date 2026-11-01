@@ -1,2 +1,4 @@
 <resources>
+    <!-- the outline of the sign-in option that is chosen -->
+    <dimen name="sign_in_option_stroke">2dp</dimen>
 </resources>

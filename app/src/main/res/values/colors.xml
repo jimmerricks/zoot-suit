@@ -15,4 +15,9 @@
     <!-- badges on the library list's PDF icon -->
     <color name="attachmentOnDevice">#2E7D32</color>
     <color name="attachmentEdited">#E65100</color>
+    <!-- sign-in: the selected option (as the launcher icon's background) and the
+         instructions panel -->
+    <color name="signInSelected">#2B2350</color>
+    <color name="signInOnSelected">#FFFFFF</color>
+    <color name="signInPanel">#F3EFF6</color>
 </resources>
