@@ -71,7 +71,11 @@ android {
             if (keystoreProperties.getProperty("storeFile")) {
                 signingConfig signingConfigs.release
             }
-            minifyEnabled false
+            // R8 shrinks the libraries (Compose, Material, AndroidX): 18 MB -> ~4 MB.
+            // The app's own classes are all kept (proguard-rules.pro): Gson, Room and
+            // Retrofit reach them by reflection.
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -99,6 +103,11 @@ android {
         unitTests.returnDefaultValues = true
     }
     
+    // the app is English only; the libraries' ~100 translations are dead weight
+    androidResources {
+        localeFilters += ['en']
+    }
+
     namespace 'com.mickstarify.zooforzotero'
 }
 

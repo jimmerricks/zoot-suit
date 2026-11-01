@@ -21,3 +21,26 @@
 #-renamesourcefileattribute SourceFile
 
 -keepattributes *Annotation*
+# The app's own classes, whole: Gson fills the API models and the download queue by
+# reflection, Room and Hilt generate code against them. Only the libraries are shrunk.
+-keep class com.mickstarify.zooforzotero.** { *; }
+
+# Retrofit and Gson read generic types and annotations at runtime
+-keepattributes Signature, InnerClasses, EnclosingMethod, RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
+-keep,allowobfuscation,allowshrinking interface retrofit2.Call
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+-keep,allowobfuscation,allowshrinking class com.google.gson.reflect.TypeToken
+-keep,allowobfuscation,allowshrinking class * extends com.google.gson.reflect.TypeToken
+-keep,allowobfuscation,allowshrinking class io.reactivex.rxjava3.core.Observable
+-keep,allowobfuscation,allowshrinking class io.reactivex.rxjava3.core.Single
+-keep,allowobfuscation,allowshrinking class io.reactivex.rxjava3.core.Completable
+
+# optional or platform classes that libraries refer to but the app never loads
+-dontwarn org.apache.http.**
+-dontwarn android.net.http.**
+-dontwarn oauth.signpost.**
+-dontwarn javax.annotation.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
