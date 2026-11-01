@@ -66,8 +66,8 @@ class ManageAttachmentsDialog(
         hint.text = if (counts.isEmpty()) {
             "None of $items has files stored in Zotero. Links and linked files stay where they are."
         } else {
-            "The files of $items: %,d, of which %,d on this device. Links and linked files aren't counted."
-                .format(all.total, all.onDevice.size)
+            val here = if (all.onDevice.isEmpty()) "none" else "%,d".format(all.onDevice.size)
+            "The files of $items: %,d, $here on this device. Links and linked files aren't counted.".format(all.total)
         }
 
         val secondary = themed.themeColor(android.R.attr.textColorSecondary)
