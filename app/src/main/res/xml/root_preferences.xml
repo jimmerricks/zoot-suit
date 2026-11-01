@@ -113,11 +113,6 @@
             android:key="check_md5sum_before_attachment_open"
             android:summary="Compare a file with Zotero's checksum before opening it. Slower for large files."
             android:title="Check files before opening" />
-
-        <!-- summary: how many files and how much space (SettingsFragment) -->
-        <Preference app:iconSpaceReserved="false"
-            android:key="remove_all_files"
-            android:title="Remove all files from this device" />
     </PreferenceCategory>
 
     <PreferenceCategory app:iconSpaceReserved="false" android:title="WebDAV">

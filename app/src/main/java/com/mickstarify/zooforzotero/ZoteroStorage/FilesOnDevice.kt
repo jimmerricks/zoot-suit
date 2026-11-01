@@ -4,8 +4,8 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
 
 /**
- * Every attachment file on this device, in all libraries, trashed items' included: for
- * Settings' "Remove all files from this device". Blocking; call off the main thread.
+ * Every attachment file on this device, in all libraries, trashed items' included: what
+ * Settings counts before the attachment folder changes. Blocking; call off the main thread.
  */
 class FilesOnDevice(
     private val database: ZoteroDatabase,
@@ -22,16 +22,4 @@ class FilesOnDevice(
         val bytes = attachments.sumOf { storage.getFileSize(it).getOrDefault(0L) }
         return Files(attachments, bytes)
     }
-
-    /** Those of [attachments] edited here and not uploaded (hashes changed files). */
-    fun edited(attachments: List<Item>): List<Item> {
-        val keys = attachments.map { it.itemKey }.toSet()
-        return attachments.map { it.getGroup() }.distinct().flatMap { group ->
-            EditedAttachments(database, storage) { group }.edited()
-        }.filter { it.itemKey in keys }
-    }
-
-    /** Removes [attachments]' files; returns how many there were and are gone. */
-    fun remove(attachments: List<Item>): Int =
-        attachments.count { runCatching { storage.deleteAttachment(it) }.getOrDefault(false) }
 }

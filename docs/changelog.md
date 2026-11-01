@@ -16,6 +16,9 @@ Changed:
   off the main thread, with progress.
 - "Manage attachments" is also in the library's menu, where it acts on every item the list
   shows: the whole library, a collection, or what a search or filter leaves.
+- Settings → Attachments no longer has "Remove all files from this device": Manage
+  attachments in each library's menu does it, with a choice of kinds and the edited
+  files named before anything is removed.
 - "N edits to sync" and "Syncing 45%" open the same sync dialog: the edits waiting, then
   the running or last sync stage by stage (or when the library last synced), with Sync
   now while no sync runs. When a sync ends, the dialog lists what is still waiting.
