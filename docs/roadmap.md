@@ -33,8 +33,7 @@ Smaller items, none blocking a release:
   and navigation still go presenter to view rather than through the ViewModel; the
   library list's derived maps are rebuilt just after a new list is published, so they
   can briefly disagree with it; lint reports about 150 warnings (mostly hardcoded text).
-- **Library screen:** tag views and searches are not restored after a restart (the
-  collection is); whether `singleTask` would serve the library screen better than
+- **Library screen:** whether `singleTask` would serve the library screen better than
   `singleInstance` needs testing with external PDF viewers.
 
 ## Known limitations

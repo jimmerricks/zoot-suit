@@ -92,15 +92,16 @@ class LibraryLists(
     }
 
     /**
-     * The open library's list filter. Each library has its own. With "Keep the filter"
-     * on, it is saved and stays when another collection opens; off (the default), it
-     * clears then, and the app starts without one. See [clearOnCollectionChange].
+     * The open library's list filter. Each library has its own, saved as it changes. With
+     * "Keep the filter" on, it stays when another collection opens; off (the default), it
+     * clears then. Either way the app starts with it, in the place it was left
+     * ([keepThroughRestore]). See [clearOnCollectionChange].
      */
     var libraryFilter: LibraryFilter
         get() {
             clearOnCollectionChange()
             return savedFilters.getOrPut(state.currentGroup.id) {
-                if (preferences.keepFilter()) preferences.getLibraryFilter(state.currentGroup.id) else LibraryFilter()
+                preferences.getLibraryFilter(state.currentGroup.id)
             }
         }
         set(value) {
@@ -112,13 +113,13 @@ class LibraryLists(
 
     /**
      * The open library's search, narrowing every list like [libraryFilter]; "" for none.
-     * Each library has its own, kept or cleared like the filter ("Keep the search").
+     * Each library has its own, kept, cleared and restored like the filter ("Keep the search").
      */
     var librarySearch: String
         get() {
             clearOnCollectionChange()
             return searches.getOrPut(state.currentGroup.id) {
-                if (preferences.keepSearch()) preferences.getLibrarySearch(state.currentGroup.id) else ""
+                preferences.getLibrarySearch(state.currentGroup.id)
             }
         }
         set(value) {
@@ -131,6 +132,18 @@ class LibraryLists(
     /** The library and collection the search and filter were last read for. */
     private var shownCollection: Pair<Int, String>? = null
 
+    /** The place being reopened at startup; see [keepThroughRestore]. */
+    private var restoring: Pair<Int, String>? = null
+
+    /**
+     * The startup is reopening [collection] of library [groupId], where the app was left:
+     * opening it keeps the search and filter saved with it, though the list showed a
+     * library's top first. Any other place opened before it ends that.
+     */
+    fun keepThroughRestore(groupId: Int, collection: String) {
+        restoring = groupId to collection
+    }
+
     /**
      * Clears the search and the filter, unless set to be kept, when the collection (or
      * the library) differs from the last one they were read for. Back
@@ -142,6 +155,13 @@ class LibraryLists(
         val before = shownCollection
         shownCollection = now
         if (before == null || before == now) return
+        // on the way there the list shows a library's top (My Library's, or the group's)
+        val restored = restoring
+        if (restored == now) {
+            restoring = null
+            return
+        }
+        if (now.second != LibraryNavigator.ALL && now.second != LibraryNavigator.GROUP_ALL) restoring = null
         val id = now.first
         if (!preferences.keepSearch()) {
             searches[id] = ""

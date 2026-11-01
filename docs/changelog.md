@@ -45,6 +45,9 @@ Changed:
 - The sidebar's section titles ("Collections", "Group libraries") look like the headers in
   Settings and dialogs, and its icons are grey beside the text, coloured only for the
   library or collection open.
+- The app reopens with the search and filter it was left with, in the collection it
+  was left in, whether or not they are kept across collections. Before, only the
+  collection came back.
 
 Fixed:
 - A file saved again while it was being uploaded to WebDAV could reach the server with a

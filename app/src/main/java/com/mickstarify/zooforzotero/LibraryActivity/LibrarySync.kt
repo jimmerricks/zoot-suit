@@ -345,6 +345,7 @@ class LibrarySync(
         val (groupId, collection) = place
         if (groupId == GroupInfo.NO_GROUP_ID) {
             if (collection != LibraryNavigator.ALL && isPlaceInOpenLibrary(collection)) {
+                lists.keepThroughRestore(groupId, collection)
                 ui.setCollection(collection)
             }
             return
@@ -358,6 +359,7 @@ class LibrarySync(
                 // only if nothing else was opened meanwhile
                 if (state.isUsingGroup() || state.currentCollection != LibraryNavigator.ALL) return@subscribe
                 if (collection != LibraryNavigator.GROUP_ALL) openingGroupCollection = collection
+                lists.keepThroughRestore(groupId, collection)
                 startGroupSync(group)
             }, { Log.e(TAG, "could not restore the open group: $it") })
     }
