@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Looper
 import android.os.PersistableBundle
 import android.util.Log
+import android.view.GestureDetector
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
@@ -862,6 +863,15 @@ class LibraryActivity : AppCompatActivity(),
     private fun setupToolbar() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
+        // a double tap on the toolbar (its title, not a button) goes back to the list's top
+        val doubleTap = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                (supportFragmentManager.findFragmentByTag(AvailableScreens.LIBRARY_LISTVIEW_SCREEN.name)
+                        as? LibraryListFragment)?.scrollToTop()
+                return true
+            }
+        })
+        toolbar.setOnTouchListener { _, event -> doubleTap.onTouchEvent(event); false }
     }
 }
 

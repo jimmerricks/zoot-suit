@@ -52,6 +52,7 @@ Changed:
   the spinner that pulled down over the list. Pulling down still starts a sync.
 - Coloured and emoji tags show at the start of an item's second line (creator, year…),
   not before its title, so every title starts in the same place.
+- A double tap on the toolbar takes the list back to its top.
 
 Fixed:
 - A file saved again while it was being uploaded to WebDAV could reach the server with a

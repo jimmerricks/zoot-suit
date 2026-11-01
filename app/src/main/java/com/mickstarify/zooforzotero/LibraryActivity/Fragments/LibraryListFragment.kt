@@ -174,6 +174,14 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
         }
     }
 
+    /** Back to the first row: a glide from nearby, else a jump to near the top first. */
+    fun scrollToTop() {
+        val list = view?.findViewById<RecyclerView>(R.id.recyclerView) ?: return
+        val first = (list.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+        if (first > 20) list.scrollToPosition(20)
+        list.smoothScrollToPosition(0)
+    }
+
     fun showEmptyList() {
         val layout =
             requireView().findViewById<ConstraintLayout>(R.id.constraintLayout_library_content)
