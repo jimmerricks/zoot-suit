@@ -2,6 +2,8 @@ package com.mickstarify.zooforzotero.ZoteroAPI
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -55,6 +57,21 @@ class WebdavZipTest {
         }
         val out = tmp.newFile("out")
         unzipFirstFile(zip, out)
+        assertArrayEquals(bytes, out.readBytes())
+    }
+
+    @Test
+    fun `unzipping stops past the limit and says why`() {
+        val zip = tmp.newFile("big.zip")
+        zipOneFile("a.pdf", bytes.inputStream(), zip)
+        val out = tmp.newFile("out")
+        try {
+            unzipFirstFile(zip, out, limit = bytes.size - 1L)
+            fail("unzipped past the limit")
+        } catch (e: NotEnoughSpaceException) {
+            assertTrue(out.length() < bytes.size)
+        }
+        unzipFirstFile(zip, out, limit = bytes.size.toLong())
         assertArrayEquals(bytes, out.readBytes())
     }
 

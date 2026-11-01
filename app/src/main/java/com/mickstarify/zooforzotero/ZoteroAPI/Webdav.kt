@@ -95,6 +95,7 @@ class Webdav(
                 val prop = WebdavProp(downloadPropToString(webpathProp))
                 val reporter = ProgressThrottle()
                 var total = 0L
+                val limit = spaceLeftFor(zipFile)
                 get(webpathZip).byteStream().use { input ->
                     zipFile.outputStream().use { output ->
                         val buffer = ByteArray(65536)
@@ -102,6 +103,7 @@ class Webdav(
                         while (read > 0 && !emitter.isDisposed) { // stops when cancelled
                             output.write(buffer, 0, read)
                             total += read
+                            if (total > limit) throw NotEnoughSpaceException("$key.zip")
                             if (reporter.due()) {
                                 emitter.onNext(DownloadProgress(total, -1, prop.mtime, prop.hash))
                             }
@@ -276,14 +278,36 @@ internal fun zipOneFile(name: String, input: InputStream, zip: File) {
 
 /**
  * Writes the first file in [zip] to [dest]. Zotero's zips hold one; the entry's own name
- * isn't used, so it can't point outside [dest]'s folder.
+ * isn't used, so it can't point outside [dest]'s folder. Stops with
+ * [NotEnoughSpaceException] past [limit] bytes: the server's zip decides how much is
+ * written, and a small zip can unpack to far more than the device has room for.
  */
-internal fun unzipFirstFile(zip: File, dest: File) {
+internal fun unzipFirstFile(zip: File, dest: File, limit: Long = spaceLeftFor(dest)) {
     ZipFile(zip).use { archive ->
         val entry = archive.entries().asSequence().firstOrNull { !it.isDirectory }
             ?: throw IOException("${zip.name} is empty")
         archive.getInputStream(entry).use { input ->
-            dest.outputStream().use { input.copyTo(it, 65536) }
+            dest.outputStream().use { output ->
+                val buffer = ByteArray(65536)
+                var total = 0L
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    total += read
+                    if (total > limit) throw NotEnoughSpaceException(zip.name)
+                    output.write(buffer, 0, read)
+                }
+            }
         }
     }
 }
+
+/** What a download may still write to [file]'s storage and leave [RESERVED_SPACE] free. */
+internal fun spaceLeftFor(file: File): Long =
+    ((file.parentFile ?: file).usableSpace - RESERVED_SPACE).coerceAtLeast(0)
+
+/** Left free by a WebDAV download, so it can't fill the device. */
+internal const val RESERVED_SPACE = 100L * 1024 * 1024
+
+class NotEnoughSpaceException(what: String) :
+    IOException("Not enough free space on this device for $what")
