@@ -343,10 +343,23 @@ class SettingsActivity : AppCompatActivity() {
         }
         builder
             .setPositiveButton(if (unsynced?.isEmpty == true) "Sign out" else "Sign out anyway") { _, _ ->
-                SignOut.signOut(this, zoteroDatabase)
+                signOut()
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    /**
+     * Signs out in the background: clearing the database, waiting for WorkManager and
+     * deleting the downloaded files can take seconds, long enough on the main thread for
+     * Android's "isn't responding". The process restarts when it's done.
+     */
+    private fun signOut() {
+        AlertDialog.Builder(this)
+            .setMessage("Signing out…")
+            .setCancelable(false)
+            .show()
+        Thread { SignOut.signOut(this, zoteroDatabase) }.start()
     }
 
     private fun updateWebDAVPreferenceUI(flag: Boolean) {

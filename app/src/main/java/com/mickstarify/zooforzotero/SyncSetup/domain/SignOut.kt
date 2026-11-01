@@ -54,6 +54,7 @@ object SignOut {
         )
     }
 
+    /** Blocks for up to a few seconds and then exits the process: call it off the main thread. */
     fun signOut(activity: Activity, database: ZoteroDatabase) {
         // before the library goes: a download running now would look its items up
         AttachmentDownloads.forget(activity)
