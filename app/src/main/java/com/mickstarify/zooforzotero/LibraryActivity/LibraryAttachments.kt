@@ -572,14 +572,23 @@ class LibraryAttachments(
      */
     fun downloadAttachments(attachments: List<Item>) {
         val group = state.currentGroup.id
-        val added = AttachmentDownloads.enqueue(context, attachments.map { AttachmentDownloadQueue.Entry(group, it.itemKey) })
-        ui.makeToastAlert(
-            when (added) {
-                0 -> "They're being downloaded already."
-                1 -> "Downloading 1 file in the background."
-                else -> "Downloading $added files in the background."
-            }
-        )
+        val entries = attachments.map { AttachmentDownloadQueue.Entry(group, it.itemKey) }
+        // the queue is a file, rewritten whole: off the main thread for a whole library's
+        Single.fromCallable { AttachmentDownloads.enqueue(context, entries) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ added ->
+                ui.makeToastAlert(
+                    when (added) {
+                        0 -> "They're being downloaded already."
+                        1 -> "Downloading 1 file in the background."
+                        else -> "Downloading %,d files in the background.".format(added)
+                    }
+                )
+            }, { e ->
+                Log.e("zotero", "queueing ${entries.size} downloads failed: $e")
+                ui.createErrorAlert("Couldn't start the downloads", "Details: ${e.message ?: e}") {}
+            })
     }
 
     /** Those of [files] (on this device) with edits not uploaded yet; [onResult] on the main thread. */
@@ -600,13 +609,17 @@ class LibraryAttachments(
 
     /** Deletes the copies of [files] on this device; Zotero keeps them. */
     fun deleteLocalAttachments(files: List<Item>) {
+        // thousands, from a whole library, take a while in a folder the user chose
+        ui.showLoadingAlertDialog(if (files.size == 1) "Removing 1 file…" else "Removing %,d files…".format(files.size))
         Single.fromCallable { files.count { runCatching { attachmentStorageManager.deleteAttachment(it) }.getOrDefault(false) } }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ deleted ->
+                ui.hideLoadingAlertDialog()
                 onFilesChanged()
-                ui.makeToastAlert(if (deleted == 1) "Removed 1 file from this device." else "Removed $deleted files from this device.")
+                ui.makeToastAlert(if (deleted == 1) "Removed 1 file from this device." else "Removed %,d files from this device.".format(deleted))
             }, { e ->
+                ui.hideLoadingAlertDialog()
                 onFilesChanged()
                 Log.e("zotero", "deleting ${files.size} files failed: $e")
                 ui.createErrorAlert("Couldn't remove the files", "Details: ${e.message ?: e}") {}

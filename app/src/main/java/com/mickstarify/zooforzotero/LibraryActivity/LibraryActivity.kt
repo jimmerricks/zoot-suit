@@ -149,6 +149,7 @@ class LibraryActivity : AppCompatActivity(),
         viewModel.pendingEdits.observe(this) { showPendingEdits(it) }
         viewModel.syncStatus.observe(this) { showSyncStatus(it) }
         viewModel.downloadsActive.observe(this) { invalidateOptionsMenu() }
+        viewModel.downloadProgress.observe(this) { manageAttachmentsDialog?.showDownloads(it) }
         libraryListViewModel.getItems().observe(this) { pages ->
             val none = pages.size == 0 && !viewModel.isListNarrowed()
             // set with the place, before its list arrives
@@ -357,20 +358,16 @@ class LibraryActivity : AppCompatActivity(),
                     viewModel.editSelectedCollection(key, name, add = false)
                 }
             }
-            R.id.selection_download -> viewModel.countSelectedAttachments { counts ->
+            R.id.selection_attachments -> viewModel.countSelectedAttachments { counts ->
                 if (isFinishing || isDestroyed) return@countSelectedAttachments
-                SelectionDialogs(this).download(counts) { missing ->
-                    if (missing.isEmpty()) makeToastAlert("They're all on this device already.")
-                    else viewModel.downloadAttachments(missing)
-                }
-            }
-            R.id.selection_remove_attachments -> viewModel.countSelectedAttachments { counts ->
-                if (isFinishing || isDestroyed) return@countSelectedAttachments
-                SelectionDialogs(this).removeAttachments(counts) { files ->
-                    viewModel.findEditedFiles(files) { edited ->
-                        if (isFinishing || isDestroyed) return@findEditedFiles
-                        SelectionDialogs(this).confirmDelete(files, edited, viewModel.chosenAttachmentFolder()) { viewModel.deleteLocalFiles(it) }
-                    }
+                val count = libraryListViewModel.getSelection().value!!.size
+                manageAttachmentsDialog = ManageAttachmentsDialog(this, count, counts,
+                    onDownload = { viewModel.downloadAttachments(it) },
+                    onRemove = { files -> confirmRemoveFiles(files) },
+                    onStop = { viewModel.stopDownloads() },
+                ).apply {
+                    show()
+                    showDownloads(viewModel.downloadProgress.value)
                 }
             }
             R.id.stop_downloads -> viewModel.stopDownloads()
@@ -490,8 +487,20 @@ class LibraryActivity : AppCompatActivity(),
         dialog.setMessage(details.message)
     }
 
+    // open while the user reads it; follows the bulk downloads
+    private var manageAttachmentsDialog: ManageAttachmentsDialog? = null
+
+    /** Removes [files] from this device after asking, saying which have edits not uploaded. */
+    private fun confirmRemoveFiles(files: List<Item>) {
+        viewModel.findEditedFiles(files) { edited ->
+            if (isFinishing || isDestroyed) return@findEditedFiles
+            SelectionDialogs(this).confirmDelete(files, edited, viewModel.chosenAttachmentFolder()) { viewModel.deleteLocalFiles(it) }
+        }
+    }
+
     override fun onDestroy() {
         syncDetailsDialog?.dismiss() // its window would leak with the activity (rotation)
+        manageAttachmentsDialog?.dismiss()
         super.onDestroy()
     }
 

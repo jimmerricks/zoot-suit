@@ -202,6 +202,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     /** Bulk downloads at work, for the menu's "Stop downloads". */
     val downloadsActive = MutableLiveData(false)
 
+    /** How far the bulk downloads are ("Downloading 3 of 12"), null when none are at work. */
+    val downloadProgress = MutableLiveData<String?>(null)
+
     private fun showSubtitle() {
         subtitle.value = listOfNotNull(downloadStatus, filterSummary).joinToString(" · ").ifEmpty { null }
     }
@@ -224,6 +227,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 else -> "Downloading…"
             }
             showSubtitle()
+            if (downloadProgress.value != downloadStatus) downloadProgress.value = downloadStatus
             if (done != lastDone && library.isLoaded()) parts.deviceState.refresh()
             lastDone = done
             // also a round that ended while the app was away (or killed) is told at start

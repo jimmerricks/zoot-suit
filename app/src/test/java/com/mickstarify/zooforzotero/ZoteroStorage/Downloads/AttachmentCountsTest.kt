@@ -34,15 +34,17 @@ class AttachmentCountsTest {
         assertEquals(listOf("PDF12222"), counts.getValue(AttachmentKind.PDF).missing.map { it.itemKey })
         assertEquals(listOf("PDF22222"), counts.getValue(AttachmentKind.PDF).onDevice.map { it.itemKey })
         assertEquals(listOf("HTML2222"), counts.getValue(AttachmentKind.HTML).missing.map { it.itemKey })
-        // the linked file isn't stored in Zotero; pdf1 is counted once
-        assertEquals(4, counts.getValue(AttachmentKind.ALL).total)
-        assertEquals(3, counts.getValue(AttachmentKind.ALL).missing.size)
+        assertEquals(listOf("EPUB2222"), counts.getValue(AttachmentKind.OTHER).missing.map { it.itemKey })
+        // the linked file isn't stored in Zotero; pdf1 is counted once; the kinds add up
+        val all = counts.values.reduce(AttachmentCounts::plus)
+        assertEquals(4, all.total)
+        assertEquals(3, all.missing.size)
     }
 
     @Test
     fun `kinds without files are left out`() {
         val counts = AttachmentCounts.of(listOf(epub)) { false }
-        assertEquals(setOf(AttachmentKind.ALL), counts.keys)
+        assertEquals(setOf(AttachmentKind.OTHER), counts.keys)
         assertFalse(AttachmentKind.isStoredFile(linked))
     }
 }

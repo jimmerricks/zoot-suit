@@ -8,6 +8,12 @@ Changed:
   of the items have it; a tap puts the tag on all of them, the next takes it off all of
   them. The field finds any tag in the library or adds a new one, and your coloured tags
   are listed first. Apply makes every change at once.
+- Selected items: "Download attachments" and "Remove attachments from device" are one
+  screen, "Manage attachments". It counts the selection's files by kind (PDFs, HTML
+  snapshots, other attachments) with how many are on this device; Download and Remove act
+  on the kinds ticked, and while downloads run it shows how far they are, with Stop. It
+  copes with a whole library selected: the downloads are queued and the files removed
+  off the main thread, with progress.
 - The sign-in screens are built like the rest of the app (they used Jetpack Compose,
   which the app now leaves out): they look the same, the API key field no longer opens
   the keyboard before it's tapped, and Zotero's login page survives turning the device.

@@ -2,16 +2,19 @@ package com.mickstarify.zooforzotero.ZoteroStorage.Downloads
 
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 
-/** Which of the selected items' attachments a bulk download or deletion acts on. */
+/**
+ * Which of the selected items' attachments a bulk download or removal acts on. The kinds
+ * don't overlap, so their counts add up; named as in the filter.
+ */
 enum class AttachmentKind(val label: String) {
     PDF("PDFs"),
-    HTML("Web snapshots (HTML)"),
-    ALL("All attachments");
+    HTML("HTML snapshots"),
+    OTHER("Other attachments");
 
     fun matches(attachment: Item): Boolean = when (this) {
         PDF -> attachment.data["contentType"] == "application/pdf"
         HTML -> attachment.data["contentType"] == "text/html"
-        ALL -> true
+        OTHER -> !PDF.matches(attachment) && !HTML.matches(attachment)
     }
 
     companion object {
@@ -26,9 +29,11 @@ enum class AttachmentKind(val label: String) {
     }
 }
 
-/** For one [AttachmentKind]: the selection's stored files [onDevice] and those [missing] from it. */
+/** For one [AttachmentKind] (or several, [plus]): the selection's stored files [onDevice] and those [missing] from it. */
 data class AttachmentCounts(val missing: List<Item>, val onDevice: List<Item>) {
     val total get() = missing.size + onDevice.size
+
+    operator fun plus(other: AttachmentCounts) = AttachmentCounts(missing + other.missing, onDevice + other.onDevice)
 
     companion object {
         /**

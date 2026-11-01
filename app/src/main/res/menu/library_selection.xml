@@ -35,12 +35,8 @@
     <!-- the files on this device: in groups too -->
     <group android:id="@+id/selection_files">
         <item
-            android:id="@+id/selection_download"
-            android:title="@string/download_attachments"
-            app:showAsAction="never" />
-        <item
-            android:id="@+id/selection_remove_attachments"
-            android:title="@string/remove_attachments"
+            android:id="@+id/selection_attachments"
+            android:title="@string/manage_attachments"
             app:showAsAction="never" />
     </group>
 

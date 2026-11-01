@@ -16,9 +16,8 @@
     <string name="add_and_remove_tags">Add and remove tags</string>
     <string name="add_to_collection">Add to collection…</string>
     <string name="remove_from_collection">Remove from this collection</string>
-    <string name="download_attachments">Download attachments</string>
+    <string name="manage_attachments">Manage attachments</string>
     <string name="stop_downloads">Stop downloads</string>
-    <string name="remove_attachments">Remove attachments from device</string>
     <string name="select_all">Select all</string>
     <string name="invert_selection">Invert selection</string>
     <string name="start_selection">Select items</string>
