@@ -9,6 +9,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemPOJO
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.AttachmentInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -463,8 +464,10 @@ class ZoteroDB(
         downloadedFrom: String = AttachmentInfo.UNSET
     ): Completable {
         val mDownloadedFrom = if (downloadedFrom == AttachmentInfo.UNSET) {
-            // check to see if webdav is on, which implies that i was downloaded from webdav.
-            if (com.mickstarify.zooforzotero.PreferenceManager(context).isWebDAVEnabled()) {
+            // WebDAV, if it's on and this is My Library: groups always use Zotero's storage
+            if (groupID == GroupInfo.NO_GROUP_ID &&
+                com.mickstarify.zooforzotero.PreferenceManager(context).isWebDAVEnabled()
+            ) {
                 AttachmentInfo.WEBDAV
             } else {
                 AttachmentInfo.ZOTEROAPI

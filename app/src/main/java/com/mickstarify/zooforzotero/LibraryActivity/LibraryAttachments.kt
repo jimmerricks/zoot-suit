@@ -16,6 +16,7 @@ import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroNotFoundException
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentOpenCheck
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
+import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.AttachmentInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
@@ -402,7 +403,9 @@ class LibraryAttachments(
                 val intact = md5.isNotEmpty()
                 if (intact) {
                     // on the main thread: it also updates the open library's records in memory
-                    val source = if (preferences.isWebDAVEnabled()) AttachmentInfo.WEBDAV else AttachmentInfo.ZOTEROAPI
+                    // groups always download from Zotero: WebDAV is for My Library only
+                    val webdav = preferences.isWebDAVEnabled() && state.currentGroup.id == GroupInfo.NO_GROUP_ID
+                    val source = if (webdav) AttachmentInfo.WEBDAV else AttachmentInfo.ZOTEROAPI
                     zoteroDB.updateAttachmentMetadata(item.itemKey, md5, mtime, source)
                         .subscribeOn(Schedulers.io()).subscribe({}, { Log.e("zotero", "recording ${item.itemKey}'s download failed: $it") })
                 }
