@@ -21,9 +21,10 @@ class SelectionDialogs(private val context: Context) {
 
     /**
      * Asks for a tag to add to the [count] selected items, suggesting the library's [tags]
-     * (which may arrive later through the returned function).
+     * (which may arrive later through the returned function); the coloured ones in [colors]
+     * are one tap away.
      */
-    fun addTag(count: Int, onAdd: (String) -> Unit): (List<String>) -> Unit {
+    fun addTag(count: Int, colors: TagColors, onAdd: (String) -> Unit): (List<String>) -> Unit {
         val view = LayoutInflater.from(context).inflate(R.layout.dialog_add_tag, null)
         val field = view.findViewById<AutoCompleteTextView>(R.id.editText_new_tag)
         val dialog = AlertDialog.Builder(context)
@@ -32,6 +33,10 @@ class SelectionDialogs(private val context: Context) {
             .setPositiveButton("Add", null) // set below: a blank tag keeps the dialog open
             .setNegativeButton("Cancel", null)
             .create()
+        QuickTags.bind(view, colors, emptySet()) { tag ->
+            onAdd(tag)
+            dialog.dismiss()
+        }
         val add = {
             val tag = ItemEdits.cleanTag(field.text.toString())
             if (tag == null) {

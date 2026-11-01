@@ -5,6 +5,8 @@
 Added:
 - Settings → About: the version (tap to copy it with the Android version and device),
   Report a problem (a GitHub issue with those filled in), source code and licence.
+- Adding a tag (to one item or to the selection): your coloured tags are buttons above
+  the field, in Zotero's order; one tap adds that tag. Tags the item has are left out.
 
 Changed:
 - Settings: Syncing comes before Attachments.

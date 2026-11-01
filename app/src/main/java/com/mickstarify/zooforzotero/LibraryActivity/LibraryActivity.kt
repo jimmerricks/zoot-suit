@@ -339,7 +339,7 @@ class LibraryActivity : AppCompatActivity(),
         when (item.itemId) {
             R.id.selection_add_tag -> {
                 val count = libraryListViewModel.getSelection().value!!.size
-                val suggest = SelectionDialogs(this).addTag(count) { viewModel.editSelectedTags(it, add = true) }
+                val suggest = SelectionDialogs(this).addTag(count, viewModel.currentTagColors()) { viewModel.editSelectedTags(it, add = true) }
                 viewModel.loadTags { tags -> suggest(tags.map { it.first }) }
             }
             R.id.selection_remove_tag -> viewModel.loadSelectedTags { tags ->
@@ -839,6 +839,8 @@ class LibraryActivity : AppCompatActivity(),
 
     override fun libraryTags(onResult: (List<String>) -> Unit) =
         viewModel.loadTags { tags -> onResult(tags.map { it.first }) }
+
+    override fun tagColors(): TagColors = viewModel.currentTagColors()
 
     override fun hasPendingEdits(item: Item): Boolean = viewModel.hasPendingEdits(item)
 

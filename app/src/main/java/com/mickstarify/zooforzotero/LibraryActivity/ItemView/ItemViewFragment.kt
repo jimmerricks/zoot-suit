@@ -21,6 +21,8 @@ import android.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.EditNoteDialog
+import com.mickstarify.zooforzotero.LibraryActivity.QuickTags
+import com.mickstarify.zooforzotero.LibraryActivity.TagColors
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListener
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.onEditNoteChangeListener
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
@@ -196,8 +198,9 @@ class ItemViewFragment : DialogFragment(),
     }
 
     /**
-     * Asks for a tag to add to [item], suggesting the library's other tags as it is typed.
-     * Added on this device at once; it goes to Zotero with the next sync.
+     * Asks for a tag to add to [item], suggesting the library's other tags as it is typed;
+     * its coloured tags are one tap away. Added on this device at once; it goes to Zotero
+     * with the next sync.
      */
     private fun showAddTagDialog(item: Item) {
         val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_tag, null)
@@ -216,6 +219,12 @@ class ItemViewFragment : DialogFragment(),
             .setPositiveButton("Add", null) // set below: a blank tag keeps the dialog open
             .setNegativeButton("Cancel", null)
             .create()
+        listener?.let { l ->
+            QuickTags.bind(view, l.tagColors(), itemTags) { tag ->
+                l.onTagAdd(item, tag)
+                dialog.dismiss()
+            }
+        }
         val add = {
             val tag = ItemEdits.cleanTag(field.text.toString())
             if (tag == null) {
@@ -335,6 +344,9 @@ class ItemViewFragment : DialogFragment(),
 
         /** The open library's tags, for suggestions; [onResult] runs on the main thread. */
         fun libraryTags(onResult: (List<String>) -> Unit)
+
+        /** The open library's coloured tags, offered as buttons when adding a tag. */
+        fun tagColors(): TagColors
         fun hasPendingEdits(item: Item): Boolean
     }
 
