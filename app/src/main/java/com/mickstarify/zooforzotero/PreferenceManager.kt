@@ -201,7 +201,8 @@ class PreferenceManager @Inject constructor(context: Context) {
         editor.putString("webdav_username", "")
         editor.putString("webdav_password", "")
         editor.putBoolean("webdav_allowInsecureSSL", false)
-        editor.putBoolean("webdav_verify_ssl", false)
+        // back to the default: a server set up after this has its certificate checked
+        editor.putBoolean("webdav_verify_ssl", true)
         editor.putBoolean("webdav_add_zotero_to_url", false)
         editor.putString("webdav_auth_mode", "automatic")
 
