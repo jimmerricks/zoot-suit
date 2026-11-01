@@ -217,7 +217,12 @@ class AttachmentStorageManager @Inject constructor(
     fun openAttachment(uri: Uri, contentType: String = ""): Intent {
         Log.d("zotero", "opening PDF with Uri $uri")
         val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = uri
+        // the storage's type for the file (from its name), else Zotero's: a file whose name
+        // says nothing would otherwise go to apps that open anything, or to none
+        val type = runCatching { context.contentResolver.getType(uri) }.getOrNull()
+            ?.takeUnless { it == "application/octet-stream" }
+            ?: contentType.ifBlank { null }
+        intent.setDataAndType(uri, type)
         intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
         intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         return intent
