@@ -33,8 +33,9 @@ Smaller items, none blocking a release:
   and navigation still go presenter to view rather than through the ViewModel; the
   library list's derived maps are rebuilt just after a new list is published, so they
   can briefly disagree with it; lint reports about 150 warnings (mostly hardcoded text).
-- **Library screen:** whether `singleTask` would serve the library screen better than
-  `singleInstance` needs testing with external PDF viewers.
+- **Library screen:** it is `singleTask` since 0.5.0 (was `singleInstance`, which left
+  Settings in a task of its own). Opening a PDF in an external viewer and coming back
+  needs a test on a device.
 
 ## Known limitations
 

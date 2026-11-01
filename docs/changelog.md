@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
+
+Updates 0.4.3 in place (same app id and signing key). Downloaded files move to the
+app's private storage at the first start (see below); they open as before and don't
+count as edited.
 
 Changed:
 - Selected items: "Add tag" and "Remove tag" are one screen, "Add and remove tags". It
@@ -70,7 +74,6 @@ Changed:
   than in the menu.
 - The menu while selecting starts with Stop selecting, then Manage attachments, then the
   tag and collection actions, so the entries that are always there keep their places.
-
 - The app icon is zoomed in on the suit.
 
 Fixed:

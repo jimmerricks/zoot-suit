@@ -16,12 +16,13 @@ forked at v4.0.0. The main differences:
 | Collections | Read only | Add a selection to a collection or remove it from one, offline too |
 | New notes | Online only, uploaded at once | Offline too; uploaded at the next sync |
 | Large libraries | Whole library held in memory | List, sort and search read from the database |
-| Sidebar | Top-level collections; groups in a flat list | Collection tree; groups with their own collections |
+| Sidebar | Top-level collections; groups in a flat list | Collection tree; groups with their own collections; Settings at its foot |
+| Syncing | Sync in the menu; a spinner over the list | Pull the list down; the toolbar's sync icon shows edits waiting (with a dot) and turns while a sync runs |
 | Rotation and restart | Reloads the library; restarts in My Library | Keeps your place |
 | Theme | Follows the system | Settings → Theme: auto, light or dark (dark on Android 7–9 too) |
 | List rows | Type icon, title, first creator | Settings → Appearance: compact rows, year and publication after the creator, type icons on or off, and Zotero's coloured and emoji tags at the start of the second line |
 | Adding items | Zotero Save, ISBN scanner, share target | Removed |
-| Downloading many attachments | Attachment Manager: the whole library, while the screen stays open | The selected items' PDFs, snapshots or all files, in the background; resumes after interruptions |
+| Downloading many attachments | Attachment Manager: the whole library, while the screen stays open | Manage attachments: the PDFs, snapshots or other files of the items selected or listed, in the background; resumes after interruptions |
 | Sharing an item | Share button in the item view | Removed |
 | Signing out | Clear the app's data | Settings → Sign out, which first lists the edits not synced yet |
 
