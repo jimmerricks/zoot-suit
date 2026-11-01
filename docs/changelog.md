@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.4.3
+
+Updates 0.4.2 in place (same app id and signing key).
 
 Added:
 - Settings → About: the version (tap to copy it with the Android version and device),
@@ -12,6 +14,24 @@ Changed:
 - Settings: Syncing comes before Attachments.
 - The toolbar is spaced like the list below it: the menu button as far from the left
   edge as ⋮ is from the right, and the title closer to it.
+
+Security:
+- WebDAV: clearing the server address (Save with the address empty) also switched
+  "Verify the server's certificate" off, so the next server you set up went
+  unchecked. It now stays on. If you ever cleared your server and set it up again,
+  open Settings → WebDAV server → Advanced and check that the switch is on.
+- WebDAV: your username and password go only to the server you set up. If that
+  server redirected to another host, the other host could ask for them and get them.
+  A server that redirects to a different host name now fails to sign in: enter the
+  address it redirects to.
+- The Zotero sign-in page shows only zotero.org, over https. Links to other sites
+  open in your browser; other kinds of link are ignored.
+
+Fixed:
+- Signing out no longer freezes the app while it clears a large library: it runs in
+  the background behind a "Signing out…" message.
+- Two rare crashes: a network error arriving after a download was cancelled, and a
+  failed reload of the library from the database.
 
 ## 0.4.2
 
