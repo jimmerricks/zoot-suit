@@ -113,7 +113,6 @@ android {
 
 dependencies {
     def nav_version = "2.9.3"
-    def nav3_version = "1.0.0-alpha06"
     def compose_bom_version = "2025.06.01"
     def acraVersion = "5.12.0"
 
@@ -131,10 +130,6 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2'
     implementation 'androidx.compose.runtime:runtime-livedata'
     
-    // Navigation 3
-    implementation "androidx.navigation3:navigation3-runtime:$nav3_version"
-    implementation "androidx.navigation3:navigation3-ui:$nav3_version"
-
     // Hilt integration with Compose
     implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
     
