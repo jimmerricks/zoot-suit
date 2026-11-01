@@ -64,8 +64,10 @@ Changed:
   title clear them; the search and filter screens keep their Clear buttons.
 - "Stop downloads" is no longer in the menu: Manage attachments shows the downloads at
   work, with Stop.
-- The library's menu is Filter and Sort (on phones), Select items, Manage attachments,
-  Settings: nothing in it comes and goes any more.
+- The library's menu is Filter and Sort (on phones), Select items, Manage attachments:
+  nothing in it comes and goes any more.
+- Settings is at the foot of the sidebar, below the libraries and collections, rather
+  than in the menu.
 - The menu while selecting starts with Stop selecting, then Manage attachments, then the
   tag and collection actions, so the entries that are always there keep their places.
 

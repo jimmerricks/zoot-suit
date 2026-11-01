@@ -226,13 +226,20 @@ class LibraryActivity : AppCompatActivity(),
                 if (newState != DrawerLayout.STATE_IDLE) showSidebarRows()
             }
         })
+        findViewById<View>(R.id.sidebar_settings).setOnClickListener {
+            findViewById<DrawerLayout>(R.id.drawerlayout_library).closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
         val statusBarStrip = findViewById<View>(R.id.sidebar_status_bar)
+        val footer = findViewById<View>(R.id.sidebar_footer)
         val padding = sidebar.paddingTop
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.sidebar_container)) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             statusBarStrip.layoutParams.height = bars.top
             statusBarStrip.requestLayout()
-            sidebar.updatePadding(top = bars.top + padding, bottom = bars.bottom + padding)
+            // the footer, last, keeps clear of the navigation bar
+            sidebar.updatePadding(top = bars.top + padding)
+            footer.updatePadding(bottom = bars.bottom + padding)
             insets
         }
     }
@@ -376,11 +383,6 @@ class LibraryActivity : AppCompatActivity(),
             }
 
             R.id.sync_status, R.id.pending_edits -> showSyncDialog()
-
-            R.id.settings -> {
-                val intent = Intent(this, SettingsActivity::class.java)
-                startActivity(intent)
-            }
 
             R.id.force_resync -> {
                 // clears every table: pending tag edits and new notes (PendingItemEdit)
