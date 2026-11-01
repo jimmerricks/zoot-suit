@@ -1,6 +1,7 @@
 package com.mickstarify.zooforzotero
 
 import android.app.Application
+import com.mickstarify.zooforzotero.common.installRxErrorHandler
 import dagger.hilt.android.HiltAndroidApp
 import org.acra.ReportField
 import org.acra.config.dialog
@@ -12,6 +13,7 @@ import org.acra.ktx.initAcra
 class ZooForZoteroApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        installRxErrorHandler()
         AppTheme.apply(this)
 
         // off in debug builds, and when no address is configured (apikeys.properties)
