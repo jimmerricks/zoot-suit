@@ -547,7 +547,12 @@ class LibraryAttachments(
     fun countAttachments(keys: List<String>, onResult: (Map<AttachmentKind, AttachmentCounts>) -> Unit) {
         ui.showLoadingAlertDialog("Looking at the attachments…")
         val here = onDevice()
-        Single.fromCallable { AttachmentCounts.of(zoteroDatabase.loadAttachmentsOf(keys)) { it.itemKey in here } }
+        Single.fromCallable {
+            val start = System.nanoTime()
+            AttachmentCounts.of(zoteroDatabase.loadAttachmentsOf(keys)) { it.itemKey in here }.also {
+                Log.d("zotero", "counted the attachments of ${keys.size} items in ${(System.nanoTime() - start) / 1_000_000} ms")
+            }
+        }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ counts ->

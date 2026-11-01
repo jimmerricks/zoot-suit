@@ -183,15 +183,39 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
     }
 
     /**
-     * The attachments among the items [keys] and their children (not trashed), with all
-     * their fields: what bulk downloads and deletions act on. Blocking.
+     * The attachments among the items [keys] and their children (not trashed): what bulk
+     * downloads and deletions act on. One query per chunk of keys, found through ItemInfo's
+     * copies of itemType and parent, reading only the columns and fields
+     * ([ATTACHMENT_FILE_FIELDS]) those use: a whole library's took a second when each
+     * attachment was loaded whole, search text and all. Blocking.
      */
     fun loadAttachmentsOf(keys: List<String>): List<Item> {
-        val dao = db.itemDao()
-        val own = keys.chunked(KEY_CHUNK).flatMap { dao.getItemInfos(it) }
-            .filter { it.itemType == "attachment" && !it.deleted }.map { it.itemKey }
-        val children = keys.chunked(KEY_CHUNK).flatMap { dao.getChildKeys(it) }
-        return loadByKeys(own + children, listFieldsOnly = false).filter { it.itemType == "attachment" }
+        val infos = LinkedHashMap<String, ItemInfo>()
+        val data = HashMap<String, MutableList<ItemData>>()
+        val names = ATTACHMENT_FILE_FIELDS.joinToString(",") { "'$it'" } // constants
+        // the keys are bound twice
+        for (chunk in keys.chunked(KEY_CHUNK / 2)) {
+            val marks = chunk.joinToString(",") { "?" }
+            val sql = "SELECT i.itemKey, i.`group`, i.version, i.parent, i.contentType, d.name, d.value, d.valueType " +
+                    "FROM ItemInfo i LEFT JOIN ItemData d ON d.parent = i.itemKey AND d.name IN ($names) " +
+                    "WHERE i.itemType = 'attachment' AND i.deleted = 0 AND (i.itemKey IN ($marks) OR i.parent IN ($marks))"
+            db.query(SimpleSQLiteQuery(sql, (chunk + chunk).toTypedArray())).use { c ->
+                while (c.moveToNext()) {
+                    val key = c.getString(0)
+                    infos.getOrPut(key) {
+                        ItemInfo(
+                            key, c.getInt(1), c.getInt(2), deleted = false,
+                            parent = c.getString(3), itemType = "attachment", contentType = c.getString(4),
+                        )
+                    }
+                    if (!c.isNull(5)) {
+                        data.getOrPut(key) { ArrayList(ATTACHMENT_FILE_FIELDS.size) }
+                            .add(ItemData(key, c.getString(5), c.getString(6), c.getString(7)))
+                    }
+                }
+            }
+        }
+        return infos.values.map { assemble(it, data, emptyMap(), emptyMap(), emptyMap(), listFieldsOnly = true) }
     }
 
     private fun loadByKeys(keys: List<String>, listFieldsOnly: Boolean): List<Item> {
@@ -336,6 +360,14 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
     companion object {
         /** Keys per IN (...) list: SQLite allows 999 parameters, and some queries add a few. */
         const val KEY_CHUNK = 900
+
+        /**
+         * An attachment's fields that counting, downloading and removing its file read: its
+         * type (Item.itemType reads the field, not ItemInfo's copy), kind and link
+         * (AttachmentKind), file name, title (to name it), md5 and mtime.
+         */
+        val ATTACHMENT_FILE_FIELDS =
+            listOf("itemType", "contentType", "linkMode", "filename", "title", "md5", "mtime")
 
         /**
          * The fields a regular item loads at startup: what lists, sorting, the filter and
