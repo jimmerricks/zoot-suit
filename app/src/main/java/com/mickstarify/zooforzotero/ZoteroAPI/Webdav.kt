@@ -15,6 +15,8 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 import net.lingala.zip4j.ZipFile
+import okhttp3.Authenticator
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Request
@@ -206,7 +208,12 @@ class Webdav(
             }
 
             clientBuilder
-                .authenticator(CachingAuthenticatorDecorator(authenticator, authCach))
+                .authenticator(
+                    serverOnly(
+                        preferenceManager.getWebDAVAddress(),
+                        CachingAuthenticatorDecorator(authenticator, authCach)
+                    )
+                )
                 .addInterceptor(AuthenticationCacheInterceptor(authCach))
         }
 
@@ -246,4 +253,19 @@ class Webdav(
     }
 }
 
-
+/**
+ * [delegate], answering only challenges from the host of [address], the WebDAV server
+ * set up. OkHttp follows redirects to any host and asks the authenticator when that
+ * host answers 401: without this a redirect elsewhere was sent the WebDAV password.
+ */
+internal fun serverOnly(address: String, delegate: Authenticator): Authenticator {
+    val host = address.trim().toHttpUrlOrNull()?.host
+    return Authenticator { route, response ->
+        if (host != null && response.request.url.host == host) {
+            delegate.authenticate(route, response)
+        } else {
+            Log.w("zotero", "WebDAV: not sending the login to ${response.request.url.host}")
+            null
+        }
+    }
+}
