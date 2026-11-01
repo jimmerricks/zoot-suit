@@ -29,8 +29,7 @@ Smaller items, none blocking a release:
 - **Size:** the release APK is about 2.6 MB. Keeping only the classes Gson, Room and
   Hilt reach by reflection, instead of all of the app's own, would save a few hundred
   KB more; the navigation library is used for a single screen.
-- **Code:** the download-and-check logic exists twice (single and bulk downloads);
-  RxJava is being replaced by coroutines part by part; the library screen's dialogs
+- **Code:** RxJava is being replaced by coroutines part by part; the library screen's dialogs
   and navigation still go presenter to view rather than through the ViewModel; the
   library list's derived maps are rebuilt just after a new list is published, so they
   can briefly disagree with it; lint reports about 150 warnings (mostly hardcoded text).

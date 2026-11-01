@@ -110,17 +110,9 @@ class AttachmentDownloadWorker(context: Context, params: WorkerParameters) : Cor
             }
             throw e
         }
-        val md5 = storage.calculateMd5(item)
-        if (expected.isNotEmpty() && !md5.equals(expected, ignoreCase = true)) {
-            storage.deleteAttachment(item)
-            return Outcome.FAILED to "A download didn't match Zotero's checksum and was deleted."
-        }
-        database.setAttachmentBase(item.itemKey, entry.group, md5)
-        val source = if (entry.group == GroupInfo.NO_GROUP_ID && preferences.isWebDAVEnabled()) {
-            AttachmentInfo.WEBDAV
-        } else {
-            AttachmentInfo.ZOTEROAPI
-        }
+        val md5 = settleDownload(item, entry.group, expected, storage, database)
+            ?: return Outcome.FAILED to "A download didn't match Zotero's checksum and was deleted."
+        val source = downloadSource(entry.group, preferences.isWebDAVEnabled())
         database.writeAttachmentInfo(AttachmentInfo(item.itemKey, entry.group, md5, item.getMtime(), source))
             .blockingAwait()
         return Outcome.DOWNLOADED to null

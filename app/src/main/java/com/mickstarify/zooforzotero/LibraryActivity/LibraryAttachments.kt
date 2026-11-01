@@ -16,14 +16,14 @@ import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroNotFoundException
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentOpenCheck
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.AttachmentInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
 import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentCounts
 import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentDownloadQueue
 import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentDownloads
 import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.downloadSource
+import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.settleDownload
 import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachments
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Completable
@@ -384,18 +384,15 @@ class LibraryAttachments(
 
 
     /**
-     * Checks a finished download against Zotero's md5 and records it (as the copy's base,
-     * and its md5 and [mtime]), hashing the file once, off the main thread; then opens it
-     * or says it's there. A damaged download is deleted and recorded nowhere, as in a bulk
-     * download (AttachmentDownloadWorker).
+     * Checks a finished download against Zotero's md5 and records it (settleDownload, as a
+     * bulk download does; then its md5 and [mtime]), off the main thread; then opens it or
+     * says it's there. A damaged download is deleted and recorded nowhere.
      */
     private fun verifyDownload(item: Item, openWhenDone: Boolean, expected: String, mtime: Long) {
-        // the md5 if the file is intact, else ""
+        val group = state.currentGroup.id
+        // the md5 if the file is intact, else "" (the copy is then deleted)
         Single.fromCallable {
-            val md5 = attachmentStorageManager.calculateMd5(item)
-            val intact = expected.isEmpty() || md5.equals(expected, ignoreCase = true)
-            if (intact) recordBase(item, md5)
-            if (intact) md5 else ""
+            settleDownload(item, group, expected, attachmentStorageManager, zoteroDatabase) ?: ""
         }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -403,15 +400,12 @@ class LibraryAttachments(
                 val intact = md5.isNotEmpty()
                 if (intact) {
                     // on the main thread: it also updates the open library's records in memory
-                    // groups always download from Zotero: WebDAV is for My Library only
-                    val webdav = preferences.isWebDAVEnabled() && state.currentGroup.id == GroupInfo.NO_GROUP_ID
-                    val source = if (webdav) AttachmentInfo.WEBDAV else AttachmentInfo.ZOTEROAPI
+                    val source = downloadSource(group, preferences.isWebDAVEnabled())
                     zoteroDB.updateAttachmentMetadata(item.itemKey, md5, mtime, source)
                         .subscribeOn(Schedulers.io()).subscribe({}, { Log.e("zotero", "recording ${item.itemKey}'s download failed: $it") })
                 }
                 if (!intact) {
                     Log.d("zotero", "md5 error on attachment $expected")
-                    attachmentStorageManager.deleteAttachment(item)
                     ui.createErrorAlert(
                         "Download damaged",
                         "The downloaded file doesn't match Zotero's checksum, so it was " +
