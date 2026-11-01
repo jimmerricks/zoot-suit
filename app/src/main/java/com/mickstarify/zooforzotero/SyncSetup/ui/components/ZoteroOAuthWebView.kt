@@ -1,10 +1,10 @@
 package com.mickstarify.zooforzotero.SyncSetup.ui.components
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import android.view.ViewGroup
-import android.webkit.URLUtil
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +21,25 @@ import com.mickstarify.zooforzotero.ui.theme.ZoteroTheme
 const val OAUTH_CALLBACK = "zootsuit://oauth_callback"
 
 private const val TAG = "ZoteroOAuthWebView"
+
+/** What the sign-in page does with a link: the page only ever shows zotero.org over https. */
+internal enum class OAuthNavigation { CALLBACK, LOAD, EXTERNAL, BLOCK }
+
+internal fun oauthNavigation(url: String): OAuthNavigation {
+    if (url.startsWith(OAUTH_CALLBACK)) return OAuthNavigation.CALLBACK
+    val uri = runCatching { java.net.URI(url) }.getOrNull() ?: return OAuthNavigation.BLOCK
+    val host = uri.host?.lowercase() ?: return OAuthNavigation.BLOCK
+    return when (uri.scheme?.lowercase()) {
+        "https" -> if (host == "zotero.org" || host.endsWith(".zotero.org")) {
+            OAuthNavigation.LOAD
+        } else {
+            OAuthNavigation.EXTERNAL
+        }
+        // the browser shows where it goes; here the user couldn't tell
+        "http" -> OAuthNavigation.EXTERNAL
+        else -> OAuthNavigation.BLOCK
+    }
+}
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -63,9 +82,9 @@ fun ZoteroOAuthWebView(
             view.webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
 
-                    url?.let { urlString ->
-                        // Check for OAuth callback URL
-                        if (urlString.startsWith(OAUTH_CALLBACK)) {
+                    val urlString = url ?: return true
+                    when (oauthNavigation(urlString)) {
+                        OAuthNavigation.CALLBACK -> {
                             val uri = Uri.parse(urlString)
                             val oauthToken = uri.getQueryParameter("oauth_token")
                             val oauthVerifier = uri.getQueryParameter("oauth_verifier")
@@ -75,16 +94,16 @@ fun ZoteroOAuthWebView(
                             } else {
                                 onError("Zotero's sign-in page didn't return a login. Try again.")
                             }
-                            return true
                         }
-
-                        // Allow network URLs to be loaded normally
-                        if (URLUtil.isNetworkUrl(urlString)) {
-                            return false
-                        }
+                        // zotero.org over https: the sign-in page and its own links
+                        OAuthNavigation.LOAD -> return false
+                        // anywhere else opens in the browser, never inside the sign-in page
+                        OAuthNavigation.EXTERNAL -> runCatching {
+                            view?.context?.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(urlString)))
+                        }.onFailure { Log.e(TAG, "no app opens $urlString: $it") }
+                        OAuthNavigation.BLOCK -> Log.w(TAG, "blocked $urlString")
                     }
-
-                    return super.shouldOverrideUrlLoading(view, url)
+                    return true
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
