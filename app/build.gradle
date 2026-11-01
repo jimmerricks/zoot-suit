@@ -57,8 +57,6 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "zotero_api_key", localSetting("zotero_api_key"))
         buildConfigField("String", "zotero_api_secret", localSetting("zotero_api_secret"))
-        // where the crash dialog's "Send" emails reports; empty: crash reporting off
-        buildConfigField("String", "crash_report_email", localSetting("crash_report_email"))
     }
     buildTypes {
         // beside a release build on the same device: different keys can't update each other
@@ -112,7 +110,6 @@ android {
 
 dependencies {
     def nav_version = "2.9.3"
-    def acraVersion = "5.12.0"
 
     // MAIN DEPENDENCIES
     
@@ -154,16 +151,6 @@ dependencies {
     implementation "androidx.room:room-runtime:2.7.2"
     implementation 'androidx.room:room-rxjava3:2.7.2'
     ksp "androidx.room:room-compiler:2.7.2"
-
-    // ACRA crash reporting
-    // auto-service is ACRA's annotation processor, needed only to build ACRA itself; it
-    // brought Guava (CVE-2026-102554) onto the app's classpath
-    implementation("ch.acra:acra-mail:$acraVersion") {
-        exclude group: 'com.google.auto.service'
-    }
-    implementation("ch.acra:acra-dialog:$acraVersion") {
-        exclude group: 'com.google.auto.service'
-    }
 
     // Dependency Injection
     implementation "com.google.dagger:hilt-android:2.57"

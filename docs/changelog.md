@@ -33,6 +33,10 @@ Changed:
   Datasets, preprints and standards get their own icons; an item's attachments show
   Zotero's icon for their kind (PDF, EPUB, web snapshot, linked file, link).
 
+Removed:
+- The crash-report code (ACRA), which was never switched on. Report crashes as GitHub
+  issues.
+
 ## 0.4.3
 
 Updates 0.4.2 in place (same app id and signing key).

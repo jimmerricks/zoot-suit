@@ -65,10 +65,7 @@ A WebDAV password sent over `http` is not encrypted; use `https` where you can.
 
 ## Crash reports
 
-Off. If they were turned on, a report would hold the app version, Android version,
-device model and the crash's stack trace, sent by email only after the user taps Send.
-The device log is left out: release logs contain item titles, item keys and WebDAV
-URLs. Turning reports on still needs a line in the privacy policy.
+None. The app has no crash reporting; report a crash as a GitHub issue.
 
 ## Licence
 

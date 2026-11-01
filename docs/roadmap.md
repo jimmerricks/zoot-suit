@@ -33,8 +33,6 @@ Smaller items, none blocking a release:
 - **WebDAV over `http`:** the password goes unencrypted, and Basic authentication
   sends it as is. A warning in WebDAV setup is planned, worded together with the
   rest of the setup screen.
-- **Crash reports** are off. Turning them on needs a line in the privacy policy (what a
-  report holds is in `releases.md`); if they stay off, ACRA can go (about 70 KB).
 - **Size:** the release APK is about 2.6 MB. Keeping only the classes Gson, Room and
   Hilt reach by reflection, instead of all of the app's own, would save a few hundred
   KB more; the navigation library is used for a single screen.
