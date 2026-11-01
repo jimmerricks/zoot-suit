@@ -37,6 +37,21 @@ private const val EXTERNAL_STORAGE_PROVIDER = "com.android.externalstorage.docum
  * but the name comes from the server and goes into a path, and "../" in it would reach
  * outside the attachment folder (and createTempFile deletes what's there).
  */
+/** Lower-case hex md5 of [inputStream], which it closes. Reads it all: not on the main thread. */
+fun md5Hex(inputStream: InputStream): String {
+    val digest = MessageDigest.getInstance("MD5")
+    inputStream.use { stream ->
+        // 64 KB: through a Custom Path folder each read is a binder call
+        val buffer = ByteArray(65536)
+        while (true) {
+            val n = stream.read(buffer)
+            if (n < 0) break
+            digest.update(buffer, 0, n)
+        }
+    }
+    return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+}
+
 fun safeFileName(name: String?): String {
     val base = name?.substringAfterLast('/')?.replace("\u0000", "")
     return if (base.isNullOrBlank() || base == "." || base == "..") "unknown.pdf" else base
@@ -115,19 +130,7 @@ class AttachmentStorageManager @Inject constructor(
     }
 
     /** Lower-case hex md5 of the stream, which it closes. Reads it all: not on the main thread. */
-    fun calculateMd5(inputStream: InputStream): String {
-        val digest = MessageDigest.getInstance("MD5")
-        inputStream.use { stream ->
-            // 64 KB: through a Custom Path folder each read is a binder call
-            val buffer = ByteArray(65536)
-            while (true) {
-                val n = stream.read(buffer)
-                if (n < 0) break
-                digest.update(buffer, 0, n)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
-    }
+    fun calculateMd5(inputStream: InputStream): String = md5Hex(inputStream)
 
     fun getItemOutputStream(item: Item): OutputStream {
         val filename = getFilenameForItem(item)

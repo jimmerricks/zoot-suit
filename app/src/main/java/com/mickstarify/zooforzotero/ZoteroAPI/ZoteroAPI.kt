@@ -14,6 +14,7 @@ import com.mickstarify.zooforzotero.ZoteroAPI.Model.ItemPOJO
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.ZoteroUploadAuthorizationPojo
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
+import com.mickstarify.zooforzotero.ZoteroStorage.md5Hex
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.ZoteroDB.ItemsDownloadProgress
@@ -36,6 +37,8 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.File
+import java.io.IOException
 import java.util.LinkedList
 import java.util.concurrent.TimeUnit
 
@@ -54,6 +57,21 @@ class ItemChangedSinceException(message: String) : RuntimeException(message)
 class ItemGoneException(message: String) : RuntimeException(message)
 class WriteAccessDeniedException(message: String) : RuntimeException(message)
 class ZoteroNotFoundException(message: String) : RuntimeException(message)
+
+/** A download that doesn't match Zotero's md5; the copy on the device was left as it was. */
+class DamagedDownloadException(what: String) :
+    IOException("The download of $what doesn't match Zotero's checksum")
+
+/**
+ * Throws [DamagedDownloadException] if [file], a finished download of [key], doesn't have
+ * md5 [expected]; an empty [expected] (Zotero has none) passes.
+ */
+fun checkDownload(file: File, expected: String?, key: String) {
+    if (expected.isNullOrEmpty()) return
+    if (!md5Hex(file.inputStream()).equals(expected, ignoreCase = true)) {
+        throw DamagedDownloadException(key)
+    }
+}
 
 // The Zotero Web API's maximum page size; it defaults to 25 when omitted.
 // Pagination advances by the number of items actually returned, so any value works.
@@ -186,9 +204,14 @@ class ZoteroAPI(
         return Webdav(p).also { webdavClient = Pair(settings, it) }
     }
 
+    /**
+     * Downloads [item]'s file into storage. With [expectedMd5], a download that doesn't
+     * match fails with [DamagedDownloadException] and never replaces the copy on the device.
+     */
     fun downloadItemRx(
         item: Item,
         groupID: Int = GroupInfo.NO_GROUP_ID,
+        expectedMd5: String? = null,
     ): Observable<DownloadProgress> {
 
         val useGroup = groupID != GroupInfo.NO_GROUP_ID
@@ -199,7 +222,7 @@ class ZoteroAPI(
         // we will delegate to a webdav download if the user has webdav enabled.
         // When the user has webdav enabled on personal account or for groups are the only two conditions.
         if (!useGroup && preferencesManager.isWebDAVEnabled()) {
-            return webdav().downloadFileRx(item, attachmentStorageManager)
+            return webdav().downloadFileRx(item, attachmentStorageManager, expectedMd5)
             //stops here.
         }
 
@@ -263,7 +286,10 @@ class ZoteroAPI(
                                     )
                                 }
                             }
-                            if (!emitter.isDisposed) attachmentStorageManager.writeAttachmentFromFile(temp, item)
+                            if (!emitter.isDisposed) {
+                                checkDownload(temp, expectedMd5, item.itemKey)
+                                attachmentStorageManager.writeAttachmentFromFile(temp, item)
+                            }
                         } finally {
                             temp.delete()
                         }

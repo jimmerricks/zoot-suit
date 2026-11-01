@@ -11,6 +11,7 @@ import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploadBatch
 import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploader
 import com.mickstarify.zooforzotero.ZoteroAPI.DownloadProgress
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
+import com.mickstarify.zooforzotero.ZoteroAPI.DamagedDownloadException
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroNotFoundException
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentOpenCheck
@@ -335,7 +336,8 @@ class LibraryAttachments(
 
     /** [latestMd5]: Zotero's md5 for the file now, or null if it couldn't be asked. */
     private fun startDownload(item: Item, openWhenDone: Boolean, latestMd5: String?) {
-        api().downloadItemRx(item, state.currentGroup.id)
+        val expected = latestMd5 ?: zoteroDB.getMd5Key(item)
+        api().downloadItemRx(item, state.currentGroup.id, expected)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : Observer<DownloadProgress> {
@@ -344,7 +346,7 @@ class LibraryAttachments(
                 override fun onComplete() {
                     isDownloading = false
                     ui.finishDownloadingAttachment()
-                    verifyDownload(item, openWhenDone, latestMd5 ?: zoteroDB.getMd5Key(item), mtime)
+                    verifyDownload(item, openWhenDone, expected, mtime)
                 }
 
                 override fun onSubscribe(d: Disposable) {
@@ -362,6 +364,11 @@ class LibraryAttachments(
                     if (e is ZoteroNotFoundException) {
                         ui.attachmentDownloadError(
                             "The file isn't in Zotero's storage (or on your WebDAV server)."
+                        )
+                    } else if (e is DamagedDownloadException) {
+                        ui.attachmentDownloadError(
+                            "The downloaded file doesn't match Zotero's checksum, so it " +
+                                    "wasn't saved. Try again."
                         )
                     } else {
                         ui.attachmentDownloadError(

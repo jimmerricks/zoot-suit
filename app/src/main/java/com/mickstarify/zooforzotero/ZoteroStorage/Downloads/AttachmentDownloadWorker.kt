@@ -9,6 +9,7 @@ import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
 import com.mickstarify.zooforzotero.ZoteroAPI.MAX_ITEMS_PER_WRITE
 import com.mickstarify.zooforzotero.ZoteroAPI.NetworkErrors
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
+import com.mickstarify.zooforzotero.ZoteroAPI.DamagedDownloadException
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroNotFoundException
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.AttachmentInfo
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.GroupInfo
@@ -97,11 +98,15 @@ class AttachmentDownloadWorker(context: Context, params: WorkerParameters) : Cor
         val latest = if (entry.group == GroupInfo.NO_GROUP_ID) latestMd5Of(api, entry.key) else null
         val expected = latest ?: item.data["md5"] ?: ""
         try {
-            api.downloadItemRx(item, entry.group).ignoreElements().blockingAwait()
+            api.downloadItemRx(item, entry.group, expected).ignoreElements().blockingAwait()
         } catch (e: Exception) {
             // a failed download never reaches storage (it goes through a temporary file)
-            if (generateSequence<Throwable>(e) { it.cause }.any { it is ZoteroNotFoundException }) {
+            val causes = generateSequence<Throwable>(e) { it.cause }
+            if (causes.any { it is ZoteroNotFoundException }) {
                 return Outcome.FAILED to "A file isn't in Zotero's storage (or on your WebDAV server)."
+            }
+            if (causes.any { it is DamagedDownloadException }) {
+                return Outcome.FAILED to "A download didn't match Zotero's checksum and wasn't saved."
             }
             throw e
         }

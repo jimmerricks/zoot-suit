@@ -5,6 +5,7 @@ import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentStorageManager
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ItemData
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ItemInfo
+import com.mickstarify.zooforzotero.ZoteroStorage.md5Hex
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -63,6 +64,30 @@ class ZoteroDownloadTest {
             .assertComplete()
 
         assertEquals("%PDF-new", written)
+        assertFalse(temps.single().exists())
+    }
+
+    @Test
+    fun `a download matching Zotero's md5 replaces the copy`() {
+        server.enqueue(MockResponse().setBody("%PDF-new"))
+
+        // case doesn't matter, as in the md5 checks after a download
+        api.downloadItemRx(attachment, expectedMd5 = md5Hex("%PDF-new".byteInputStream()).uppercase())
+            .test().awaitDone(5, TimeUnit.SECONDS)
+            .assertComplete()
+
+        assertEquals("%PDF-new", written)
+    }
+
+    @Test
+    fun `a damaged download leaves the copy alone`() {
+        server.enqueue(MockResponse().setBody("%PDF-damaged"))
+
+        api.downloadItemRx(attachment, expectedMd5 = md5Hex("%PDF-new".byteInputStream()))
+            .test().awaitDone(5, TimeUnit.SECONDS)
+            .assertError(DamagedDownloadException::class.java)
+
+        verify(storage, never()).writeAttachmentFromFile(any(), any())
         assertFalse(temps.single().exists())
     }
 

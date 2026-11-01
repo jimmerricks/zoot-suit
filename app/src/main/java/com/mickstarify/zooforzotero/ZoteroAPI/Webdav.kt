@@ -75,11 +75,13 @@ class Webdav(
     /**
      * Downloads KEY.zip, extracts the attachment from it and writes it to storage. The
      * zip holds one file, Zotero's; only that entry is extracted, under a name of the
-     * app's own, so an entry name can't point outside the temporary folder.
+     * app's own, so an entry name can't point outside the temporary folder. With
+     * [expectedMd5], a file that doesn't match fails the download and isn't written.
      */
     fun downloadFileRx(
         attachment: Item,
-        attachmentStorageManager: AttachmentStorageManager
+        attachmentStorageManager: AttachmentStorageManager,
+        expectedMd5: String? = null
     ): Observable<DownloadProgress> {
         val key = attachment.itemKey.uppercase()
         // trimmed as WebdavUploader does: an address ending in "/" gave "//KEY.zip"
@@ -115,6 +117,7 @@ class Webdav(
                 if (emitter.isDisposed) return@create
                 emitter.onNext(DownloadProgress(total, -1, prop.mtime, prop.hash))
                 unzipFirstFile(zipFile, extracted)
+                checkDownload(extracted, expectedMd5, key)
                 attachmentStorageManager.writeAttachmentFromFile(extracted, attachment)
                 emitter.onComplete()
             } catch (e: Exception) {
