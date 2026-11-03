@@ -57,7 +57,9 @@ class SyncDialog(
             .setTitle(" ")
             .setView(view)
             .setOnDismissListener { dialog = null }
-            .show()
+            .create()
+        DialogActions.keepButtonsInPlace(d)
+        d.show()
         dialog = d
         DialogActions.leave(view, d, "Close")
         syncNowButton.setOnClickListener {

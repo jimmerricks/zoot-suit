@@ -105,7 +105,10 @@ class ManageAttachmentsDialog(
             .setTitle(context.getString(R.string.manage_attachments))
             .setView(view)
             .setOnDismissListener { dialog = null }
-            .show()
+            .create()
+        // the downloads' status comes and goes under the boxes
+        DialogActions.keepButtonsInPlace(shown)
+        shown.show()
         dialog = shown
         DialogActions.leave(view, shown, "Close")
         showButtons()

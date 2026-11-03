@@ -2,8 +2,11 @@ package com.mickstarify.zooforzotero.common
 
 import android.app.Dialog
 import android.content.Context
+import android.graphics.Rect
 import android.util.AttributeSet
+import android.view.Gravity
 import android.view.View
+import android.view.ViewTreeObserver
 import android.view.ViewGroup
 import com.google.android.material.button.MaterialButton
 import com.mickstarify.zooforzotero.R
@@ -163,5 +166,29 @@ class DialogActions @JvmOverloads constructor(
             }
         }
 
+        /**
+         * Keeps [dialog]'s bottom edge, and so its buttons, where it first opened (centred):
+         * as its content changes (the sync dialog's edits, then stages, then the finished
+         * sync) it grows or shrinks upwards, instead of re-centring and moving the buttons.
+         * Call before show().
+         */
+        fun keepButtonsInPlace(dialog: Dialog) {
+            dialog.setOnShowListener {
+                val window = dialog.window ?: return@setOnShowListener
+                val decor = window.decorView
+                decor.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                    override fun onGlobalLayout() {
+                        if (decor.height == 0) return
+                        decor.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        val frame = Rect().also { decor.getWindowVisibleDisplayFrame(it) }
+                        val at = IntArray(2).also { decor.getLocationOnScreen(it) }
+                        val gap = frame.bottom - (at[1] + decor.height)
+                        if (gap <= 0) return
+                        window.setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
+                        window.attributes = window.attributes.apply { y = gap }
+                    }
+                })
+            }
+        }
     }
 }
