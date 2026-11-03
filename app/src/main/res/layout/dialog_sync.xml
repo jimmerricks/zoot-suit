@@ -45,9 +45,11 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- hidden while a sync runs -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_sync_now"
-        style="@style/DialogAction"
-        android:text="Sync now" />
+    <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+        <!-- hidden while a sync runs -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_sync_now"
+            style="@style/DialogAction"
+            android:text="Sync now" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
 </LinearLayout>

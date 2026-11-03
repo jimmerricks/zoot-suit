@@ -15,15 +15,17 @@
         android:layout_weight="1"
         android:scrollbars="vertical" />
 
-    <!-- text and enabled state set in code -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_apply_filter"
-        style="@style/DialogAction"
-        android:text="Apply filter" />
+    <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+        <!-- text and enabled state set in code -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_apply_filter"
+            style="@style/DialogAction"
+            android:text="Apply filter" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_clear_filter"
-        style="@style/DialogAction.Other"
-        android:text="Clear filter"
-        android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_clear_filter"
+            style="@style/DialogAction.Other"
+            android:text="Clear filter"
+            android:visibility="gone" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
 </LinearLayout>

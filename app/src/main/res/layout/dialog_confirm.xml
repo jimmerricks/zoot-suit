@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- A question with more than one way to go on (ConfirmDialog), built like Manage
-     attachments: what happens, then a full-width button per answer that says what it
-     does; Cancel stays in the bar. The text scrolls above the buttons. -->
+     attachments: what happens, then a button per answer that says what it does (side by
+     side if they fit, else stacked); Cancel stays in the bar. The text scrolls above the buttons. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     style="@style/DialogBody">
 
@@ -16,12 +16,14 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Subhead" />
     </ScrollView>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_confirm"
-        style="@style/DialogAction" />
+    <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_confirm"
+            style="@style/DialogAction" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_confirm_other"
-        style="@style/DialogAction.Other"
-        android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_confirm_other"
+            style="@style/DialogAction.Other"
+            android:visibility="gone" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
 </LinearLayout>

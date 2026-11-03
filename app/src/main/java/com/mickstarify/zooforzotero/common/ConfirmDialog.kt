@@ -9,8 +9,9 @@ import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.R
 
 /**
- * A question with its answers as full-width buttons, as in Manage attachments: the main
- * answer filled, an [other] one outlined, Cancel alone in the bar. For questions whose
+ * A question with its answers as buttons under it, as in Manage attachments: the main
+ * answer filled, an [other] one outlined (side by side if they fit, else stacked:
+ * DialogActions), Cancel alone in the bar. For questions whose
  * answers need more words than the button bar holds on a phone (it stacks three).
  * Each answer is a label and what it does; the dialog closes as it acts.
  */

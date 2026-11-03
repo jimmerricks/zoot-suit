@@ -16,8 +16,10 @@
         android:maxLines="16"
         android:minLines="3" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/buttonSubmit"
-        style="@style/DialogAction"
-        android:text="Save note" />
+    <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSubmit"
+            style="@style/DialogAction"
+            android:text="Save note" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
 </LinearLayout>

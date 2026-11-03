@@ -77,11 +77,13 @@
                 android:minHeight="48dp" />
         </RadioGroup>
 
-        <!-- enabled once the choice differs from the list's order -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_apply_sort"
-            style="@style/DialogAction"
-            android:text="Sort" />
+        <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+            <!-- enabled once the choice differs from the list's order -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_apply_sort"
+                style="@style/DialogAction"
+                android:text="Sort" />
+        </com.mickstarify.zooforzotero.common.DialogActions>
 
     </LinearLayout>
 </ScrollView>

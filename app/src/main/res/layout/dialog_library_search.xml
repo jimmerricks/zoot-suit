@@ -45,15 +45,17 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- enabled with a query and a field to search in -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_search"
-        style="@style/DialogAction"
-        android:text="Search" />
+    <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+        <!-- enabled with a query and a field to search in -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_search"
+            style="@style/DialogAction"
+            android:text="Search" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_clear_search"
-        style="@style/DialogAction.Other"
-        android:text="Clear search"
-        android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_clear_search"
+            style="@style/DialogAction.Other"
+            android:text="Clear search"
+            android:visibility="gone" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
 </LinearLayout>

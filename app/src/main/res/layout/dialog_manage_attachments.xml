@@ -26,16 +26,18 @@
             android:layout_height="wrap_content"
             android:orientation="vertical" />
 
-        <!-- act on the ticked kinds; text and enabled state set in code -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_download_attachments"
-            style="@style/DialogAction"
-            android:text="Download" />
+        <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+            <!-- act on the ticked kinds; text and enabled state set in code -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_download_attachments"
+                style="@style/DialogAction"
+                android:text="Download" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_remove_attachments"
-            style="@style/DialogAction.Other"
-            android:text="Remove" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_remove_attachments"
+                style="@style/DialogAction.Other"
+                android:text="Remove" />
+        </com.mickstarify.zooforzotero.common.DialogActions>
 
         <TextView
             style="@style/DialogSectionHeader"
