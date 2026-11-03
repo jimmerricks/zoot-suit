@@ -25,7 +25,9 @@ Changed:
   title looked different on newer Android versions; all dialogs are the same kind now.
 - A dialog's buttons, Cancel or Close included, sit on one line when all their labels
   fit (a tablet, short labels). When they don't, the coloured ones go side by side or
-  stack, with Cancel or Close under them. Decided as the dialog opens; while it is open
+  stack, with Cancel or Close under them. Cancel or Close is always at the right, the
+  other buttons to its left, so it stays put (Close doesn't move when Sync now goes as a
+  sync starts). Decided as the dialog opens; while it is open
   they may stack if a label grows, but don't jump back.
 - "Change collections" replaces "Add to collection" and "Remove from this collection":
   one screen, like "Add and remove tags", with a field to find a collection and a box per

@@ -13,14 +13,15 @@ import com.mickstarify.zooforzotero.R
  * first is the main act) and the one that leaves (Cancel or Close, [leave]), which stands in
  * for AlertDialog's button bar. Laid out the first way that fits, each label on one line:
  *
- * 1. all on one line: the leaving button at its own width at the start, the others sharing
- *    the rest equally, the main act at the end;
+ * 1. all on one line: the leaving button at its own width at the end, the others sharing
+ *    the rest equally before it, the main act next to it;
  * 2. the acting buttons side by side in equal shares, the leaving one under them at the end,
  *    where the button bar would have it;
  * 3. the acting buttons stacked, each the whole width, the main act on top; the leaving one
  *    under them as in 2.
  *
- * Decided when the dialog opens, from its width and the labels then. While it is open the
+ * The leaving button is always at the end, so it stays in one place whatever else shows
+ * (Sync now hiding as a sync starts doesn't move Close). Decided when the dialog opens, from its width and the labels then. While it is open the
  * buttons only move down that list (a count in a label grows), never back up, so they don't
  * jump about as the user ticks things. A new width (rotation) or another button shown or
  * hidden decides afresh.
@@ -124,11 +125,11 @@ class DialogActions @JvmOverloads constructor(
                 val row = buttons.maxOf { it.measuredHeight }
                 var x = paddingLeft
                 if (arrangement == Arrangement.ONE_LINE && leave != null) {
+                    val end = r - l - paddingRight
                     val top = y + (row - leave.measuredHeight) / 2
-                    leave.layout(x, top, x + leave.measuredWidth, top + leave.measuredHeight)
-                    x += leave.measuredWidth + gap
+                    leave.layout(end - leave.measuredWidth, top, end, top + leave.measuredHeight)
                 }
-                // the main act at the end
+                // the main act last, next to the leaving button
                 buttons.asReversed().forEach {
                     it.layout(x, y, x + it.measuredWidth, y + it.measuredHeight)
                     x += it.measuredWidth + gap
@@ -161,5 +162,6 @@ class DialogActions @JvmOverloads constructor(
                 dialog.dismiss()
             }
         }
+
     }
 }
