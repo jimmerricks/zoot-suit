@@ -454,6 +454,14 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     fun editSelectedCollection(collectionKey: String, name: String, add: Boolean) =
         parts.edits.editCollection(selectedKeys(), collectionKey, name, add)
 
+    /** Puts the selected items in the collections [add] and takes them out of [remove] (keys). */
+    fun editSelectedCollections(add: List<String>, remove: List<String>) =
+        parts.edits.editCollections(selectedKeys(), add, remove, library.collections.associate { it.key to it.name })
+
+    /** The collections the selected (top-level) items are in, each with how many, and how many there are. */
+    fun loadSelectedCollections(onResult: (topLevel: Int, counts: Map<String, Int>) -> Unit) =
+        parts.edits.collectionsOf(selectedKeys(), onResult)
+
     fun loadSelectedTags(onResult: (List<Pair<String, Int>>) -> Unit) =
         parts.edits.tagsOf(selectedKeys(), onResult)
 

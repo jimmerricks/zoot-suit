@@ -111,6 +111,46 @@ class LibraryItemEdits(
     }
 
     /**
+     * Puts the items [keys] (the list's selection) in each of the collections [add] and
+     * takes them out of each of [remove] (collection keys; [names] by key, for the message),
+     * on this device at once and in one go, like tags. Only top-level items can be in
+     * collections, so attachments and notes among them are left out.
+     */
+    fun editCollections(keys: List<String>, add: List<String>, remove: List<String>, names: Map<String, String>) {
+        if (state.isUsingGroup()) {
+            ui.makeToastAlert("Collections can be changed only in My Library, not in groups.")
+            return
+        }
+        val edits = add.map { ItemEdit(ItemEditKind.ADD_TO_COLLECTION, it) } +
+                remove.map { ItemEdit(ItemEditKind.REMOVE_FROM_COLLECTION, it) }
+        var topLevel = keys.size
+        val keysToEdit = { topLevelOf(keys).also { topLevel = it.size } }
+        recordInBulk(edits, "Changing the collections of ${items(keys.size)}…", keysToEdit) { changed ->
+            bulkCollectionsMessage(changed, names, topLevel, keys.size)
+        }
+    }
+
+    /** Those of [keys] that are top-level items (not attachments or notes), still there. Blocking. */
+    private fun topLevelOf(keys: List<String>): List<String> {
+        val parents = zoteroDatabase.parentsOf(keys)
+        return keys.filter { parents[it] == null && it in parents }
+    }
+
+    /**
+     * The collections the top-level items among [keys] are in, by key, each with how many
+     * of them; and how many top-level items there are. On the main thread.
+     */
+    fun collectionsOf(keys: List<String>, onResult: (topLevel: Int, counts: Map<String, Int>) -> Unit) {
+        Single.fromCallable { topLevelOf(keys).let { it.size to zoteroDatabase.collectionCountsOf(it) } }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ (topLevel, counts) -> onResult(topLevel, counts) }) { e ->
+                Log.e("zotero", "reading the collections of ${keys.size} items failed: $e")
+                onResult(keys.size, emptyMap())
+            }
+    }
+
+    /**
      * Records [edits] for the items [keys] reads (off the main thread), with [progress]
      * showing meanwhile; then says [message] of what each edit changed, and redraws.
      */
@@ -152,6 +192,27 @@ class LibraryItemEdits(
             else -> "Removed ${items(changed)} from “$name”." +
                     if (changed < topLevel) " The others are only in its subcollections." else skipped
         }
+    }
+
+    /**
+     * What a collections change did, from the keys each edit [changed] among the [topLevel]
+     * items of the [selected]: "Added 3 items to “a”. Removed 2 items from “b”.", or that
+     * nothing needed changing; and that attachments and notes were left out, if any were.
+     */
+    private fun bulkCollectionsMessage(changed: Map<ItemEdit, List<String>>, names: Map<String, String>, topLevel: Int, selected: Int): String {
+        val skipped = (selected - topLevel).takeIf { it > 0 }
+            ?.let { " ${items(it)} left out: attachments and notes go with their parent." } ?: ""
+        val done = changed.filterValues { it.isNotEmpty() }
+        if (done.isEmpty()) {
+            return (if (topLevel == 1) "The item's collections were as chosen already." else "The items' collections were as chosen already.") + skipped
+        }
+        val lines = done.map { (edit, keys) ->
+            val name = names[edit.name] ?: edit.name
+            if (edit.kind == ItemEditKind.ADD_TO_COLLECTION) "Added ${items(keys.size)} to \u201c$name\u201d."
+            else "Removed ${items(keys.size)} from \u201c$name\u201d."
+        }
+        return lines.take(3).joinToString(" ") +
+                (if (lines.size > 3) " ${lines.size - 3} more collections changed." else "") + skipped
     }
 
     /**

@@ -349,6 +349,15 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
             .sortedWith(compareBy<Pair<String, Int>, String>(String.CASE_INSENSITIVE_ORDER) { it.first }.thenBy { it.first })
     }
 
+    /** The collections the items [keys] are in (directly), each with how many of them. Blocking. */
+    fun collectionCountsOf(keys: List<String>): Map<String, Int> {
+        val counts = HashMap<String, Int>()
+        for (chunk in keys.chunked(KEY_CHUNK)) {
+            for (c in db.itemDao().getItemCollections(chunk)) counts[c.collectionKey] = (counts[c.collectionKey] ?: 0) + 1
+        }
+        return counts
+    }
+
     /** The fields [loadItems] left out with listFieldsOnly, by item key. Blocking. */
     fun loadRestOfFields(groupID: Int): Map<String, List<ItemData>> =
         db.itemDao().getRestOfItemDataForGroup(groupID, LIST_FIELDS).groupBy { it.parent }
