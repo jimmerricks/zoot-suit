@@ -3,6 +3,7 @@
     <string name="sync">Sync</string>
     <string name="search_and_filter_cleared">Search and filter cleared</string>
     <string name="syncing">Syncing…</string>
+    <string name="pull_to_sync">Pull down to sync</string>
     <string name="syncing_progress">Syncing %1$d%%</string>
     <string name="sort">Sort</string>
     <plurals name="pending_edits">

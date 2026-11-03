@@ -7,8 +7,9 @@
     android:layout_height="match_parent"
     tools:context=".LibraryActivity.Fragments.LibraryListFragment">
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/library_swipe_refresh"
+    <!-- pull down to sync; the toolbar's sync icon shows the pull (PullToSyncLayout) -->
+    <com.mickstarify.zooforzotero.LibraryActivity.PullToSyncLayout
+        android:id="@+id/library_pull_to_sync"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -71,7 +72,7 @@
 
         </LinearLayout>
 
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    </com.mickstarify.zooforzotero.LibraryActivity.PullToSyncLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

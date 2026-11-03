@@ -444,6 +444,8 @@ class LibraryActivity : AppCompatActivity(),
                 window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
             syncLabel = label
+            // the sync a pull asked for has started: its own icon takes over
+            if (label != null) stopPullTurning()
             invalidateOptionsMenu()
         } else if (label != syncLabel) {
             // only the count: rebuilding the menu for each page would close it while open
@@ -456,10 +458,55 @@ class LibraryActivity : AppCompatActivity(),
 
     private var syncIcon: View? = null
 
+    // How far the list is pulled down to sync (1 = far enough), null when it isn't: the
+    // sync icon shows the pull, so one icon shows it from the pull to the sync's end.
+    private var pull: Float? = null
+    // let go far enough: the icon turns until the sync's status arrives, else not for long
+    private var pullTurning = false
+    private val pullTurningTimeout = Runnable { pullTurning = false; invalidateOptionsMenu() }
+
+    /** The list is pulled [fraction] of the way to a sync (PullToSyncLayout). */
+    fun showPull(fraction: Float) {
+        if (syncLabel != null || pullTurning || fraction <= 0f) return // already turning
+        val starting = pull == null
+        pull = fraction
+        if (starting) invalidateOptionsMenu() else syncIcon?.let { turnWithPull(it, fraction) }
+    }
+
+    /** The pull ended; [sync]: far enough, a sync was asked for. */
+    fun endPull(sync: Boolean) {
+        if (pull == null) return
+        pull = null
+        if (sync && syncLabel == null) {
+            pullTurning = true
+            window.decorView.postDelayed(pullTurningTimeout, 5000)
+        }
+        invalidateOptionsMenu()
+    }
+
+    private fun stopPullTurning() {
+        pullTurning = false
+        window.decorView.removeCallbacks(pullTurningTimeout)
+    }
+
+    /** The still sync icon, turned and faded in as far as the list is pulled. */
+    private fun pullSyncIcon(fraction: Float): View =
+        layoutInflater.inflate(R.layout.sync_status_action, null).apply {
+            labelSyncIcon(this, getString(R.string.pull_to_sync))
+            turnWithPull(this, fraction)
+        }
+
+    // anticlockwise like the turning icon, three quarters of a turn on the way; far enough
+    // it snaps to a whole turn, the angle the turning icon then starts from
+    private fun turnWithPull(icon: View, fraction: Float) {
+        icon.rotation = if (fraction >= 1f) -360f else -270f * fraction
+        icon.alpha = 0.4f + 0.6f * fraction.coerceAtMost(1f)
+    }
+
     /** The sync button while a sync runs: the sync icon turning, tapping it opens the dialog. */
     private fun turningSyncIcon(): View =
         layoutInflater.inflate(R.layout.sync_status_action, null).apply {
-            labelSyncIcon(this, syncLabel)
+            labelSyncIcon(this, syncLabel ?: getString(R.string.syncing))
             setOnClickListener { showSyncDialog() }
             // anticlockwise, the way the icon's arrows point
             startAnimation(RotateAnimation(
@@ -520,6 +567,7 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     override fun onDestroy() {
+        window.decorView.removeCallbacks(pullTurningTimeout)
         syncDialog?.dismiss() // its window would leak with the activity (rotation)
         manageAttachmentsDialog?.dismiss()
         super.onDestroy()
@@ -546,20 +594,27 @@ class LibraryActivity : AppCompatActivity(),
         menu.findItem(R.id.selection_remove_from_collection)?.isVisible =
             viewModel.canEditItems() && !selectedNone && viewModel.currentCollection() != null
         // the sync icon, at any width, its words the tooltip: turning while a sync runs (this
-        // item), still with a dot while edits wait (pending_edits, below), else not there
+        // item), following the list while it's pulled down to sync (this item, still), still
+        // with a dot while edits wait (pending_edits, below), else not there
+        val turning = syncLabel != null || pullTurning
+        val pulled = pull?.takeIf { !turning }
         syncMenuItem = menu.findItem(R.id.sync_status)?.apply {
-            isVisible = syncLabel != null
+            isVisible = turning || pulled != null
             syncLabel?.let { title = it }
             // A view removed mid-animation is drawn by its parent until the animation ends,
             // which this one never does: stop the old icon before the menu drops it.
             syncIcon?.clearAnimation()
-            syncIcon = if (syncLabel != null) turningSyncIcon() else null
+            syncIcon = when {
+                turning -> turningSyncIcon()
+                pulled != null -> pullSyncIcon(pulled)
+                else -> null
+            }
             actionView = syncIcon
         }
         // Android caps the toolbar's buttons by its width, and the sync icon takes a place:
         // search (and filter, from 600dp wide) keep theirs beside it rather than move to the
         // menu. Narrower, filter and sort are in the menu always, so they don't move.
-        val pinned = if (syncLabel != null || pendingEdits > 0) MenuItem.SHOW_AS_ACTION_ALWAYS else MenuItem.SHOW_AS_ACTION_IF_ROOM
+        val pinned = if (turning || pulled != null || pendingEdits > 0) MenuItem.SHOW_AS_ACTION_ALWAYS else MenuItem.SHOW_AS_ACTION_IF_ROOM
         menu.findItem(R.id.search)?.setShowAsAction(pinned)
         if (resources.getBoolean(R.bool.sort_filter_in_toolbar)) {
             menu.findItem(R.id.library_filter)?.setShowAsAction(pinned)
@@ -575,7 +630,7 @@ class LibraryActivity : AppCompatActivity(),
         menu.findItem(R.id.manage_attachments)?.isVisible = listSelectable
         menu.findItem(R.id.pending_edits)?.apply {
             // while a sync runs the edits are going up; its details list them
-            isVisible = pendingEdits > 0 && syncLabel == null
+            isVisible = pendingEdits > 0 && !turning && pulled == null
             title = resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)
         }
         return super.onPrepareOptionsMenu(menu)

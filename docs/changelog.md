@@ -14,6 +14,10 @@ Changed:
 - Manage attachments: Download and Remove are full-width buttons under the kinds, with
   their counts in words ("Download 6,183 files"); only Close is left at the bottom. With
   the counts on three buttons in a row, a phone stacked them.
+- Pulling the list down shows no round spinner any more: the toolbar's sync icon fades
+  in and turns as you pull, snaps (with a short vibration) once letting go would sync,
+  and keeps turning as the sync runs. One sign for one sync, where the spinner and the
+  turning icon showed it twice.
 
 ## 0.5.0
 

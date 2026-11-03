@@ -16,12 +16,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.mickstarify.zooforzotero.LibraryActivity.LibraryActivity
 import com.mickstarify.zooforzotero.LibraryActivity.ListAppearance
+import com.mickstarify.zooforzotero.LibraryActivity.PullToSyncLayout
 import com.mickstarify.zooforzotero.LibraryActivity.TagColors
 import com.mickstarify.zooforzotero.PreferenceManager.Companion.TAG_COLORS
 import com.mickstarify.zooforzotero.PreferenceManager.Companion.libraryKey
@@ -33,8 +33,7 @@ import com.mickstarify.zooforzotero.adapters.LibraryListRecyclerViewAdapter
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class LibraryListFragment : Fragment(), LibraryListInteractionListener,
-    SwipeRefreshLayout.OnRefreshListener {
+class LibraryListFragment : Fragment(), LibraryListInteractionListener {
 
     companion object {
         fun newInstance() = LibraryListFragment()
@@ -125,11 +124,19 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
             adapter.notifyDataSetChanged()
         }
 
-        val swipeRefresh =
-            requireView().findViewById<SwipeRefreshLayout>(R.id.library_swipe_refresh)
-        swipeRefresh.setOnRefreshListener(this)
+        val pull = requireView().findViewById<PullToSyncLayout>(R.id.library_pull_to_sync)
+        val list = requireView().findViewById<RecyclerView>(R.id.recyclerView)
+        // the empty list's message pushes the list off screen beside it, still "shown"
+        val emptyMessage = requireView().findViewById<View>(R.id.constraintLayout_library_content)
+        pull.childScrolls = { emptyMessage.visibility != View.VISIBLE }
+        pull.canChildScrollUp = { pull.childScrolls() && list.canScrollVertically(-1) }
+        pull.onPull = { (activity as? LibraryActivity)?.showPull(it) }
+        pull.onRelease = { sync ->
+            (activity as? LibraryActivity)?.endPull(sync)
+            if (sync) viewModel.onLibraryRefreshRequested()
+        }
         // a sync while selecting would change the list under the selection
-        viewModel.getSelection().observe(viewLifecycleOwner) { swipeRefresh.isEnabled = !it.active }
+        viewModel.getSelection().observe(viewLifecycleOwner) { pull.isEnabled = !it.active }
 
         // keep the list above the navigation bar
         setupWindowInsets()
@@ -162,13 +169,6 @@ class LibraryListFragment : Fragment(), LibraryListInteractionListener,
 
     override fun onItemSelect(item: Item) {
         viewModel.toggleSelected(item)
-    }
-
-    override fun onRefresh() {
-        Log.d("Zotero", "got request for refresh")
-        viewModel.onLibraryRefreshRequested()
-        // the pull starts a sync; the toolbar's turning icon shows it, not the spinner
-        requireView().findViewById<SwipeRefreshLayout>(R.id.library_swipe_refresh).isRefreshing = false
     }
 
     /** Back to the first row: a glide from nearby, else a jump to near the top first. */
