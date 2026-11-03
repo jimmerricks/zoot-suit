@@ -295,16 +295,14 @@ class AttachmentStorageManager @Inject constructor(
         }
 
         val uri = Uri.parse(location)
-
-        context.contentResolver.takePersistableUriPermission(
-            uri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        )
-        context.contentResolver.takePersistableUriPermission(
-            uri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION
-        )
+        val access = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        context.contentResolver.takePersistableUriPermission(uri, access)
+        // the folder chosen before is no longer used: Android keeps a limited number of grants
+        val previous = preferenceManager.getCustomAttachmentStorageLocation()
+        if (previous.isNotEmpty() && previous != location) {
+            runCatching { context.contentResolver.releasePersistableUriPermission(Uri.parse(previous), access) }
+                .onFailure { Log.d("zotero", "no grant to release for $previous: $it") }
+        }
 
         preferenceManager.setCustomAttachmentStorage(location)
         testStorage()
