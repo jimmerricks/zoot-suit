@@ -59,4 +59,18 @@ class WebdavServerOnlyTest {
         assertEquals(1, other.requestCount)
         assertNull(other.takeRequest().getHeader("Authorization"))
     }
+
+    @Test
+    fun `another port on the same host doesn't`() {
+        // as a redirect from https to http on the same host would be: another origin
+        val elsewhere = other.url("/steal").newBuilder().host("localhost").build()
+        server.enqueue(MockResponse().setResponseCode(302).addHeader("Location", elsewhere))
+        other.enqueue(MockResponse().setResponseCode(401).addHeader("WWW-Authenticate", "Basic realm=\"x\""))
+        val address = server.url("/zotero").newBuilder().host("localhost").build().toString()
+        client(address).newCall(Request.Builder().url(address).build()).execute().use {
+            assertEquals(401, it.code)
+        }
+        assertEquals(1, other.requestCount)
+        assertNull(other.takeRequest().getHeader("Authorization"))
+    }
 }

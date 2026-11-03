@@ -256,17 +256,20 @@ class Webdav(
 }
 
 /**
- * [delegate], answering only challenges from the host of [address], the WebDAV server
- * set up. OkHttp follows redirects to any host and asks the authenticator when that
- * host answers 401: without this a redirect elsewhere was sent the WebDAV password.
+ * [delegate], answering only challenges from the WebDAV server set up at [address]: its
+ * scheme, host and port. OkHttp follows redirects anywhere, https to http included, and
+ * asks the authenticator when the new place answers 401: without this a redirect to
+ * another host was sent the WebDAV password, and one to http on the same host sent it
+ * unencrypted (Basic auth is the password itself).
  */
 internal fun serverOnly(address: String, delegate: Authenticator): Authenticator {
-    val host = address.trim().toHttpUrlOrNull()?.host
+    val server = address.trim().toHttpUrlOrNull()
     return Authenticator { route, response ->
-        if (host != null && response.request.url.host == host) {
+        val url = response.request.url
+        if (server != null && url.scheme == server.scheme && url.host == server.host && url.port == server.port) {
             delegate.authenticate(route, response)
         } else {
-            Log.w("zotero", "WebDAV: not sending the login to ${response.request.url.host}")
+            Log.w("zotero", "WebDAV: not sending the login to ${url.scheme}://${url.host}:${url.port}")
             null
         }
     }
