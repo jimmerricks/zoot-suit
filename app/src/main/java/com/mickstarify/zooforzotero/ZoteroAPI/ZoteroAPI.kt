@@ -294,10 +294,12 @@ class ZoteroAPI(
                             temp.delete()
                         }
                         emitter.onComplete()
-                    } else if (response.code() == 404) {
-                        throw ZoteroNotFoundException("Not found on server.")
                     } else {
-                        Log.e("zotero", "network error. response: ${response.body()}")
+                        // streamed (@Streaming): an unread body left unclosed keeps its connection
+                        body?.close()
+                        response.errorBody()?.close()
+                        if (response.code() == 404) throw ZoteroNotFoundException("Not found on server.")
+                        Log.e("zotero", "file download of ${item.itemKey}: HTTP ${response.code()}")
                         throw RuntimeException("Invalid server response code ${response.code()}")
                     }
                 }
