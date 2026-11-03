@@ -291,7 +291,10 @@ class SyncManager (
 
                 override fun onNext(response: ZoteroAPIItemsResponse) {
                     received += response.items.size
-                    trashLibraryVersion = response.LastModifiedVersion
+                    // the first page's, as for items: the trash can change while it pages,
+                    // and items trashed meanwhile may be on pages already read; stored as
+                    // a later version, they would never be fetched
+                    if (trashLibraryVersion == 0) trashLibraryVersion = response.LastModifiedVersion
                     report(SyncStage.TRASH) { it.copy(done = received, total = response.totalResults) }
                     Log.d("zotero", "received ${received} of ${response.totalResults} trash items")
                 }
