@@ -27,7 +27,8 @@ Changed:
   fit (a tablet, short labels). When they don't, the coloured ones go side by side or
   stack, with Cancel or Close under them. Cancel or Close is always at the right, the
   other buttons to its left, so it stays put (Close doesn't move when Sync now goes as a
-  sync starts). Decided as the dialog opens; while it is open
+  sync starts). On one line, the buttons keep their own width, with Cancel's spacing
+  around the label, from the left. Decided as the dialog opens; while it is open
   they may stack if a label grows, but don't jump back.
 - "Change collections" replaces "Add to collection" and "Remove from this collection":
   one screen, like "Add and remove tags", with a field to find a collection and a box per
