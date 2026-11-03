@@ -14,6 +14,15 @@ Changed:
 - Manage attachments: Download and Remove are full-width buttons under the kinds, with
   their counts in words ("Download 6,183 files"); only Close is left at the bottom. With
   the counts on three buttons in a row, a phone stacked them.
+- Every dialog now follows Manage attachments: a line on what it applies to or how it
+  works, grey hints, choices with a grey second line where they need one, and the action
+  as a full-width button that says what it does ("Apply 2 changes", "Apply filter",
+  "Sort", "Search", "Sync now", "Add tag", "Save note", "Remove 5 unedited files"), with
+  only Cancel or Close left at the bottom. In the dialogs with long lists (filter, tags,
+  search, sync) the button stays below the list, which scrolls, so it is on screen on a
+  phone with the keyboard up. Clear (filter, search) shows only while there is something
+  to clear. Search, Filter, Sort and the note dialogs used Android's older dialog, whose
+  title looked different on newer Android versions; all dialogs are the same kind now.
 - Pulling the list down shows no round spinner any more: the toolbar's sync icon fades
   in and turns as you pull, snaps (with a short vibration) once letting go would sync,
   and keeps turning as the sync runs. One sign for one sync, where the spinner and the
