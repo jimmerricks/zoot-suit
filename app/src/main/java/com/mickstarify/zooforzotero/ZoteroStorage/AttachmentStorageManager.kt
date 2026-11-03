@@ -55,6 +55,16 @@ fun md5Hex(inputStream: InputStream): String {
     return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
 }
 
+/**
+ * A linked file's path as Zotero stores it ("C:\Users\me\a.pdf", "attachments:Sub/a.pdf",
+ * "/home/me/a.pdf") split into its folder and file names, for looking it up under the
+ * attachment folder. Empty, "." and ".." parts are dropped: the path comes from the server
+ * (in a group, from any member), and ".." would reach outside the folder looked in.
+ */
+fun linkedFileSegments(path: String?): List<String> =
+    (path ?: "").removePrefix("attachments:").replace('\\', '/').split('/')
+        .filter { it.isNotEmpty() && it != "." && it != ".." }
+
 fun safeFileName(name: String?): String {
     val base = name?.substringAfterLast('/')?.replace("\u0000", "")
     return if (base.isNullOrBlank() || base == "." || base == "..") "unknown.pdf" else base
@@ -481,13 +491,7 @@ class AttachmentStorageManager @Inject constructor(
         // if it doesn't, return to the root path, and repeat for the next item in the list.
 
 
-        var itemPath = item.data["path"] ?: ""
-        // do some transformations for windows style paths
-        // e.g C:\\Users\\michael\\file.txt -> C:/Users/michael/file.txt
-        itemPath = itemPath.replace("\\", File.separator)
-        //we get rid of zotero reserved expression on storaged path "attachemnts:"
-        itemPath = itemPath.replace(Regex("^attachments:"), "")
-        val directories = itemPath.split("/")
+        val directories = linkedFileSegments(item.data["path"])
         if (storageMode == StorageMode.CUSTOM) {
             for (index in directories.indices) {
                 val location = preferenceManager.getCustomAttachmentStorageLocation()
@@ -515,9 +519,7 @@ class AttachmentStorageManager @Inject constructor(
         } else if (storageMode == StorageMode.EXTERNAL_CACHE) {
             // logic using File api is much simpler
             for (i in directories.indices) {
-                val path = directories.slice(i..directories.size - 1).joinToString("/")
-                    .trimStart('/')
-                if (path.isEmpty()) continue
+                val path = directories.drop(i).joinToString("/")
                 Log.d("zotero", "checking path $path")
                 val document = listOfNotNull(appStorageDir, oldAppStorageDir)
                     .map { File(it, path) }.firstOrNull { it.exists() }
