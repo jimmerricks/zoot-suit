@@ -745,13 +745,14 @@ class ZoteroAPI(
         index: Int
     ): Observable<ZoteroAPIItemsResponse> {
         // the items' client: OkHttp's default 10 s read timeout is too short for a cold
-        // trash query on a large library, which then failed as "offline"
+        // trash query on a large library, which then failed as "offline". Pages as large
+        // as the items': without a limit Zotero sends 25, four times the requests.
         val call = when (groupID) {
             GroupInfo.NO_GROUP_ID -> {
-                shortTimeoutService.getTrashedItemsForUser(sinceVersion, userID, sinceVersion, index, SYNC_ITEM_TYPE_FILTER)
+                shortTimeoutService.getTrashedItemsForUser(sinceVersion, userID, sinceVersion, index, SYNC_ITEM_TYPE_FILTER, ITEMS_PAGE_SIZE)
             }
             else -> {
-                shortTimeoutService.getTrashedItemsForGroup(sinceVersion, groupID, sinceVersion, index, SYNC_ITEM_TYPE_FILTER)
+                shortTimeoutService.getTrashedItemsForGroup(sinceVersion, groupID, sinceVersion, index, SYNC_ITEM_TYPE_FILTER, ITEMS_PAGE_SIZE)
             }
         }
 

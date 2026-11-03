@@ -161,7 +161,8 @@ interface ZoteroAPIService {
         @Path("user") user: String,
         @Query("since") since: Int,
         @Query("start") index: Int,
-        @Query("itemType") itemType: String
+        @Query("itemType") itemType: String,
+        @Query("limit") limit: Int
     ): Observable<Response<ResponseBody>>
 
     @GET("groups/{groupID}/items/trash")
@@ -170,7 +171,8 @@ interface ZoteroAPIService {
         @Path("groupID") groupID: Int,
         @Query("since") since: Int,
         @Query("start") index: Int,
-        @Query("itemType") itemType: String
+        @Query("itemType") itemType: String,
+        @Query("limit") limit: Int
     ): Observable<Response<ResponseBody>>
 
     @GET("users/{user}/collections")
