@@ -269,7 +269,7 @@ class SettingsActivity : AppCompatActivity() {
             else -> builder.setMessage(
                 "Not synced yet, and lost if you sign out now:\n" +
                         unsynced.describe().joinToString("\n") { "• $it" } +
-                        "\n\nGo back to the library and sync first: pull down the list.\n\n$forgets"
+                        "\n\nSync first: in the library, tap the sync icon at the top.\n\n$forgets"
             )
         }
         builder

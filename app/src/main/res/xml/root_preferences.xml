@@ -53,7 +53,7 @@
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="true"
             android:key="list_tag_colors"
-            android:summary="Tags you coloured in Zotero show as dots before the title, and tags with an emoji as the emoji, as in Zotero's items list."
+            android:summary="Tags you coloured in Zotero show as dots, and tags with an emoji as the emoji, at the start of an item's second line."
             android:title="Coloured and emoji tags" />
     </PreferenceCategory>
 
@@ -67,19 +67,19 @@
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="false"
             android:key="keep_search"
-            android:summary="Off: the search clears when you open another collection. On: it stays, for each library separately, until you clear it."
+            android:summary="The search stays when you open another collection, for each library separately, until you clear it. Off: it clears."
             android:title="Keep the search across collections" />
 
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="false"
             android:key="keep_filter"
-            android:summary="Off: the filter clears when you open another collection. On: it stays, for each library separately, until you clear it."
+            android:summary="The filter stays when you open another collection, for each library separately, until you clear it. Off: it clears."
             android:title="Keep the filter across collections" />
 
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="false"
             android:key="title_tap_clears"
-            android:summary="A tap on the library's name at the top clears the search and filter. Off: clear them in the search and filter screens."
+            android:summary="A tap on the library's name at the top clears the search and filter. Off: clear them where you set them."
             android:title="Tap the title to clear search and filter" />
     </PreferenceCategory>
 
@@ -93,9 +93,9 @@
 
         <EditTextPreference app:iconSpaceReserved="false"
             android:key="http_write_timeout"
-            android:title="Upload timeout (ms)"
+            android:title="Write timeout (ms)"
             android:defaultValue="60000"
-            android:summary="How long an upload may take before it is given up. 0 waits forever."
+            android:summary="How long sending to Zotero's server may stall before it's given up. 0 waits forever. Default 60000. Files have their own limits."
             android:inputType="number" />
     </PreferenceCategory>
 
@@ -111,13 +111,13 @@
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="true"
             android:key="attachments_uploading_enabled"
-            android:summary="PDFs you annotate on this device are uploaded to Zotero when you sync (My Library only)."
+            android:summary="Files you change on this device, such as annotated PDFs, are uploaded when you sync: to Zotero, or to your WebDAV server if you use one. My Library only."
             android:title="Upload edited attachments" />
 
         <SwitchPreference app:iconSpaceReserved="false"
             android:defaultValue="false"
             android:key="check_md5sum_before_attachment_open"
-            android:summary="Compare a file with Zotero's checksum before opening it. Slower for large files."
+            android:summary="Before opening a file the app has no record of downloading, compare it with Zotero's copy and offer that one if they differ. Slower for large files."
             android:title="Check files before opening" />
     </PreferenceCategory>
 

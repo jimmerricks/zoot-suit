@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+Changed:
+- Settings' descriptions checked against what each setting does. Coloured and emoji
+  tags lead an item's second line (they moved there in 0.5.0). "Upload edited
+  attachments" covers any changed file and WebDAV, not only PDFs and Zotero. "Upload
+  timeout" is "Write timeout": it limits how long sending to Zotero's server may stall,
+  not how long an upload takes, and file uploads have their own limits. "Check files
+  before opening" says it applies to files the app has no record of downloading. The
+  keep-search and keep-filter switches describe what On does, as the others do. Signing
+  out with edits waiting says to tap the sync icon.
+
 ## 0.5.0
 
 Updates 0.4.3 in place (same app id and signing key). Downloaded files move to the
