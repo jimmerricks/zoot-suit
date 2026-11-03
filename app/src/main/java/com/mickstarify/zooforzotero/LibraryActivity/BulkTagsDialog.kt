@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
+import android.widget.Button
 import android.widget.CheckedTextView
 import android.widget.EditText
 import android.widget.TextView
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.LibraryActivity.BulkTagChoices.State
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogText
 import com.mickstarify.zooforzotero.common.themeColor
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 
@@ -27,8 +29,10 @@ import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
  * the tags on the items, each with a three-state box (on all of them, some, none), the
  * library's coloured tags first as in Zotero. Tapping a tag puts it on all of the items,
  * then takes it off all of them, then leaves it as it was. The field finds a tag of the
- * library, or adds a new one. Nothing changes until Apply, which makes every change in one
- * go; Cancel (or Back) changes nothing.
+ * library, or adds a new one. Laid out like Manage attachments: what it applies to, how it
+ * works, then the tags, and Apply as a full-width button that says how many changes it
+ * makes. Nothing changes until Apply, which makes every change in one go; Cancel (or
+ * Back) changes nothing.
  *
  * @param count the number of items selected
  * @param onItems the tags on the selected items, each with how many of them carry it
@@ -60,7 +64,9 @@ class BulkTagsDialog(
         val themed = builder.context
         val inflater = LayoutInflater.from(themed)
         val view = inflater.inflate(R.layout.dialog_bulk_tags, null)
+        val scope = view.findViewById<TextView>(R.id.textView_bulk_tags_scope)
         val hint = view.findViewById<TextView>(R.id.textView_bulk_tags_hint)
+        val apply = view.findViewById<Button>(R.id.button_apply_tags)
         val field = view.findViewById<EditText>(R.id.editText_bulk_tags)
         val empty = view.findViewById<TextView>(R.id.textView_bulk_tags_empty)
         val list = view.findViewById<RecyclerView>(R.id.recyclerView_bulk_tags)
@@ -70,8 +76,9 @@ class BulkTagsDialog(
 
         val accent = themed.themeColor(androidx.appcompat.R.attr.colorAccent)
         val secondary = themed.themeColor(android.R.attr.textColorSecondary)
-        hint.text = if (count == 1) "The tags of the selected item. Tap one to add or remove it."
-        else "The tags of the %,d selected items. Tap one to put it on all of them, again to take it off all of them.".format(count)
+        scope.text = DialogText.appliesTo(count, listed = false)
+        hint.text = if (count == 1) "Its tags. Tap one to add or remove it."
+        else "Their tags. Tap one to put it on all of them, again to take it off all of them."
 
         lateinit var dialog: AlertDialog
         lateinit var render: () -> Unit
@@ -135,7 +142,13 @@ class BulkTagsDialog(
                 if (count == 1) "The item has no tags. Type one to add it." else "None of the items has tags. Type one to add it."
             } else "No matching tags"
             adapter.notifyDataSetChanged()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = choices.hasChanges
+            val changes = choices.toAdd.size + choices.toRemove.size
+            apply.isEnabled = changes > 0
+            apply.text = when (changes) {
+                0 -> "Apply"
+                1 -> "Apply 1 change"
+                else -> "Apply %,d changes".format(changes)
+            }
         }
 
         field.addTextChangedListener(object : TextWatcher {
@@ -164,11 +177,12 @@ class BulkTagsDialog(
         dialog = builder
             .setTitle(context.getString(R.string.add_and_remove_tags))
             .setView(view)
-            .setPositiveButton("Apply") { _, _ ->
-                if (choices.hasChanges) onApply(choices.toAdd, choices.toRemove)
-            }
             .setNegativeButton("Cancel", null)
             .create()
+        apply.setOnClickListener {
+            dialog.dismiss()
+            if (choices.hasChanges) onApply(choices.toAdd, choices.toRemove)
+        }
         // the keyboard only once the field is tapped; with it, the dialog shrinks above it
         dialog.window?.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN or
