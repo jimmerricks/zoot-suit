@@ -1,14 +1,14 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
-import com.mickstarify.zooforzotero.LibraryActivity.BulkTagChoices.State
+import com.mickstarify.zooforzotero.LibraryActivity.BulkChoices.State
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class BulkTagChoicesTest {
+class BulkChoicesTest {
     // 4 items: "all" on each, "some" on 2
-    private fun choices() = BulkTagChoices(4, mapOf("all" to 4, "some" to 2))
+    private fun choices() = BulkChoices(4, mapOf("all" to 4, "some" to 2))
 
     @Test
     fun `tags start as they are on the items`() {
@@ -52,14 +52,14 @@ class BulkTagChoicesTest {
     fun `a typed tag is listed and goes on all of them, and off again`() {
         val c = choices()
         c.add("new")
-        assertEquals(setOf("all", "some", "new"), c.tags())
+        assertEquals(setOf("all", "some", "new"), c.names())
         assertEquals(State.ALL, c.state("new"))
         assertEquals(4, c.affected("new"))
         c.tap("new")
         assertEquals(State.NONE, c.state("new"))
         assertFalse(c.hasChanges)
         // still listed, to tick again
-        assertTrue("new" in c.tags())
+        assertTrue("new" in c.names())
     }
 
     @Test

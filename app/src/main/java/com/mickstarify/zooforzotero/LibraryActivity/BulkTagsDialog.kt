@@ -18,7 +18,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.mickstarify.zooforzotero.LibraryActivity.BulkTagChoices.State
+import com.mickstarify.zooforzotero.LibraryActivity.BulkChoices.State
 import com.mickstarify.zooforzotero.R
 import com.mickstarify.zooforzotero.common.DialogActions
 import com.mickstarify.zooforzotero.common.DialogText
@@ -48,7 +48,7 @@ class BulkTagsDialog(
     private val colors: TagColors,
     private val onApply: (add: List<String>, remove: List<String>) -> Unit,
 ) {
-    private val choices = BulkTagChoices(count, onItems.toMap())
+    private val choices = BulkChoices(count, onItems.toMap())
     private var libraryTags: List<String> = emptyList()
     private var query = ""
 
@@ -132,10 +132,10 @@ class BulkTagsDialog(
 
         render = {
             val q = query.trim()
-            val listed = choices.tags() + colors.colors.map { it.first }
+            val listed = choices.names() + colors.colors.map { it.first }
             val tags = if (q.isEmpty()) listed
             else (listed + libraryTags).filter { it.contains(q, ignoreCase = true) }
-            val ordered = LibraryFilterDialog.order(tags, choices.tags(), colors)
+            val ordered = LibraryFilterDialog.order(tags, choices.names(), colors)
             val typed = ItemEdits.cleanTag(q)?.takeIf { it !in ordered && it !in libraryTags }
             rows = listOfNotNull(typed?.let { Row.New(it) }) + ordered.map { Row.Tag(it) }
             empty.visibility = if (rows.isEmpty()) View.VISIBLE else View.GONE
@@ -143,7 +143,7 @@ class BulkTagsDialog(
                 if (count == 1) "The item has no tags. Type one to add it." else "None of the items has tags. Type one to add it."
             } else "No matching tags"
             adapter.notifyDataSetChanged()
-            val changes = choices.toAdd.size + choices.toRemove.size
+            val changes = choices.changes
             apply.isEnabled = changes > 0
             apply.text = when (changes) {
                 0 -> "Apply"
