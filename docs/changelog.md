@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.5.1
+
+Updates 0.5.0 in place (same app id and signing key).
 
 Changed:
 - Settings' descriptions checked against what each setting does. Coloured and emoji
