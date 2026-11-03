@@ -13,8 +13,8 @@ class SelectionDialogs(private val context: Context) {
     private fun items(count: Int) = if (count == 1) "1 item" else "$count items"
 
     /**
-     * Lists the library's [collections] as a tree (indented by depth); the one tapped gets
-     * the [count] selected items.
+     * Lets the user choose one of the library's [collections] (a tree, each with its
+     * depth), then add the [count] selected items to it (AddToCollectionDialog).
      */
     fun addToCollection(count: Int, collections: List<Pair<Collection, Int>>, onChoose: (Collection) -> Unit) {
         if (collections.isEmpty()) {
@@ -25,12 +25,7 @@ class SelectionDialogs(private val context: Context) {
                 .show()
             return
         }
-        val labels = collections.map { (c, depth) -> "\u2003".repeat(depth) + c.name }
-        AlertDialog.Builder(context)
-            .setTitle("Add ${items(count)} to a collection")
-            .setItems(labels.toTypedArray()) { _, which -> onChoose(collections[which].first) }
-            .setNegativeButton("Cancel", null)
-            .show()
+        AddToCollectionDialog(context, count, collections, onChoose).show()
     }
 
     /** Asks before taking the [count] selected items out of the collection [name]. */

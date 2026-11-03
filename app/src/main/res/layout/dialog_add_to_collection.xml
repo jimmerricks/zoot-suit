@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Add to collection" (AddToCollectionDialog), built like Manage attachments: what it
+     applies to, how it works, the library's collections as a tree of one-choice rows, then
+     the button that adds, naming the collection chosen. Cancel stays in the bar. The rows
+     scroll; the list's weight lets it shrink so the button stays in view. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DialogBody">
+
+    <TextView
+        android:id="@+id/textView_add_to_collection_scope"
+        style="@style/DialogLead" />
+
+    <TextView
+        android:id="@+id/textView_add_to_collection_hint"
+        style="@style/DialogHint" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView_collections"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:scrollbars="vertical" />
+
+    <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+        <!-- text and enabled state set in code -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_add_to_collection"
+            style="@style/DialogAction"
+            android:text="@string/add_to_collection" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
+</LinearLayout>
