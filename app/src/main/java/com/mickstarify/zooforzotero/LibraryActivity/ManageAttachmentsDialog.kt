@@ -1,9 +1,6 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
 import android.content.Context
-import android.text.SpannableStringBuilder
-import android.text.Spanned
-import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,7 +10,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.R
-import com.mickstarify.zooforzotero.common.themeColor
+import com.mickstarify.zooforzotero.common.DialogText
+import com.mickstarify.zooforzotero.common.DialogText.files
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentCounts
 import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
@@ -80,32 +78,20 @@ class ManageAttachmentsDialog(
         }
 
         val all = counts.values.fold(AttachmentCounts(emptyList(), emptyList())) { a, b -> a + b }
-        val items = if (count == 1) "1 item" else "%,d items".format(count)
-        scope.text = when {
-            listed && count == 1 -> "Applies to 1 item: the one listed"
-            listed -> "Applies to $items: all those listed"
-            count == 1 -> "Applies to 1 item: the one selected"
-            else -> "Applies to $items: those selected"
-        }
+        scope.text = DialogText.appliesTo(count, listed)
         hint.text = if (counts.isEmpty()) {
             (if (count == 1) "It has no files stored in Zotero." else "None of them has files stored in Zotero.") +
                     " Links and linked files stay where they are."
         } else {
             val here = if (all.onDevice.isEmpty()) "none" else "%,d".format(all.onDevice.size)
-            val files = if (all.total == 1) "1 file" else "%,d files".format(all.total)
-            "${if (count == 1) "Its" else "Their"} $files: $here on this device. Links and linked files aren't counted."
+            "${if (count == 1) "Its" else "Their"} ${files(all.total)}: $here on this device. Links and linked files aren't counted."
         }
 
-        val secondary = themed.themeColor(android.R.attr.textColorSecondary)
         for ((kind, c) in counts) {
             kinds.addView(CheckBox(themed).apply {
                 layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 minHeight = (48 * resources.displayMetrics.density).toInt()
-                text = SpannableStringBuilder(kind.label).apply {
-                    val start = length
-                    append("\n").append(describe(c))
-                    setSpan(ForegroundColorSpan(secondary), start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                }
+                text = DialogText.twoLines(themed, kind.label, describe(c))
                 isChecked = true
                 setOnCheckedChangeListener { _, on ->
                     if (on) ticked += kind else ticked -= kind
@@ -147,8 +133,6 @@ class ManageAttachmentsDialog(
             isEnabled = c.onDevice.isNotEmpty()
         }
     }
-
-    private fun files(n: Int) = if (n == 1) "1 file" else "%,d files".format(n)
 
     private fun describe(c: AttachmentCounts): String = when {
         c.missing.isEmpty() -> if (c.total == 1) "On this device" else "All %,d on this device".format(c.total)

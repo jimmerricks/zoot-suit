@@ -16,4 +16,45 @@
     <style name="DialogChoice">
         <item name="android:minHeight">36dp</item>
     </style>
+    <!-- The parts of a dialog, as Manage attachments has them. Body: the custom view's
+         insets, as the title's. Lead: what the dialog acts on ("Applies to 2 items: those
+         selected"). Hint: how it works, grey. Actions: full-width buttons in the body that
+         name what they do (with counts where it helps); the filled one is the main act, the
+         outlined one the other. The button bar keeps only the button that leaves (Cancel
+         or Close), so long labels never stack there on a phone. -->
+    <style name="DialogBody">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingEnd">20dp</item>
+    </style>
+
+    <style name="DialogLead">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Subhead</item>
+    </style>
+
+    <style name="DialogHint">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Body1</item>
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
+    </style>
+
+    <style name="DialogAction" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">8dp</item>
+    </style>
+
+    <style name="DialogAction.Other" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
 </resources>
