@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A sidebar section title, styled as Settings' headers (SettingsForm.Header); the Group
+<!-- A sidebar section title, styled as Settings' category headers; the Group
      Libraries one collapses, with the chevron at the end. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"

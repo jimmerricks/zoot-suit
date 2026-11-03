@@ -35,7 +35,6 @@
     <string name="title">Title</string>
     <string name="author">Author</string>
     <string name="library_header">Library</string>
-    <string name="title_activity_web_davsetup">WebDAV</string>
     <string name="setting_sync_attachments_location">Attachment folder</string>
     <string name="filter">Filter</string>
     <string name="force_resync">Re-download library</string>
@@ -49,6 +48,7 @@
     <string name="webdav_config_title">WebDAV server</string>
     <string name="advanced_configuration">Advanced</string>
     <string name="save_connect">Save and connect</string>
+    <string name="webdav_connecting">Connecting…</string>
     
     <!-- API Key Setup -->
     <string name="api_key_instructions_title">How to get your API key</string>

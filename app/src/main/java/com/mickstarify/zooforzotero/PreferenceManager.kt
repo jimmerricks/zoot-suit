@@ -189,7 +189,7 @@ class PreferenceManager @Inject constructor(context: Context) {
         username: String,
         password: String,
     ) {
-        // doesn't turn WebDAV on: WebDAVSetup does that once the connection test passes
+        // doesn't turn WebDAV on: WebDAVSetupDialog does that once the connection test passes
         val editor = sharedPreferences.edit()
         editor.putString("webdav_address", address)
         editor.putString("webdav_username", username)

@@ -22,7 +22,7 @@ import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
-import com.mickstarify.zooforzotero.LibraryActivity.WebDAV.WebDAVSetup
+import com.mickstarify.zooforzotero.LibraryActivity.WebDAV.WebDAVSetupDialog
 import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorage
 import com.mickstarify.zooforzotero.SyncSetup.domain.SignOut
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.ZoteroDatabase
@@ -137,12 +137,16 @@ class SettingsActivity : AppCompatActivity() {
             // Set up a listener whenever a key changes
             preferenceScreen.sharedPreferences!!.registerOnSharedPreferenceChangeListener(this)
 
-            this.findPreference<SwitchPreference>("use_webdav")?.isChecked =
+            showWebDAV()
+            showAttachmentFolder()
+        }
+
+        /** The WebDAV switch and the server's address, as saved (the server dialog changes both). */
+        private fun showWebDAV() {
+            findPreference<SwitchPreference>("use_webdav")?.isChecked =
                 preferenceManager.sharedPreferences!!.getBoolean("use_webdav", false)
-            // back from the server screen: show what it saved
             val address = (requireActivity() as SettingsActivity).myPreferenceManager.getWebDAVAddress()
             findPreference<Preference>("configure_webdav")?.summary = address.ifEmpty { "Not set up" }
-            showAttachmentFolder()
         }
 
         /** Attachment folder's summary: where files go, and what happens to them on sign-out. */
@@ -196,8 +200,7 @@ class SettingsActivity : AppCompatActivity() {
 
         override fun onPreferenceTreeClick(preference: Preference): Boolean {
             if (preference.key == "configure_webdav") {
-                val intent = Intent(requireContext(), WebDAVSetup::class.java)
-                startActivity(intent)
+                WebDAVSetupDialog(requireContext()) { showWebDAV() }.show()
                 return true
             } else if (preference.key == "sign_out") {
                 (requireActivity() as SettingsActivity).confirmSignOut()

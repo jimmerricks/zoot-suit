@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "WebDAV server" (WebDAVSetupDialog), built like the other dialogs: what it is, the
+     address and login, Advanced opening the rest; then Save and connect, Remove server
+     while one is set up, and Cancel. The form scrolls above the buttons (its weight lets it
+     shrink with the keyboard up). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/DialogBody">
+
+    <ScrollView
+        android:id="@+id/scrollView_webdav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+        <!-- focusable itself: the address field doesn't take the focus, and the keyboard
+             doesn't come up, until it's tapped -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/DialogHint"
+                android:text="My Library's attachment files go through your own server instead of Zotero's storage: the one Zotero desktop uses for WebDAV." />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/textInputLayout_webdav_host"
+                style="@style/DialogField"
+                android:hint="@string/host_url"
+                app:helperText="https:// and /zotero are added if missing (see Advanced).">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textUri" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/textInputLayout_webdav_user"
+                style="@style/DialogField"
+                android:hint="@string/username"
+                app:helperText="Optional.">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textWebEditText" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/textInputLayout_webdav_password"
+                style="@style/DialogField"
+                android:hint="@string/password"
+                app:endIconMode="password_toggle"
+                app:helperText="Optional.">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- opens and closes the section below -->
+            <LinearLayout
+                android:id="@+id/button_webdav_advanced_config"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/DialogSectionHeader"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="0dp"
+                        android:text="@string/advanced_configuration" />
+
+                    <TextView
+                        style="@style/DialogHint"
+                        android:paddingBottom="0dp"
+                        android:text="Address format, certificate check, authentication, timeouts" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/imageView_webdav_advanced_chevron"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginStart="16dp"
+                    android:importantForAccessibility="no"
+                    android:rotation="90"
+                    android:src="@drawable/baseline_chevron_right_24" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/linearLayout_advanced_config"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/checkBox_add_zotero_host"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:minHeight="48dp"
+                    android:text="Add https:// and /zotero to the address"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/checkBox_Verify_ssl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:minHeight="48dp"
+                    android:text="Verify the server's certificate"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/TextInputLayout_webdav_auth_mode"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="Authentication"
+                    app:helperText="Change this only if signing in fails.">
+
+                    <AutoCompleteTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        android:text="AUTOMATIC" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/textInputLayout_webdav_connect_timeout"
+                    style="@style/DialogField"
+                    android:hint="Connect timeout (ms)"
+                    app:helperText="How long connecting may take. 0 waits forever. Default 10000.">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/textInputLayout_webdav_read_timeout"
+                    style="@style/DialogField"
+                    android:hint="Read timeout (ms)"
+                    app:helperText="How long the server may take to answer. 0 waits forever. Default 30000.">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/textInputLayout_webdav_write_timeout"
+                    style="@style/DialogField"
+                    android:hint="Write timeout (ms)"
+                    app:helperText="How long sending a file may stall. 0 waits forever. Default 30000.">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <com.mickstarify.zooforzotero.common.DialogActions
+        android:id="@+id/dialog_actions"
+        style="@style/DialogActions">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_webdav_connect"
+            style="@style/DialogAction"
+            android:text="@string/save_connect" />
+
+        <!-- while a server is set up -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_webdav_remove"
+            style="@style/DialogAction.Other"
+            android:text="Remove server"
+            android:visibility="gone" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
+</LinearLayout>
