@@ -18,7 +18,7 @@ class NoteView(val context: Context, val note: Note, val listener: NoteInteracti
     fun show() {
         val builder = AlertDialog.Builder(context)
         val view = LayoutInflater.from(builder.context).inflate(R.layout.dialog_note_view, null)
-        view.findViewById<TextView>(R.id.textView_note).text = Html.fromHtml(note.note).trimEnd()
+        view.findViewById<TextView>(R.id.textView_note).text = Html.fromHtml(note.note, Html.FROM_HTML_MODE_LEGACY).trimEnd()
         val dialog = builder
             .setTitle("Note")
             .setView(view)
