@@ -1,6 +1,5 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -25,6 +24,7 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
 import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.downloadSource
 import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.settleDownload
 import com.mickstarify.zooforzotero.ZoteroStorage.EditedAttachments
+import com.mickstarify.zooforzotero.ZoteroStorage.linkedFileSegments
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
@@ -64,43 +64,35 @@ class LibraryAttachments(
     private val zoteroDB get() = library.db
 
     fun openPDF(attachment: Item) {
-        /* This method creates an intent to open a PDF for Android. */
-
-        run {
-            try {
-                val intent = attachmentStorageManager.openAttachment(attachment)
-                ui.startActivity(intent)
-            } catch (exception: ActivityNotFoundException) {
-                ui.createYesNoPrompt("No app opens this file",
-                    "Nothing on this device opens .${attachment.getFileExtension()} files. Install a PDF reader such as Xodo?",
-                    "Get Xodo", "Cancel", onYesClick = {
-                        try {
-                            ui.startActivity(
-                                Intent(
-                                    Intent.ACTION_VIEW,
-                                    Uri.parse("market://details?id=com.xodo.pdf.reader")
-                                )
-                            )
-                        } catch (e: ActivityNotFoundException) {
-                            ui.startActivity(
-                                Intent(
-                                    Intent.ACTION_VIEW,
-                                    Uri.parse("https://play.google.com/store/apps/details?id=com.xodo.pdf.reader")
-                                )
-                            )
-                        }
-                    }, onNoClick = {})
-            } catch (e: IllegalArgumentException) {
-                ui.createErrorAlert("Couldn't open the file",
-                    "Android refused access to the file. This is a known problem on Huawei " +
-                            "devices: in Settings, set Attachment folder to A folder you choose.",
-                    {})
-            } catch (e: FileNotFoundException) {
-                ui.createErrorAlert("File not found",
-                    "The file is missing from this device. Download it again.",
-                    {})
-            }
+        val intent = try {
+            attachmentStorageManager.openAttachment(attachment)
+        } catch (e: IllegalArgumentException) {
+            ui.createErrorAlert("Couldn't open the file",
+                "Android refused access to the file. This is a known problem on Huawei " +
+                        "devices: in Settings, set Attachment folder to A folder you choose.",
+                {})
+            return
+        } catch (e: FileNotFoundException) {
+            ui.createErrorAlert("File not found",
+                "The file is missing from this device. Download it again.",
+                {})
+            return
         }
+        ui.startActivity(intent) { offerViewer(attachment.getFileExtension()) }
+    }
+
+    /** No app opens .[extension] files ("": this file): offers a PDF reader from the store. */
+    private fun offerViewer(extension: String) {
+        val what = if (extension.isEmpty()) "this file" else ".$extension files"
+        ui.createYesNoPrompt("No app opens this file",
+            "Nothing on this device opens $what. Install a PDF reader such as Xodo?",
+            "Get Xodo", "Cancel", onYesClick = {
+                ui.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.xodo.pdf.reader"))) {
+                    // no store app either: the store's web page
+                    ui.startActivity(Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://play.google.com/store/apps/details?id=com.xodo.pdf.reader")))
+                }
+            }, onNoClick = {})
     }
 
     fun openAttachment(item: Item) {
@@ -109,9 +101,16 @@ class LibraryAttachments(
 
         // first check to see if we are opening a linked attachment
         if (item.data["linkMode"] == "linked_file") {
-            val intent = attachmentStorageManager.openLinkedAttachment(item)
+            // the path is Zotero's, from another computer: it may name anything
+            val intent = try {
+                attachmentStorageManager.openLinkedAttachment(item)
+            } catch (e: Exception) {
+                Log.e("zotero", "looking up linked file ${item.data["path"]} failed: $e")
+                null
+            }
             if (intent != null) {
-                ui.startActivity(intent)
+                val name = linkedFileSegments(item.data["path"]).lastOrNull() ?: ""
+                ui.startActivity(intent) { offerViewer(name.substringAfterLast('.', "")) }
             } else {
                 ui.makeToastAlert("Linked file not found: ${item.data["path"]}")
             }

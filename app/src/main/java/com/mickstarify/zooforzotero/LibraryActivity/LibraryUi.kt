@@ -20,7 +20,12 @@ interface LibraryUi {
     )
     fun showLoadingAlertDialog(message: String)
     fun hideLoadingAlertDialog()
-    fun startActivity(intent: Intent)
+    /**
+     * Starts [intent] from the screen; [onNoApp] if no app takes it. The screen may start
+     * it later (queued while the app is in the background), so a caller's own try/catch
+     * wouldn't see that.
+     */
+    fun startActivity(intent: Intent, onNoApp: () -> Unit = {})
 
     // attachment progress
     fun updateAttachmentDownloadProgress(progress: Long, total: Long)

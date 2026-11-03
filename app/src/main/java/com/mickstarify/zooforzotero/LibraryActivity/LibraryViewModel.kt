@@ -2,6 +2,7 @@ package com.mickstarify.zooforzotero.LibraryActivity
 
 import android.app.Application
 import android.text.format.DateUtils
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.os.Handler
@@ -655,8 +656,15 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         observers.clear()
     }
 
-    override fun startActivity(intent: Intent) {
-        commands.send { it.startActivity(intent) }
+    override fun startActivity(intent: Intent, onNoApp: () -> Unit) {
+        commands.send {
+            try {
+                it.startActivity(intent)
+            } catch (e: ActivityNotFoundException) {
+                Log.d("zotero", "no app for $intent")
+                onNoApp()
+            }
+        }
     }
 
     fun describeAttachment(attachment: Item, onState: (AttachmentLocalState) -> Unit) {
