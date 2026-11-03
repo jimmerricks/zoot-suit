@@ -22,8 +22,9 @@ larger work behind them.
 
 Smaller items, none blocking a release:
 
-- **Not yet tested:** a WebDAV server that redirects to another host (the login now
-  goes only to the host set up, so such a server needs its final address entered);
+- **Not yet tested:** a WebDAV server that redirects to another host, port or scheme
+  (the login now goes only to the address set up, so such a server needs its final
+  address entered); opening a linked file;
   leaving a group library (its items are now removed from the device); tag colours
   and kept searches in group libraries; Android 15.
 - **Size:** the release APK is about 2.6 MB. Keeping only the classes Gson, Room and
@@ -33,6 +34,11 @@ Smaller items, none blocking a release:
   and navigation still go presenter to view rather than through the ViewModel; the
   library list's derived maps are rebuilt just after a new list is published, so they
   can briefly disagree with it; lint reports about 150 warnings (mostly hardcoded text).
+  Sign-in uses signpost's Apache HTTP module, which needs Android's legacy Apache
+  library; signpost's own HttpURLConnection provider (or OAuth 1.0a on OkHttp) would drop
+  both. The Zotero File Storage upload chain (`ZoteroAPI.updateAttachment`) relies on an
+  Observer throwing inside a Completable, and the database still allows main-thread
+  queries (`allowMainThreadQueries`), which hides any left on the main thread.
 - **Library screen:** it is `singleTask` since 0.5.0 (was `singleInstance`, which left
   Settings in a task of its own). Opening a PDF in an external viewer and coming back
   needs a test on a device.
@@ -47,6 +53,9 @@ Smaller items, none blocking a release:
   replayed onto Zotero's copy at sync, 50 items to a request, so editing other fields
   can reuse the same path; it needs an editor and a way to settle a field changed both
   here and elsewhere (detected, not yet shown).
+- Notes are edited as plain text, and only notes of plain paragraphs: a note with
+  formatting is edited in Zotero. Editing an existing note needs a connection (adding
+  one doesn't).
 - The Zotero File Storage upload path has had less testing than WebDAV (uploads and a
   conflict were tested against a test account).
 
@@ -70,7 +79,8 @@ work, each on its own: `OpenLibrary` (which library is open, the Back stack),
 `EditedAttachments`), `LibraryItemEdits`, `LibraryDeviceState` and `LibraryGroups`.
 The list's selection is an `ItemSelection` of keys in `LibraryListViewModel`; bulk
 downloads run in a WorkManager worker (`ZoteroStorage/Downloads/`) from a queue kept in
-a file, so they outlive the screen and the process.
+files (the list, and a small progress file beside it), so they outlive the screen and
+the process.
 
 Planned, one small, behaviour-preserving step at a time, each checked on a device:
 

@@ -28,6 +28,36 @@ Changed:
   and keeps turning as the sync runs. One sign for one sync, where the spinner and the
   turning icon showed it twice.
 
+Security:
+- WebDAV: the login goes only to the server's own scheme, host and port. A server set up
+  with https:// that redirected to http:// on the same host was sent the password
+  unencrypted.
+- A linked file's path (set on another computer, or by any member of a group) can't
+  reach outside the attachment folder: "..", "." and empty parts are dropped.
+
+Fixed:
+- Editing a note showed its HTML ("<div data-schema-version=…><p>…") and saved what was
+  typed as markup. A note of plain paragraphs now opens as text and is saved back as
+  paragraphs; a note with formatting (headings, bold, links, citations, images) isn't
+  opened for editing, as saving it as text would strip that everywhere: edit it in
+  Zotero. A change that failed to save no longer shows as saved.
+- Edit note from an item's note opened a second editor after the first; one now.
+- No crash when no app opens a linked file, or when a file finishes downloading while
+  the app is in the background and no app opens it: the app offers a PDF reader.
+- A bulk download that Android stopped mid-file no longer deletes that file when it
+  resumes, if it was downloaded from the attachment menu in the meantime.
+- An item trashed in Zotero while the trash was syncing could be missed for good.
+- A file Zotero refuses to send (missing, 404) no longer leaves its connection open.
+- The 0.5.0 move out of shared storage takes only attachment folders.
+- Removing one file from the device no longer runs on the main thread.
+- Choosing another attachment folder releases the app's access to the old one.
+
+Faster:
+- Bulk downloads no longer rewrite their whole queue for every file (a whole library's
+  queue is thousands of entries): the list is written when it changes, the progress in a
+  small file beside it.
+- The trash syncs 100 items per request instead of 25.
+
 ## 0.5.0
 
 Updates 0.4.3 in place (same app id and signing key). Downloaded files move to the
