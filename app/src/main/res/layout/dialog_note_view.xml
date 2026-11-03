@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A note (NoteView), built like Manage attachments: its text, selectable, scrolling above
+     Edit note, a full-width button. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DialogBody">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/textView_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
+            android:textIsSelectable="true" />
+    </ScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_edit_note"
+        style="@style/DialogAction"
+        android:text="Edit note" />
+</LinearLayout>

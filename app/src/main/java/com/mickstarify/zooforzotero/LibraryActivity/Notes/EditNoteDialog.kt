@@ -3,14 +3,17 @@ package com.mickstarify.zooforzotero.LibraryActivity.Notes
 import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
-import android.view.inputmethod.InputMethodManager
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.R
 
-
+/**
+ * Adding a note, or editing one ([noteText] not empty): laid out like Manage attachments,
+ * the field, then Save note as a full-width button; Cancel alone in the bar. The keyboard
+ * comes up with it.
+ */
 class EditNoteDialog {
 
     fun show(
@@ -22,40 +25,31 @@ class EditNoteDialog {
             Log.e("zotero", "got null context on create Note")
             return
         }
-        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        val dialogBuilder = AlertDialog.Builder(context).create()
-        val inflater = LayoutInflater.from(context)
-        val dialogView: View = inflater.inflate(R.layout.dialog_add_note, null)
-
-        val cancelButton = dialogView.findViewById<Button>(R.id.buttonCancel)
+        val builder = AlertDialog.Builder(context)
+        val dialogView = LayoutInflater.from(builder.context).inflate(R.layout.dialog_add_note, null)
         val submitButton = dialogView.findViewById<Button>(R.id.buttonSubmit)
         val editTextNote = dialogView.findViewById<EditText>(R.id.edit_note)
-
         editTextNote.setText(noteText)
-        cancelButton.setOnClickListener {
-            onEditNoteChangeListener.onCancel()
-            imm.hideSoftInputFromWindow(editTextNote.windowToken, 0)
-            dialogBuilder.dismiss()
-        }
+        editTextNote.setSelection(noteText.length)
 
+        val dialog = builder
+            .setTitle(if (noteText.isEmpty()) "Add note" else "Edit note")
+            .setView(dialogView)
+            .setNegativeButton("Cancel") { _, _ -> onEditNoteChangeListener.onCancel() }
+            .create()
         submitButton.setOnClickListener {
             onEditNoteChangeListener.onSubmit(editTextNote.text.toString())
-            imm.hideSoftInputFromWindow(editTextNote.windowToken, 0)
-            dialogBuilder.dismiss()
+            dialog.dismiss()
         }
-
-
-        dialogBuilder.setView(dialogView)
-
-        //not letting user dismiss dialog because otherwise the keyboard stays and it's a pain to
-        //dismiss it. (need to find currentFocusedView, etc)
-        dialogBuilder.setCanceledOnTouchOutside(false)
-
-        dialogBuilder.show()
-
+        // a tap beside the dialog would lose what was typed
+        dialog.setCanceledOnTouchOutside(false)
+        // the field has focus, so the keyboard comes up with the dialog; it goes with it
+        dialog.window?.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE or
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+        )
         editTextNote.requestFocus()
-        // Shows the softkeyboard.
-        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+        dialog.show()
     }
 }
 
