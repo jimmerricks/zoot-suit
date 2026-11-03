@@ -629,9 +629,19 @@ class LibraryAttachments(
 
     fun deleteLocalAttachment(attachment: Item) {
         val delete = {
-            attachmentStorageManager.deleteAttachment(attachment)
-            onFilesChanged()
-            ui.makeToastAlert("Removed from this device: ${attachment.getTitle()}")
+            // off the main thread: in a folder the user chose it goes through its provider
+            Single.fromCallable { attachmentStorageManager.deleteAttachment(attachment) }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onFilesChanged()
+                    ui.makeToastAlert("Removed from this device: ${attachment.getTitle()}")
+                }, { e ->
+                    onFilesChanged()
+                    Log.e("zotero", "deleting ${attachment.itemKey} failed: $e")
+                    ui.createErrorAlert("Couldn't remove the file", "Details: ${e.message ?: e}") {}
+                })
+            Unit
         }
         // in a folder the user chose the file is theirs: always ask, naming the folder
         Single.fromCallable {
