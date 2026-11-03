@@ -1,6 +1,5 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
-import android.app.AlertDialog
 import android.content.Context
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -10,6 +9,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
+import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.R
 

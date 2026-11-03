@@ -1,7 +1,6 @@
 package com.mickstarify.zooforzotero.LibraryActivity.ItemView
 
 
-import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -13,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -82,7 +82,7 @@ class ItemAttachmentEntry(
                 filename.text = "Link: ${attachment?.getItemData("title")}"
                 layout.setOnClickListener {
                     val url = attachment?.getItemData("url")
-                    AlertDialog.Builder(context)
+                    AlertDialog.Builder(requireContext())
                         .setTitle("Open this link?")
                         .setMessage(url)
                         .setPositiveButton("Open") { dialog, which ->

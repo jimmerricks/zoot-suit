@@ -1,6 +1,5 @@
 package com.mickstarify.zooforzotero.LibraryActivity
 
-import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
 import android.text.Editable
@@ -20,6 +19,7 @@ import android.widget.CheckBox
 import android.widget.CheckedTextView
 import android.widget.EditText
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.R

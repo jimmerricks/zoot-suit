@@ -1,6 +1,5 @@
 package com.mickstarify.zooforzotero.LibraryActivity.ItemView
 
-import android.app.AlertDialog
 import android.os.Bundle
 import android.text.Html
 import android.util.Log
@@ -8,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListener
@@ -66,7 +66,7 @@ class ItemNoteEntry() : Fragment() {
 
             requireView().setOnLongClickListener(object : View.OnLongClickListener {
                 override fun onLongClick(dialog: View?): Boolean {
-                    AlertDialog.Builder(this@ItemNoteEntry.context)
+                    AlertDialog.Builder(requireContext())
                         .setTitle("Note")
                         .setItems(
                             arrayOf("View", "Edit", "Delete")

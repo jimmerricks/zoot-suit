@@ -1,10 +1,10 @@
 package com.mickstarify.zooforzotero.LibraryActivity.Notes
 
-import android.app.AlertDialog
 import android.content.Context
 import android.text.Html
 import android.util.Log
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 
 class NoteView(val context: Context, val note: Note, val listener: NoteInteractionListener) {

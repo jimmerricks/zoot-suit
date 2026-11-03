@@ -14,10 +14,10 @@ import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.doOnNextLayout
 import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.ViewModelProvider
-import android.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.EditNoteDialog
