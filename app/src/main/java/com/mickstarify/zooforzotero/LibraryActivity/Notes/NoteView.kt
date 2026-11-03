@@ -31,18 +31,6 @@ class NoteView(val context: Context, val note: Note, val listener: NoteInteracti
     }
 
     fun showNoteEditingDialog() {
-        EditNoteDialog()
-            .show(context, note.note, object :
-                onEditNoteChangeListener {
-                override fun onCancel() {
-                }
-
-                override fun onSubmit(noteText: String) {
-                    note.note = noteText
-                    listener.editNote(note)
-
-                }
-
-            })
+        editNoteAsText(context, note) { edited -> listener.editNote(edited) }
     }
 }

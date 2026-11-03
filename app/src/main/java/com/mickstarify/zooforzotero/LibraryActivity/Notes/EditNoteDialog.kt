@@ -8,6 +8,8 @@ import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
+import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 
 /**
  * Adding a note, or editing one ([noteText] not empty): laid out like Manage attachments,
@@ -51,6 +53,48 @@ class EditNoteDialog {
         editTextNote.requestFocus()
         dialog.show()
     }
+}
+
+/**
+ * Edits [note] as plain text and gives [onSave] a copy with the new text ([note] itself is
+ * left as it is until the change is saved). A note with formatting the app can't show as
+ * text (headings, bold, links, citations, images) isn't opened for editing: saving it as
+ * text would strip that from it everywhere. It says so instead.
+ */
+fun editNoteAsText(context: Context, note: Note, onSave: (Note) -> Unit) {
+    val text = ItemEdits.noteText(note.note)
+    if (text == null) {
+        AlertDialog.Builder(context)
+            .setTitle("Edit in Zotero")
+            .setMessage("This note has formatting (such as headings, bold, links, citations or " +
+                    "images) that editing it here would remove. Edit it in Zotero instead.")
+            .setPositiveButton("OK", null)
+            .show()
+        return
+    }
+    EditNoteDialog().show(context, text, object : onEditNoteChangeListener {
+        override fun onCancel() {}
+
+        override fun onSubmit(noteText: String) {
+            if (noteText.trim() == text) return // unchanged
+            val html = ItemEdits.editedNoteHtml(note.note, noteText)
+            if (html == null) {
+                AlertDialog.Builder(context)
+                    .setTitle("The note is empty")
+                    .setMessage("An empty note isn't saved. To remove the note, delete it.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return
+            }
+            onSave(Note().apply {
+                parent = note.parent
+                key = note.key
+                this.note = html
+                version = note.version
+                tags = note.tags
+            })
+        }
+    })
 }
 
 interface onEditNoteChangeListener {

@@ -281,7 +281,19 @@ class LibraryItemEdits(
             return
         }
         changeNewNote({ itemEdits.editNewNote(GroupInfo.NO_GROUP_ID, note.key, note.note) },
-            notNew = { uploadNoteEdit(note) }) { ui.makeToastAlert("Note saved.") }
+            notNew = { uploadNoteEdit(note) }) {
+            showSavedNote(note)
+            ui.makeToastAlert("Note saved.")
+        }
+    }
+
+    /**
+     * [note] (an edited copy) is saved: the open item's note gets its text. Only then: a
+     * change that failed to save showed as if saved until the item was opened again.
+     */
+    private fun showSavedNote(note: Note) {
+        selectedItem()?.notes?.find { it.key == note.key }?.note = note.note
+        ui.refreshItemView()
     }
 
     private fun uploadNoteEdit(note: Note) {
@@ -290,6 +302,7 @@ class LibraryItemEdits(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : CompletableObserver {
                 override fun onComplete() {
+                    showSavedNote(note)
                     syncItems()
                     ui.makeToastAlert("Note saved.")
                 }

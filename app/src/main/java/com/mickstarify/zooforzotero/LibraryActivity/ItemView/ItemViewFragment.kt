@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.fragment.app.DialogFragment
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.EditNoteDialog
+import com.mickstarify.zooforzotero.LibraryActivity.Notes.editNoteAsText
 import com.mickstarify.zooforzotero.LibraryActivity.QuickTags
 import com.mickstarify.zooforzotero.LibraryActivity.TagColors
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListener
@@ -55,17 +56,8 @@ class ItemViewFragment : DialogFragment(),
     }
 
     override fun editNote(note: Note) {
-        EditNoteDialog()
-            .show(context, note.note, object :
-                onEditNoteChangeListener {
-                override fun onCancel() {
-                }
-
-                override fun onSubmit(noteText: String) {
-                    note.note = noteText
-                    listener?.onNoteEdit(note)
-                }
-            })
+        val context = context ?: return
+        editNoteAsText(context, note) { edited -> listener?.onNoteEdit(edited) }
     }
 
     override fun deleteNote(note: Note) {

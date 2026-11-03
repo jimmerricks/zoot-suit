@@ -217,6 +217,55 @@ object ItemEdits {
     private fun escapeHtml(s: String) =
         s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
 
+    /** Zotero 6+ wraps a note in this; kept when the note is edited here. */
+    private val NOTE_WRAPPER = Regex("^<div data-schema-version=\"\\d+\">(.*)</div>$", RegexOption.DOT_MATCHES_ALL)
+
+    /** Any tag but <p>, </p> and <br>. */
+    private val OTHER_TAG = Regex("<(?!/?p>|br\\s*/?>)")
+
+    private val ENTITIES = mapOf("amp" to "&", "lt" to "<", "gt" to ">", "quot" to "\"", "apos" to "'", "nbsp" to " ")
+
+    /**
+     * [html], a note as Zotero stores it, as the plain text [noteHtml] makes it from, if
+     * it is only paragraphs and line breaks: what the app can edit without losing anything.
+     * Null if it holds more (headings, bold, lists, links, images, citations), which an
+     * edit as plain text would throw away.
+     */
+    fun noteText(html: String): String? {
+        val body = html.trim().let { NOTE_WRAPPER.find(it)?.groupValues?.get(1) ?: it }
+        if (OTHER_TAG.containsMatchIn(body)) return null
+        var unknownEntity = false
+        val text = body
+            .replace(Regex("\\s+"), " ") // as HTML shows it: a line break in the source is a space
+            .replace(Regex("<br\\s*/?>"), "\n")
+            .replace(Regex("</?p>"), "\n\n")
+            .replace(Regex("&(#x[0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);")) { m ->
+                val name = m.groupValues[1]
+                when {
+                    name.startsWith("#x") -> codePoint(name.drop(2).toIntOrNull(16))
+                    name.startsWith("#") -> codePoint(name.drop(1).toIntOrNull())
+                    else -> ENTITIES[name]
+                } ?: run { unknownEntity = true; m.value }
+            }
+        if (unknownEntity) return null
+        return text.lines().joinToString("\n") { it.trim() }
+            .replace(Regex("\n{3,}"), "\n\n").trim()
+    }
+
+    private fun codePoint(n: Int?): String? =
+        n?.let { runCatching { String(Character.toChars(it)) }.getOrNull() }
+
+    /**
+     * The note [html] with its text replaced by [text] (typed as plain text, see [noteText]),
+     * in the same wrapper; null if [text] is blank.
+     */
+    fun editedNoteHtml(html: String, text: String): String? {
+        val body = noteHtml(text) ?: return null
+        val original = html.trim()
+        if (!NOTE_WRAPPER.matches(original)) return body
+        return original.substringBefore('>') + ">" + body + "</div>"
+    }
+
     /** What creates a [ItemEditKind.CREATE_NOTE] edit's note in Zotero (POST <prefix>/items). */
     fun newNoteJson(noteKey: String, edit: ItemEdit): JsonObject = JsonObject().apply {
         addProperty("key", noteKey)
