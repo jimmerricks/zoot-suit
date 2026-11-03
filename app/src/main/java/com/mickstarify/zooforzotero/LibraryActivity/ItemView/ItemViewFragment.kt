@@ -28,6 +28,7 @@ import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListene
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.onEditNoteChangeListener
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogActions
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Creator
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -210,8 +211,8 @@ class ItemViewFragment : DialogFragment(),
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Add tag")
             .setView(view)
-            .setNegativeButton("Cancel", null)
             .create()
+        DialogActions.leave(view, dialog, "Cancel")
         listener?.let { l ->
             QuickTags.bind(view, l.tagColors(), itemTags) { tag ->
                 l.onTagAdd(item, tag)

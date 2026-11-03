@@ -2,88 +2,97 @@
 <!-- Same layout as dialog_library_filter_header: section headers, then one choice per row.
      The order's choices have a grey second line (set in code, DialogText.twoLines), as the
      kinds in Manage attachments; Sort is a full-width button under them. -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DialogBody">
 
-    <LinearLayout style="@style/DialogBody">
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
 
-        <TextView
-            style="@style/DialogHint"
-            android:paddingBottom="0dp"
-            android:text="Each library keeps its own order." />
-
-        <TextView
-            style="@style/DialogSectionHeader"
-            android:text="Sort by" />
-
-        <RadioGroup
-            android:id="@+id/radioGroup_sort_method"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-            <RadioButton
-                style="@style/DialogChoice"
-                android:id="@+id/radioButton_sort_title"
+            <TextView
+                style="@style/DialogHint"
+                android:paddingBottom="0dp"
+                android:text="Each library keeps its own order." />
+
+            <TextView
+                style="@style/DialogSectionHeader"
+                android:text="Sort by" />
+
+            <RadioGroup
+                android:id="@+id/radioGroup_sort_method"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:tag="TITLE"
-                android:text="Title" />
+                android:layout_height="wrap_content">
 
-            <RadioButton
-                style="@style/DialogChoice"
-                android:id="@+id/radioButton_sort_author"
+                <RadioButton
+                    style="@style/DialogChoice"
+                    android:id="@+id/radioButton_sort_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:tag="TITLE"
+                    android:text="Title" />
+
+                <RadioButton
+                    style="@style/DialogChoice"
+                    android:id="@+id/radioButton_sort_author"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:tag="AUTHOR"
+                    android:text="Author" />
+
+                <RadioButton
+                    style="@style/DialogChoice"
+                    android:id="@+id/radioButton_sort_date"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:tag="DATE"
+                    android:text="Date" />
+
+                <RadioButton
+                    style="@style/DialogChoice"
+                    android:id="@+id/radioButton_sort_date_added"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:tag="DATE_ADDED"
+                    android:text="Date added" />
+            </RadioGroup>
+
+            <TextView
+                style="@style/DialogSectionHeader"
+                android:text="Order" />
+
+            <RadioGroup
+                android:id="@+id/radioGroup_sort_order"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:tag="AUTHOR"
-                android:text="Author" />
+                android:layout_height="wrap_content">
 
-            <RadioButton
-                style="@style/DialogChoice"
-                android:id="@+id/radioButton_sort_date"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:tag="DATE"
-                android:text="Date" />
+                <RadioButton
+                    android:id="@+id/radioButton_sort_ascending"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp" />
 
-            <RadioButton
-                style="@style/DialogChoice"
-                android:id="@+id/radioButton_sort_date_added"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:tag="DATE_ADDED"
-                android:text="Date added" />
-        </RadioGroup>
+                <RadioButton
+                    android:id="@+id/radioButton_sort_descending"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp" />
+            </RadioGroup>
+        </LinearLayout>
+    </ScrollView>
 
-        <TextView
-            style="@style/DialogSectionHeader"
-            android:text="Order" />
-
-        <RadioGroup
-            android:id="@+id/radioGroup_sort_order"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <RadioButton
-                android:id="@+id/radioButton_sort_ascending"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="48dp" />
-
-            <RadioButton
-                android:id="@+id/radioButton_sort_descending"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="48dp" />
-        </RadioGroup>
-
-        <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
-            <!-- enabled once the choice differs from the list's order -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_apply_sort"
-                style="@style/DialogAction"
-                android:text="Sort" />
-        </com.mickstarify.zooforzotero.common.DialogActions>
-
-    </LinearLayout>
-</ScrollView>
+    <com.mickstarify.zooforzotero.common.DialogActions
+        android:id="@+id/dialog_actions"
+        style="@style/DialogActions">
+        <!-- enabled once the choice differs from the list's order -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_apply_sort"
+            style="@style/DialogAction"
+            android:text="Sort" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
+</LinearLayout>

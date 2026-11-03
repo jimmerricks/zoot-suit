@@ -10,9 +10,9 @@ import com.mickstarify.zooforzotero.R
 
 /**
  * A question with its answers as buttons under it, as in Manage attachments: the main
- * answer filled, an [other] one outlined (side by side if they fit, else stacked:
- * DialogActions), Cancel alone in the bar. For questions whose
- * answers need more words than the button bar holds on a phone (it stacks three).
+ * answer filled, an [other] one outlined, and Cancel (DialogActions: on one line if they
+ * fit). For questions whose answers need more words than AlertDialog's button bar holds
+ * on a phone (it stacks three).
  * Each answer is a label and what it does; the dialog closes as it acts.
  */
 object ConfirmDialog {
@@ -29,8 +29,8 @@ object ConfirmDialog {
         val dialog = builder
             .setTitle(title)
             .setView(view)
-            .setNegativeButton("Cancel", null)
             .create()
+        DialogActions.leave(view, dialog, "Cancel")
         fun bind(id: Int, answer: Pair<String, () -> Unit>) = view.findViewById<Button>(id).apply {
             visibility = View.VISIBLE
             text = answer.first

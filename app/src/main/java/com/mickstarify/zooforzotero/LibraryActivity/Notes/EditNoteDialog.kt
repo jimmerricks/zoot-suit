@@ -8,12 +8,13 @@ import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogActions
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
 
 /**
  * Adding a note, or editing one ([noteText] not empty): laid out like Manage attachments,
- * the field, then Save note as a full-width button; Cancel alone in the bar. The keyboard
+ * the field, then Save note and Cancel (DialogActions). The keyboard
  * comes up with it.
  */
 class EditNoteDialog {
@@ -37,8 +38,8 @@ class EditNoteDialog {
         val dialog = builder
             .setTitle(if (noteText.isEmpty()) "Add note" else "Edit note")
             .setView(dialogView)
-            .setNegativeButton("Cancel") { _, _ -> onEditNoteChangeListener.onCancel() }
             .create()
+        DialogActions.leave(dialogView, dialog, "Cancel") { onEditNoteChangeListener.onCancel() }
         submitButton.setOnClickListener {
             onEditNoteChangeListener.onSubmit(editTextNote.text.toString())
             dialog.dismiss()

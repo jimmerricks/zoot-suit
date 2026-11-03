@@ -7,6 +7,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogActions
 import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncStatus
 
 /**
@@ -14,8 +15,8 @@ import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncStatus
  * "Syncing 45%"): the edits waiting to go up, the running or last sync stage by stage
  * (SyncDetails), and Sync now while no sync runs. Open while the user reads it, redrawn as
  * the sync goes on; when it ends, the edits are listed again (those left, if any). Laid
- * out like Manage attachments: a header over each part, Sync now a full-width button,
- * Close alone in the bar.
+ * out like Manage attachments: a header over each part, Sync now and Close under them
+ * (DialogActions).
  *
  * @param details what to say of a sync's status
  * @param lastSynced "Last finished sync: …" for the open library, when there's no status
@@ -55,10 +56,10 @@ class SyncDialog(
         val d = builder
             .setTitle(" ")
             .setView(view)
-            .setNegativeButton("Close", null)
             .setOnDismissListener { dialog = null }
             .show()
         dialog = d
+        DialogActions.leave(view, d, "Close")
         syncNowButton.setOnClickListener {
             // shown as running before the first status arrives
             it.visibility = View.GONE

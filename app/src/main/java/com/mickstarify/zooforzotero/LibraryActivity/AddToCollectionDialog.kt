@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogActions
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.common.DialogText
 
@@ -92,8 +93,8 @@ class AddToCollectionDialog(
         val dialog = builder
             .setTitle(context.getString(R.string.add_to_collection))
             .setView(view)
-            .setNegativeButton("Cancel", null)
             .create()
+        DialogActions.leave(view, dialog, "Cancel")
         add.setOnClickListener {
             val collection = collections.getOrNull(chosen) ?: return@setOnClickListener
             dialog.dismiss()

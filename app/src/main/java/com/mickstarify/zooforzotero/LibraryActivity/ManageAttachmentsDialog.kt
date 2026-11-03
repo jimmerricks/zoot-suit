@@ -10,6 +10,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogActions
 import com.mickstarify.zooforzotero.common.DialogText
 import com.mickstarify.zooforzotero.common.DialogText.files
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
@@ -100,12 +101,13 @@ class ManageAttachmentsDialog(
             })
         }
 
-        dialog = builder
+        val shown = builder
             .setTitle(context.getString(R.string.manage_attachments))
             .setView(view)
-            .setNegativeButton("Close", null)
             .setOnDismissListener { dialog = null }
             .show()
+        dialog = shown
+        DialogActions.leave(view, shown, "Close")
         showButtons()
     }
 

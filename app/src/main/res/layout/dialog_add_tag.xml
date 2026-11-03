@@ -29,7 +29,9 @@
         android:inputType="text"
         android:maxLength="255" />
 
-    <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+    <com.mickstarify.zooforzotero.common.DialogActions
+        android:id="@+id/dialog_actions"
+        style="@style/DialogActions">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_add_tag"
             style="@style/DialogAction"

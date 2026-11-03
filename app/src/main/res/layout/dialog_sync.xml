@@ -45,7 +45,9 @@
         </LinearLayout>
     </ScrollView>
 
-    <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+    <com.mickstarify.zooforzotero.common.DialogActions
+        android:id="@+id/dialog_actions"
+        style="@style/DialogActions">
         <!-- hidden while a sync runs -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_sync_now"

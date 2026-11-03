@@ -14,6 +14,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogActions
 
 /**
  * Library search, laid out like [LibraryFilterDialog] and [LibrarySortDialog]: the query,
@@ -21,7 +22,7 @@ import com.mickstarify.zooforzotero.R
  * until it is cleared; unlike it, nothing runs until Search (or the keyboard's search key),
  * as each search scans the library. The chosen fields are kept for next time. With a
  * search on, it opens with that query and offers Clear search, which ends it. Search and
- * Clear search are full-width buttons, as in Manage attachments; Cancel is the bar's.
+ * Clear search are buttons with Cancel, as in Manage attachments (DialogActions).
  *
  * @param current the open library's search, or ""
  * @param onSearch sets the search; "" ends it
@@ -55,8 +56,8 @@ class LibrarySearchDialog(
         val dialog = AlertDialog.Builder(context)
             .setTitle("Search")
             .setView(view)
-            .setNegativeButton("Cancel", null)
             .create()
+        DialogActions.leave(view, dialog, "Cancel")
 
         fun selectedFields() = boxes.filterValues { it.isChecked }.keys
         fun search() {

@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.LibraryActivity.BulkTagChoices.State
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogActions
 import com.mickstarify.zooforzotero.common.DialogText
 import com.mickstarify.zooforzotero.common.themeColor
 import com.mickstarify.zooforzotero.ZoteroStorage.ItemEdits.ItemEdits
@@ -177,8 +178,8 @@ class BulkTagsDialog(
         dialog = builder
             .setTitle(context.getString(R.string.add_and_remove_tags))
             .setView(view)
-            .setNegativeButton("Cancel", null)
             .create()
+        DialogActions.leave(view, dialog, "Cancel")
         apply.setOnClickListener {
             dialog.dismiss()
             if (choices.hasChanges) onApply(choices.toAdd, choices.toRemove)

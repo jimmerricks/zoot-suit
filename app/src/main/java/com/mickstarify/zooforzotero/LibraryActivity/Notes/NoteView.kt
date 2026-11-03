@@ -7,11 +7,12 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogActions
 import com.mickstarify.zooforzotero.ZoteroAPI.Model.Note
 
 /**
  * A note, its text selectable; laid out like Manage attachments, Edit note is a full-width
- * button under it and Close is alone in the bar.
+ * button under it, Close beside or under it (DialogActions).
  */
 class NoteView(val context: Context, val note: Note, val listener: NoteInteractionListener) {
 
@@ -22,8 +23,8 @@ class NoteView(val context: Context, val note: Note, val listener: NoteInteracti
         val dialog = builder
             .setTitle("Note")
             .setView(view)
-            .setNegativeButton("Close", null)
             .show()
+        DialogActions.leave(view, dialog, "Close")
         view.findViewById<Button>(R.id.button_edit_note).setOnClickListener {
             dialog.dismiss()
             showNoteEditingDialog()

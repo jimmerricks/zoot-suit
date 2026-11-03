@@ -1,71 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- "Manage attachments" (ManageAttachmentsDialog): what the selection's files are, a box
      per kind (PDFs, HTML snapshots, others) with how many are on this device, and the bulk
-     downloads at work with a button to stop them. Download and Remove sit under the boxes,
-     full width with their counts in words: in the button bar, three buttons with counts
-     stacked on a phone. Close stays in the bar. -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+     downloads at work with a button to stop them; that part scrolls. Under it Download and
+     Remove, with their counts in words, and Close (DialogActions: on one line if they fit). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DialogBody">
 
-    <LinearLayout style="@style/DialogBody">
-
-        <!-- what the buttons act on: "Applies to 10,306 items: all those listed" -->
-        <TextView
-            android:id="@+id/textView_attachments_scope"
-            style="@style/DialogLead" />
-
-        <TextView
-            android:id="@+id/textView_attachments_hint"
-            style="@style/DialogHint" />
-
-        <!-- a CheckBox per kind, added in code -->
-        <LinearLayout
-            android:id="@+id/layout_attachment_kinds"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-
-        <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
-            <!-- act on the ticked kinds; text and enabled state set in code -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_download_attachments"
-                style="@style/DialogAction"
-                android:text="Download" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_remove_attachments"
-                style="@style/DialogAction.Other"
-                android:text="Remove" />
-        </com.mickstarify.zooforzotero.common.DialogActions>
-
-        <TextView
-            style="@style/DialogSectionHeader"
-            android:id="@+id/textView_downloads_header"
-            android:text="Downloads"
-            android:visibility="gone" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
 
         <LinearLayout
-            android:id="@+id/layout_downloads"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:visibility="gone">
+            android:orientation="vertical">
+
+            <!-- what the buttons act on: "Applies to 10,306 items: all those listed" -->
+            <TextView
+                android:id="@+id/textView_attachments_scope"
+                style="@style/DialogLead" />
 
             <TextView
-                android:id="@+id/textView_downloads"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
+                android:id="@+id/textView_attachments_hint"
+                style="@style/DialogHint" />
 
-            <Button
-                android:id="@+id/button_stop_downloads"
-                style="?attr/borderlessButtonStyle"
-                android:layout_width="wrap_content"
+            <!-- a CheckBox per kind, added in code -->
+            <LinearLayout
+                android:id="@+id/layout_attachment_kinds"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/stop_downloads" />
+                android:orientation="vertical" />
+
+            <TextView
+                style="@style/DialogSectionHeader"
+                android:id="@+id/textView_downloads_header"
+                android:text="Downloads"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/layout_downloads"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/textView_downloads"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
+
+                <Button
+                    android:id="@+id/button_stop_downloads"
+                    style="?attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/stop_downloads" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
-</ScrollView>
+    </ScrollView>
+
+    <com.mickstarify.zooforzotero.common.DialogActions
+        android:id="@+id/dialog_actions"
+        style="@style/DialogActions">
+        <!-- act on the ticked kinds; text and enabled state set in code -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_download_attachments"
+            style="@style/DialogAction"
+            android:text="Download" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_remove_attachments"
+            style="@style/DialogAction.Other"
+            android:text="Remove" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
+</LinearLayout>

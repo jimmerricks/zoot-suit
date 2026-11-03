@@ -24,6 +24,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogActions
 
 /**
  * Filter for the library list: item and device conditions and tags, all ticked conditions
@@ -31,7 +32,7 @@ import com.mickstarify.zooforzotero.R
  * at the top with the matching tags below, above the keyboard. Ticks only change the dialog; the list is filtered when Apply is tapped, since
  * redrawing a large library on every tick was slow. Clear (shown while a filter is on)
  * removes the filter at once; Cancel (or Back) leaves the list as it was. Apply and Clear
- * are full-width buttons under the list, as in Manage attachments; Cancel is the bar's.
+ * are buttons under the list with Cancel, as in Manage attachments (DialogActions).
  *
  * @param tagCounts the open library's tags with how many items carry each
  * @param tagColors the library's coloured tags: listed first, as in Zotero's tag selector
@@ -199,8 +200,8 @@ class LibraryFilterDialog(
         val dialog = AlertDialog.Builder(context)
             .setTitle("Filter")
             .setView(view)
-            .setNegativeButton("Cancel", null)
             .create()
+        DialogActions.leave(view, dialog, "Cancel")
         apply.setOnClickListener {
             dialog.dismiss()
             if (filter != initial) onApply(filter)

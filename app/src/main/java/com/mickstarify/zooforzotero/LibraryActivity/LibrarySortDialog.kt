@@ -9,6 +9,7 @@ import android.widget.RadioGroup
 import androidx.appcompat.app.AlertDialog
 import com.mickstarify.zooforzotero.PreferenceManager
 import com.mickstarify.zooforzotero.R
+import com.mickstarify.zooforzotero.common.DialogActions
 import com.mickstarify.zooforzotero.common.DialogText
 
 /**
@@ -55,8 +56,8 @@ class LibrarySortDialog(
         val dialog = builder
             .setTitle("Sort")
             .setView(view)
-            .setNegativeButton("Cancel", null)
             .show()
+        DialogActions.leave(view, dialog, "Cancel")
         sort.isEnabled = false
         methods.setOnCheckedChangeListener { _, _ -> sort.isEnabled = changed() }
         order.setOnCheckedChangeListener { _, _ -> sort.isEnabled = changed() }

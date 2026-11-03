@@ -18,7 +18,9 @@
             android:textIsSelectable="true" />
     </ScrollView>
 
-    <com.mickstarify.zooforzotero.common.DialogActions style="@style/DialogActions">
+    <com.mickstarify.zooforzotero.common.DialogActions
+        android:id="@+id/dialog_actions"
+        style="@style/DialogActions">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_edit_note"
             style="@style/DialogAction"
