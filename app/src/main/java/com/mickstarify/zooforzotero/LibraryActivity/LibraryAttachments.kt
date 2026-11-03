@@ -391,7 +391,10 @@ class LibraryAttachments(
         val group = state.currentGroup.id
         // the md5 if the file is intact, else "" (the copy is then deleted)
         Single.fromCallable {
-            settleDownload(item, group, expected, attachmentStorageManager, zoteroDatabase) ?: ""
+            val md5 = settleDownload(item, group, expected, attachmentStorageManager, zoteroDatabase)
+            // a bulk download stopped while on this file would delete it as partial
+            if (md5 != null) AttachmentDownloads.queue(context).settled(AttachmentDownloadQueue.Entry(group, item.itemKey))
+            md5 ?: ""
         }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())

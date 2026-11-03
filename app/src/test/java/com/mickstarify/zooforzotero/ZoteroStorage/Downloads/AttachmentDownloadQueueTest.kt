@@ -100,4 +100,16 @@ class AttachmentDownloadQueueTest {
         q.next(); q.finish(b, Outcome.FAILED, "x")
         assertEquals(1, q.takeReport()?.failed)
     }
+
+    @Test
+    fun `a file settled elsewhere is no longer in progress, another one still is`() {
+        val q = queue()
+        q.add(listOf(a, b))
+        assertEquals(a, q.next())
+        q.settled(b)
+        assertEquals(a, queue().state().inProgress)
+        q.settled(a)
+        assertNull(queue().state().inProgress)
+        assertEquals(listOf(a, b), queue().state().pending) // still to do: then skipped as there
+    }
 }

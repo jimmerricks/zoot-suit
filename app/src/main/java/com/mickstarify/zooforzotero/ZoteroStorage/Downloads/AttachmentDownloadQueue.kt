@@ -75,6 +75,16 @@ class AttachmentDownloadQueue(private val file: File) {
         if (state.inProgress == entry) write(state.copy(inProgress = null))
     }
 
+    /**
+     * [entry]'s file was put in place whole by another download (one from the attachment
+     * menu): if a stopped worker left it in progress, its copy is no longer the partial one
+     * the next worker would delete.
+     */
+    fun settled(entry: Entry) = synchronized(LOCK) {
+        val state = read()
+        if (state.inProgress == entry) write(state.copy(inProgress = null))
+    }
+
     /** The finished round's tally, once: null if it was reported already or isn't finished. */
     fun takeReport(): State? = synchronized(LOCK) {
         val state = read()
