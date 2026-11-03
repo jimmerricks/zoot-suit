@@ -7,8 +7,8 @@ import java.io.File
 /**
  * Moves App storage's attachment folders from [from] (before 0.5.0: the app's cache in
  * shared storage) to [to] (private files), one KEY folder at a time, so it can stop at any
- * point and go on at the next start. Until a folder is moved, AttachmentStorageManager
- * reads it where it is.
+ * point and go on at the next start; other folders there are left alone. Until a folder
+ * is moved, AttachmentStorageManager reads it where it is.
  *
  * Within one filesystem a folder is renamed; otherwise (shared storage is a separate
  * mount, even on the same flash) it is copied into "KEY.moving", which becomes KEY only
@@ -28,7 +28,9 @@ class AppStorageMove(
 ) {
     /** True when nothing is left in [from]. Blocking: not on the main thread. */
     fun run(): Boolean {
-        val folders = from?.listFiles()?.filter { it.isDirectory } ?: return true
+        // only attachment folders (KEY, an item key): anything else a library put in the
+        // cache stays where it is
+        val folders = from?.listFiles()?.filter { it.isDirectory && KEY_FOLDER.matches(it.name) } ?: return true
         if (folders.isEmpty()) return true
         to.mkdirs()
         // half copies of a move that was stopped
@@ -91,5 +93,6 @@ class AppStorageMove(
     private companion object {
         const val TAG = "AppStorageMove"
         const val MOVING = ".moving"
+        val KEY_FOLDER = Regex("[0-9A-Z]{8}")
     }
 }

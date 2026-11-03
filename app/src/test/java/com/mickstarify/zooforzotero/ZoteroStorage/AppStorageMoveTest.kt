@@ -88,4 +88,16 @@ class AppStorageMoveTest {
         assertTrue(AppStorageMove(old, new).run())
         assertFalse(new.exists())
     }
+
+    @Test
+    fun `only attachment folders move`() {
+        file(old, "AAAA1111", "Paper.pdf", "pdf")
+        file(old, "image_cache", "x.png", "png")
+
+        assertTrue(copyingMove().run())
+
+        assertTrue(File(new, "AAAA1111/Paper.pdf").exists())
+        assertTrue(File(old, "image_cache/x.png").exists())
+        assertFalse(File(new, "image_cache").exists())
+    }
 }
