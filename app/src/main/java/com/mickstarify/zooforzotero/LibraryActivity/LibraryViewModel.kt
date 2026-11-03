@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.mickstarify.zooforzotero.common.DialogText
 import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -235,18 +236,17 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     private fun reportDownloads() {
         val state = AttachmentDownloads.queue(context).takeReport() ?: return
-        fun files(n: Int) = if (n == 1) "1 file" else "$n files"
         if (state.stopped) {
-            makeToastAlert("Downloads stopped. ${files(state.downloaded)} downloaded.")
+            makeToastAlert("Downloads stopped. ${DialogText.files(state.downloaded)} downloaded.")
         } else if (state.failed == 0) {
             makeToastAlert(
-                if (state.downloaded == 0) "No files were downloaded." else "Downloaded ${files(state.downloaded)}."
+                if (state.downloaded == 0) "No files were downloaded." else "Downloaded ${DialogText.files(state.downloaded)}."
             )
         } else {
             createErrorAlert(
                 "Some files weren't downloaded",
-                (if (state.downloaded == 0) "${files(state.failed)} couldn't be downloaded."
-                else "Downloaded ${files(state.downloaded)}; ${files(state.failed)} couldn't be.") +
+                (if (state.downloaded == 0) "${DialogText.files(state.failed)} couldn't be downloaded."
+                else "Downloaded ${DialogText.files(state.downloaded)}; ${DialogText.files(state.failed)} couldn't be.") +
                         state.firstError?.let { "\n\n$it" }.orEmpty()
             ) {}
         }

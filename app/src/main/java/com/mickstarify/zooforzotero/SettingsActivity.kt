@@ -1,6 +1,7 @@
 package com.mickstarify.zooforzotero
 
 import android.content.Intent
+import com.mickstarify.zooforzotero.common.DialogText
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
@@ -30,7 +31,6 @@ import com.mickstarify.zooforzotero.ZoteroStorage.STORAGE_ACCESS_REQUEST
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
-private fun fileCount(n: Int) = if (n == 1) "1 file" else "$n files"
 
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
@@ -162,7 +162,7 @@ class SettingsActivity : AppCompatActivity() {
                         pref.value = newValue
                         return@runOnUiThread
                     }
-                    val files = fileCount(count)
+                    val files = DialogText.files(count)
                     val message = if (folder == null) {
                         "The $files in app storage aren't moved. The app won't see them any more; " +
                                 "they keep taking space until you switch back or sign out. To free " +
