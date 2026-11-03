@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sync dialog (SyncDialog), built like Manage attachments: the edits waiting under
+     their header, the running or last sync stage by stage under its own, then Sync now as
+     a full-width button. The button stays put; the text scrolls above it (a bulk edit
+     lists up to SyncDialog.MAX_EDIT_LINES items). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DialogBody"
+    android:paddingTop="0dp">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textView_sync_edits_header"
+                style="@style/DialogSectionHeader"
+                android:paddingTop="4dp"
+                android:text="Waiting to sync"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/textView_sync_edits"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                android:textIsSelectable="true"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/textView_sync_header"
+                style="@style/DialogSectionHeader"
+                android:text="Last sync" />
+
+            <TextView
+                android:id="@+id/textView_sync_stages"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- hidden while a sync runs -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_sync_now"
+        style="@style/DialogAction"
+        android:text="Sync now" />
+</LinearLayout>

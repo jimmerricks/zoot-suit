@@ -6,23 +6,22 @@ import org.junit.Test
 
 class SyncDialogTest {
     @Test
-    fun `without edits it is the sync alone`() {
-        assertEquals("Last finished sync: today", SyncDialog.message(null, "Last finished sync: today"))
-        assertEquals("Items: up to date", SyncDialog.message(emptyList(), "Items: up to date"))
+    fun `no edits, no lines`() {
+        assertEquals("", SyncDialog.editLines(emptyList()))
     }
 
     @Test
-    fun `edits come first, then the sync`() {
+    fun `a line per item`() {
         assertEquals(
-            "Waiting to sync:\n• Book: tag “a” added\n• Paper: new note\n\nNot synced before",
-            SyncDialog.message(listOf("Book: tag “a” added", "Paper: new note"), "Not synced before"),
+            "• Book: tag “a” added\n• Paper: new note",
+            SyncDialog.editLines(listOf("Book: tag “a” added", "Paper: new note")),
         )
     }
 
     @Test
     fun `thousands of edits are cut short`() {
-        val text = SyncDialog.message((1..2500).map { "Item $it" }, "Not synced before")
+        val text = SyncDialog.editLines((1..2500).map { "Item $it" })
         assertEquals(SyncDialog.MAX_EDIT_LINES, text.lines().count { it.startsWith("• ") })
-        assertTrue(text.contains("…and 2,400 more items."))
+        assertTrue(text.endsWith("…and 2,400 more items."))
     }
 }
