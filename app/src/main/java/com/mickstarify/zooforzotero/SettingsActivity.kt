@@ -105,23 +105,31 @@ class SettingsActivity : AppCompatActivity() {
                     false // confirmFolderChange sets it
                 }
 
-            val httpTimeoutPreference: EditTextPreference? = findPreference("http_write_timeout")
+        }
 
-            httpTimeoutPreference?.setOnBindEditTextListener { editText ->
-                // Ensure the input allows only integers
-                editText.inputType = InputType.TYPE_CLASS_NUMBER
-            }
-
-            httpTimeoutPreference?.setOnPreferenceChangeListener { _, newValue ->
-                // Validate the input to ensure it's a non-negative integer
-                val value = newValue.toString()
-                val isValid = value.matches(Regex("\\d+")) // Match only non-negative integers
-                if (!isValid) {
-                    Toast.makeText(context, "Enter a whole number of milliseconds, 0 or more.", Toast.LENGTH_SHORT).show()
+        /**
+         * The app's own dialogs for a list or a typed value (SettingDialogs), built like the
+         * library's, instead of androidx.preference's.
+         */
+        override fun onDisplayPreferenceDialog(preference: Preference) {
+            when (preference) {
+                is ListPreference -> SettingDialogs.choose(
+                    requireContext(), preference.dialogTitle ?: preference.title ?: "",
+                    preference.entries.toList(), preference.findIndexOfValue(preference.value),
+                ) { index ->
+                    val value = preference.entryValues[index].toString()
+                    if (preference.callChangeListener(value)) preference.value = value
                 }
-                isValid
+                is EditTextPreference -> SettingDialogs.edit(
+                    requireContext(), preference.dialogTitle ?: preference.title ?: "",
+                    preference.summary, preference.text ?: "", InputType.TYPE_CLASS_NUMBER,
+                    // the only one is the write timeout, in milliseconds
+                    check = { if (it.matches(Regex("\\d+"))) null else "Enter a whole number of milliseconds, 0 or more." },
+                ) { value ->
+                    if (preference.callChangeListener(value)) preference.text = value
+                }
+                else -> super.onDisplayPreferenceDialog(preference)
             }
-
         }
 
         override fun onResume() {

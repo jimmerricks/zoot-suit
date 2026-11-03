@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A setting typed in (SettingDialogs.edit): what it does in grey, the field (a mistake is
+     shown under it), then Save and Cancel. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DialogBody">
+
+    <TextView
+        android:id="@+id/textView_setting_hint"
+        style="@style/DialogHint" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textInputLayout_setting"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionDone" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.mickstarify.zooforzotero.common.DialogActions
+        android:id="@+id/dialog_actions"
+        style="@style/DialogActions">
+        <!-- enabled once the text differs from the setting -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_setting_save"
+            style="@style/DialogAction"
+            android:text="Save" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
+</LinearLayout>

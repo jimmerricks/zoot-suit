@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A setting with a list of values (SettingDialogs.choose), built like Sort: the choices as
+     rows, then the button that applies the one chosen, and Cancel. The choices scroll
+     above the buttons. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DialogBody">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+        <!-- a RadioButton per value, added in code -->
+        <RadioGroup
+            android:id="@+id/radioGroup_setting_choices"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </ScrollView>
+
+    <com.mickstarify.zooforzotero.common.DialogActions
+        android:id="@+id/dialog_actions"
+        style="@style/DialogActions">
+        <!-- enabled once the choice differs from the setting -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_setting_apply"
+            style="@style/DialogAction"
+            android:text="Apply" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
+</LinearLayout>
