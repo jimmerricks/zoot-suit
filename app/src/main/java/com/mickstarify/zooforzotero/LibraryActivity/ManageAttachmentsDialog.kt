@@ -23,7 +23,8 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
  * items the list shows: their stored files by kind
  * (PDFs, HTML snapshots, others), each with how many are on this device, ticked to be
  * acted on; Download fetches the ticked kinds' missing files in the background, Remove
- * takes their copies off this device (after asking). While bulk downloads are at work it
+ * takes their copies off this device (after asking). Both are full-width buttons under
+ * the boxes, naming how many files they act on; Close is the only one in the button bar. While bulk downloads are at work it
  * says how far they are, with a button to stop them. Counts and lists only: as cheap for
  * the whole library as for one item.
  *
@@ -48,6 +49,8 @@ class ManageAttachmentsDialog(
     private var downloadsHeader: View? = null
     private var downloadsRow: View? = null
     private var downloadsText: TextView? = null
+    private var downloadButton: Button? = null
+    private var removeButton: Button? = null
 
     private fun chosen(): AttachmentCounts =
         counts.filterKeys { it in ticked }.values.fold(AttachmentCounts(emptyList(), emptyList())) { a, b -> a + b }
@@ -64,6 +67,17 @@ class ManageAttachmentsDialog(
         downloadsRow = view.findViewById(R.id.layout_downloads)
         downloadsText = view.findViewById(R.id.textView_downloads)
         view.findViewById<Button>(R.id.button_stop_downloads).setOnClickListener { onStop() }
+        // like the button bar's buttons, each closes the dialog as it acts
+        downloadButton = view.findViewById<Button>(R.id.button_download_attachments).apply {
+            setOnClickListener { dismiss(); chosen().missing.takeIf { it.isNotEmpty() }?.let(onDownload) }
+        }
+        removeButton = view.findViewById<Button>(R.id.button_remove_attachments).apply {
+            setOnClickListener { dismiss(); chosen().onDevice.takeIf { it.isNotEmpty() }?.let(onRemove) }
+        }
+        if (counts.isEmpty()) {
+            downloadButton?.visibility = View.GONE
+            removeButton?.visibility = View.GONE
+        }
 
         val all = counts.values.fold(AttachmentCounts(emptyList(), emptyList())) { a, b -> a + b }
         val items = if (count == 1) "1 item" else "%,d items".format(count)
@@ -103,8 +117,6 @@ class ManageAttachmentsDialog(
         dialog = builder
             .setTitle(context.getString(R.string.manage_attachments))
             .setView(view)
-            .setPositiveButton("Download") { _, _ -> chosen().missing.takeIf { it.isNotEmpty() }?.let(onDownload) }
-            .setNeutralButton("Remove") { _, _ -> chosen().onDevice.takeIf { it.isNotEmpty() }?.let(onRemove) }
             .setNegativeButton("Close", null)
             .setOnDismissListener { dialog = null }
             .show()
@@ -125,17 +137,18 @@ class ManageAttachmentsDialog(
 
     // the buttons name how many files they act on, and do nothing without any
     private fun showButtons() {
-        val d = dialog ?: return
         val c = chosen()
-        d.getButton(AlertDialog.BUTTON_POSITIVE).apply {
-            text = if (c.missing.isEmpty()) "Download" else "Download %,d".format(c.missing.size)
+        downloadButton?.apply {
+            text = "Download ${files(c.missing.size)}"
             isEnabled = c.missing.isNotEmpty()
         }
-        d.getButton(AlertDialog.BUTTON_NEUTRAL).apply {
-            text = if (c.onDevice.isEmpty()) "Remove" else "Remove %,d".format(c.onDevice.size)
+        removeButton?.apply {
+            text = "Remove ${files(c.onDevice.size)}"
             isEnabled = c.onDevice.isNotEmpty()
         }
     }
+
+    private fun files(n: Int) = if (n == 1) "1 file" else "%,d files".format(n)
 
     private fun describe(c: AttachmentCounts): String = when {
         c.missing.isEmpty() -> if (c.total == 1) "On this device" else "All %,d on this device".format(c.total)

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- "Manage attachments" (ManageAttachmentsDialog): what the selection's files are, a box
      per kind (PDFs, HTML snapshots, others) with how many are on this device, and the bulk
-     downloads at work with a button to stop them. Download and Remove are the dialog's
-     buttons; they act on the ticked kinds. -->
+     downloads at work with a button to stop them. Download and Remove sit under the boxes,
+     full width with their counts in words: in the button bar, three buttons with counts
+     stacked on a phone. Close stays in the bar. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
@@ -38,6 +39,22 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical" />
+
+        <!-- act on the ticked kinds; text and enabled state set in code -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_download_attachments"
+            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Download" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_remove_attachments"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Remove" />
 
         <TextView
             style="@style/DialogSectionHeader"

@@ -11,6 +11,9 @@ Changed:
   before opening" says it applies to files the app has no record of downloading. The
   keep-search and keep-filter switches describe what On does, as the others do. Signing
   out with edits waiting says to tap the sync icon.
+- Manage attachments: Download and Remove are full-width buttons under the kinds, with
+  their counts in words ("Download 6,183 files"); only Close is left at the bottom. With
+  the counts on three buttons in a row, a phone stacked them.
 
 ## 0.5.0
 
