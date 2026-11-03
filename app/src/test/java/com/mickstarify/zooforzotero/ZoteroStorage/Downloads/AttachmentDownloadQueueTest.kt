@@ -112,4 +112,52 @@ class AttachmentDownloadQueueTest {
         assertNull(queue().state().inProgress)
         assertEquals(listOf(a, b), queue().state().pending) // still to do: then skipped as there
     }
+
+    @Test
+    fun `working through the list leaves the list's file as it was`() {
+        val q = queue()
+        q.add(listOf(a, b, c))
+        val written = file.readText()
+        q.next(); q.finish(a, Outcome.DOWNLOADED)
+        q.next(); q.release(b)
+        assertEquals(written, file.readText())
+        assertEquals(listOf(b, c), queue().state().pending)
+        assertEquals(1, queue().state().downloaded)
+    }
+
+    @Test
+    fun `a queue written by 0_5_0 carries on`() {
+        file.writeText("""{"pending":[{"group":0,"key":"AAAA2222"},{"group":0,"key":"BBBB2222"}],""" +
+                """"downloaded":4,"inProgress":{"group":0,"key":"AAAA2222"}}""")
+        val q = queue()
+        assertEquals(a, q.state().inProgress)
+        assertEquals(a, q.next())
+        q.finish(a, Outcome.SKIPPED)
+        val state = queue().state()
+        assertEquals(listOf(b), state.pending)
+        assertEquals(listOf(4, 1), listOf(state.downloaded, state.skipped))
+    }
+
+    @Test
+    fun `progress left from another list is ignored`() {
+        val q = queue()
+        q.add(listOf(a, b))
+        q.next(); q.finish(a, Outcome.DOWNLOADED)
+        val stale = File(file.path + ".progress").readText()
+        q.clear()
+        q.add(listOf(c))
+        // as if the process died between writing the new list and its progress
+        File(file.path + ".progress").writeText(stale)
+        assertEquals(listOf(c), queue().state().pending)
+        assertEquals(c, queue().next())
+    }
+
+    @Test
+    fun `deleting forgets the queue and its tally`() {
+        val q = queue()
+        q.add(listOf(a)); q.next(); q.finish(a, Outcome.DOWNLOADED)
+        q.delete()
+        assertEquals(0, queue().state().total)
+        assertEquals(false, File(file.path + ".progress").exists())
+    }
 }

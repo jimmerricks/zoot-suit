@@ -56,9 +56,7 @@ object AttachmentDownloads {
     fun forget(context: Context) {
         val cancelled = WorkManager.getInstance(context).cancelUniqueWork(WORK)
         runBlocking { withTimeoutOrNull(5_000) { runCatching { cancelled.await() } } }
-        val file = File(context.applicationContext.filesDir, QUEUE_FILE)
-        file.delete()
-        File(file.path + ".tmp").delete()
+        queue(context).delete()
     }
 
     /** The workers of bulk downloads, for their state and progress. */
