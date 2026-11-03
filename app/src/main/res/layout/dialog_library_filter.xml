@@ -1,11 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The filter (LibraryFilterDialog): one list, its first row the conditions and the tag
      search (dialog_library_filter_header), then a row per tag, then a blank that lets the
-     search scroll to the top when few tags match. -->
-<androidx.recyclerview.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/recyclerView_filter"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:paddingStart="20dp"
-    android:paddingEnd="20dp"
-    android:scrollbars="vertical" />
+     search scroll to the top when few tags match. Under it, as in Manage attachments,
+     full-width buttons: Apply, and Clear while a filter is on. They stay put; the list's
+     weight lets it shrink instead (keyboard up, phone). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DialogBody"
+    android:paddingTop="0dp">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView_filter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:scrollbars="vertical" />
+
+    <!-- text and enabled state set in code -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_apply_filter"
+        style="@style/DialogAction"
+        android:text="Apply filter" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_clear_filter"
+        style="@style/DialogAction.Other"
+        android:text="Clear filter"
+        android:visibility="gone" />
+</LinearLayout>

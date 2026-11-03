@@ -15,6 +15,7 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.CheckBox
 import android.widget.CheckedTextView
 import android.widget.EditText
@@ -28,8 +29,9 @@ import com.mickstarify.zooforzotero.R
  * Filter for the library list: item and device conditions and tags, all ticked conditions
  * must hold. One list scrolls them all; while the tag search is in use, it keeps its section
  * at the top with the matching tags below, above the keyboard. Ticks only change the dialog; the list is filtered when Apply is tapped, since
- * redrawing a large library on every tick was slow. Clear removes the filter at once;
- * Cancel (or Back) leaves the list as it was.
+ * redrawing a large library on every tick was slow. Clear (shown while a filter is on)
+ * removes the filter at once; Cancel (or Back) leaves the list as it was. Apply and Clear
+ * are full-width buttons under the list, as in Manage attachments; Cancel is the bar's.
  *
  * @param tagCounts the open library's tags with how many items carry each
  * @param tagColors the library's coloured tags: listed first, as in Zotero's tag selector
@@ -48,7 +50,10 @@ class LibraryFilterDialog(
 
     fun show() {
         val inflater = LayoutInflater.from(context)
-        val list = inflater.inflate(R.layout.dialog_library_filter, null) as RecyclerView
+        val view = inflater.inflate(R.layout.dialog_library_filter, null)
+        val list = view.findViewById<RecyclerView>(R.id.recyclerView_filter)
+        val apply = view.findViewById<Button>(R.id.button_apply_filter)
+        val clear = view.findViewById<Button>(R.id.button_clear_filter)
         // before the header is inflated: its layout params come from the layout manager
         val layout = LinearLayoutManager(context)
         list.layoutManager = layout
@@ -136,6 +141,7 @@ class LibraryFilterDialog(
             if (after < before) adapter.notifyItemRangeRemoved(after + 1, before - after)
             adapter.notifyItemChanged(after + 1)
             if (searching()) list.post { searchToTop() }
+            apply.isEnabled = filter != initial
         }
 
         update = { newFilter ->
@@ -192,11 +198,18 @@ class LibraryFilterDialog(
 
         val dialog = AlertDialog.Builder(context)
             .setTitle("Filter")
-            .setView(list)
-            .setPositiveButton("Apply") { _, _ -> if (filter != initial) onApply(filter) }
+            .setView(view)
             .setNegativeButton("Cancel", null)
-            .setNeutralButton("Clear") { _, _ -> if (initial.isActive) onApply(LibraryFilter()) }
             .create()
+        apply.setOnClickListener {
+            dialog.dismiss()
+            if (filter != initial) onApply(filter)
+        }
+        clear.visibility = if (initial.isActive) View.VISIBLE else View.GONE
+        clear.setOnClickListener {
+            dialog.dismiss()
+            onApply(LibraryFilter())
+        }
         // no keyboard until the tag search is tapped; with it, the dialog shrinks above it
         dialog.window?.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN or
