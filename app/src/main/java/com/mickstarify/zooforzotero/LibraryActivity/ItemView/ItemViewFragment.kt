@@ -218,7 +218,6 @@ class ItemViewFragment : DialogFragment(),
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Add tag")
             .setView(view)
-            .setPositiveButton("Add", null) // set below: a blank tag keeps the dialog open
             .setNegativeButton("Cancel", null)
             .create()
         listener?.let { l ->
@@ -227,6 +226,10 @@ class ItemViewFragment : DialogFragment(),
                 dialog.dismiss()
             }
         }
+        val chips = view.findViewById<View>(R.id.chipGroup_coloured_tags).visibility == View.VISIBLE
+        view.findViewById<TextView>(R.id.textView_add_tag_hint).text =
+            if (chips) "Tap a coloured tag to add it, or type a tag: the library's are suggested as you type."
+            else "Type a tag: the library's are suggested as you type."
         val add = {
             val tag = ItemEdits.cleanTag(field.text.toString())
             if (tag == null) {
@@ -239,9 +242,8 @@ class ItemViewFragment : DialogFragment(),
         field.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) { add(); true } else false
         }
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { add() }
-        }
+        // a blank tag keeps the dialog open
+        view.findViewById<Button>(R.id.button_add_tag).setOnClickListener { add() }
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
         dialog.show()
         field.requestFocus()
