@@ -1,6 +1,7 @@
 package com.mickstarify.zooforzotero
 
 import android.content.Intent
+import com.mickstarify.zooforzotero.common.ConfirmDialog
 import com.mickstarify.zooforzotero.common.DialogText
 import android.content.SharedPreferences
 import android.graphics.Color
@@ -172,12 +173,10 @@ class SettingsActivity : AppCompatActivity() {
                         "The $files in \u201c$folder\u201d aren't moved or deleted. The app won't " +
                                 "see them any more; switch back to use them again."
                     }
-                    AlertDialog.Builder(settings)
-                        .setTitle("Change the attachment folder?")
-                        .setMessage(message)
-                        .setPositiveButton("Change") { _, _ -> pref.value = newValue }
-                        .setNegativeButton("Cancel", null)
-                        .show()
+                    ConfirmDialog.show(
+                        settings, "Change the attachment folder?", message,
+                        main = "Change folder" to { pref.value = newValue },
+                    )
                 }
             }.start()
         }
@@ -260,24 +259,17 @@ class SettingsActivity : AppCompatActivity() {
     private fun showSignOutDialog(unsynced: SignOut.UnsyncedEdits?) {
         val forgets = "This device forgets your Zotero login, your libraries and the app's " +
                 "settings, WebDAV login included. Files in an attachment folder you chose stay there."
-        val builder = AlertDialog.Builder(this).setTitle("Sign out?")
-        when {
-            unsynced == null -> builder.setMessage(
-                "$forgets\n\nEdits waiting to sync are lost: sync first."
-            )
-            unsynced.isEmpty -> builder.setMessage(forgets)
-            else -> builder.setMessage(
-                "Not synced yet, and lost if you sign out now:\n" +
-                        unsynced.describe().joinToString("\n") { "• $it" } +
-                        "\n\nSync first: in the library, tap the sync icon at the top.\n\n$forgets"
-            )
+        val message = when {
+            unsynced == null -> "$forgets\n\nEdits waiting to sync are lost: sync first."
+            unsynced.isEmpty -> forgets
+            else -> "Not synced yet, and lost if you sign out now:\n" +
+                    unsynced.describe().joinToString("\n") { "• $it" } +
+                    "\n\nSync first: in the library, tap the sync icon at the top.\n\n$forgets"
         }
-        builder
-            .setPositiveButton(if (unsynced?.isEmpty == true) "Sign out" else "Sign out anyway") { _, _ ->
-                signOut()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        ConfirmDialog.show(
+            this, "Sign out?", message,
+            main = (if (unsynced?.isEmpty == true) "Sign out" else "Sign out anyway") to { signOut() },
+        )
     }
 
     /**
