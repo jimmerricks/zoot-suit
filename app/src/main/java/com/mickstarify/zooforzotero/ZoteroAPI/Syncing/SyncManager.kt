@@ -167,11 +167,6 @@ class SyncManager (
     }
 
     /**
-     * Fetches [db]'s changed items only. While a sync runs, a complete one is queued behind
-     * it instead: a second item download alongside the running one wrote the same progress
-     * and ended the sync twice.
-     */
-    /**
      * Asks Zotero how many items each pass of a first sync of [db] will fetch, so the
      * toolbar's percentage weighs them by size from the start (SyncStatus.percent). A
      * count a pass has reported itself is kept; without an answer, the passes go by halves.
@@ -189,7 +184,12 @@ class SyncManager (
             }, { Log.d("zotero", "counting the first sync's items failed: $it") })
     }
 
-    fun startItemsSync(db: ZoteroDB){
+    /**
+     * Fetches [db]'s changed items only. While a sync runs, a complete one is queued behind
+     * it instead: a second item download alongside the running one wrote the same progress
+     * and ended the sync twice.
+     */
+    fun startItemsSync(db: ZoteroDB) {
         if (isSyncing()) {
             startCompleteSync(db)
             return

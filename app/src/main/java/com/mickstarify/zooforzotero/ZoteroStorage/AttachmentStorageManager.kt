@@ -34,12 +34,6 @@ private const val EXTERNAL_STORAGE_PROVIDER = "com.android.externalstorage.docum
 
 /* This classes handles the data storage for all attachments. */
 
-/**
- * [name] (an attachment's filename, as Zotero has it) as a name inside one folder. Zotero
- * refuses stored-file names with a directory path, so this changes nothing in practice;
- * but the name comes from the server and goes into a path, and "../" in it would reach
- * outside the attachment folder (and createTempFile deletes what's there).
- */
 /** Lower-case hex md5 of [inputStream], which it closes. Reads it all: not on the main thread. */
 fun md5Hex(inputStream: InputStream): String {
     val digest = MessageDigest.getInstance("MD5")
@@ -65,6 +59,12 @@ fun linkedFileSegments(path: String?): List<String> =
     (path ?: "").removePrefix("attachments:").replace('\\', '/').split('/')
         .filter { it.isNotEmpty() && it != "." && it != ".." }
 
+/**
+ * [name] (an attachment's filename, as Zotero has it) as a name inside one folder. Zotero
+ * refuses stored-file names with a directory path, so this changes nothing in practice;
+ * but the name comes from the server and goes into a path, and "../" in it would reach
+ * outside the attachment folder (and createTempFile deletes what's there).
+ */
 fun safeFileName(name: String?): String {
     val base = name?.substringAfterLast('/')?.replace("\u0000", "")
     return if (base.isNullOrBlank() || base == "." || base == "..") "unknown.pdf" else base
