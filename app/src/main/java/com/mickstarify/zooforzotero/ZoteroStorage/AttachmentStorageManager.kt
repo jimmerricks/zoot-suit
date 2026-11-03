@@ -79,8 +79,7 @@ class AttachmentStorageManager @Inject constructor(
 
     enum class StorageMode {
         CUSTOM,
-        EXTERNAL_CACHE,
-        NONE_SET
+        EXTERNAL_CACHE
     }
 
     val storageMode: StorageMode
@@ -321,7 +320,6 @@ class AttachmentStorageManager @Inject constructor(
                 DocumentFile.fromTreeUri(context, getCustomStorageTreeURI())?.listFiles()
                     ?.filter { it.isDirectory }?.mapNotNull { it.name?.uppercase() }?.toSet()
                     ?: emptySet()
-            else -> emptySet()
         }
     }
 
@@ -356,8 +354,6 @@ class AttachmentStorageManager @Inject constructor(
                 val docFile = DocumentFile.fromSingleUri(context, getAttachmentUri(attachment))
                 return docFile?.lastModified() ?: throw FileNotFoundException()
             }
-
-            else -> throw Exception("Invalid storage mode")
         }
 
     }
@@ -450,8 +446,6 @@ class AttachmentStorageManager @Inject constructor(
                     .onFailure { Log.d("zotero", "couldn't remove the empty folder of ${attachment.itemKey}: $it") }
                 deleted
             }
-
-            else -> throw Exception("not implemented")
         }
     }
 
