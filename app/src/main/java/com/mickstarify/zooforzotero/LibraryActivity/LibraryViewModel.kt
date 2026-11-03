@@ -451,9 +451,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     /** The open library's collections, parents before children, with their depth. */
     fun collectionsForPicker(): List<Pair<Collection, Int>> = CollectionTree(library.collections).flattened()
 
-    fun editSelectedCollection(collectionKey: String, name: String, add: Boolean) =
-        parts.edits.editCollection(selectedKeys(), collectionKey, name, add)
-
     /** Puts the selected items in the collections [add] and takes them out of [remove] (keys). */
     fun editSelectedCollections(add: List<String>, remove: List<String>) =
         parts.edits.editCollections(selectedKeys(), add, remove, library.collections.associate { it.key to it.name })

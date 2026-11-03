@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Change collections" (BulkCollectionsDialog), built like "Add and remove tags": what it
+     applies to, how it works, a field that finds a collection, the collections as rows with
+     a three-state box (the tree, or the matches with their parents named), then Apply,
+     naming the changes, and Cancel. The field and the buttons stay put; the rows scroll
+     between them (the list's weight lets it shrink, as with the keyboard up). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DialogBody">
+
+    <TextView
+        android:id="@+id/textView_bulk_collections_scope"
+        style="@style/DialogLead" />
+
+    <TextView
+        android:id="@+id/textView_bulk_collections_hint"
+        style="@style/DialogHint" />
+
+    <EditText
+        android:id="@+id/editText_bulk_collections"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Find a collection"
+        android:imeOptions="actionDone"
+        android:inputType="text" />
+
+    <TextView
+        android:id="@+id/textView_bulk_collections_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:text="No matching collections"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textColor="?android:attr/textColorSecondary"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView_bulk_collections"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:scrollbars="vertical" />
+
+    <com.mickstarify.zooforzotero.common.DialogActions
+        android:id="@+id/dialog_actions"
+        style="@style/DialogActions">
+        <!-- text and enabled state set in code -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_apply_collections"
+            style="@style/DialogAction"
+            android:text="Apply" />
+    </com.mickstarify.zooforzotero.common.DialogActions>
+</LinearLayout>

@@ -2,7 +2,6 @@ package com.mickstarify.zooforzotero.LibraryActivity
 
 import android.content.Context
 import androidx.appcompat.app.AlertDialog
-import com.mickstarify.zooforzotero.ZoteroStorage.Database.Collection
 import com.mickstarify.zooforzotero.ZoteroStorage.Database.Item
 import com.mickstarify.zooforzotero.common.ConfirmDialog
 import com.mickstarify.zooforzotero.common.DialogText
@@ -10,31 +9,12 @@ import com.mickstarify.zooforzotero.common.DialogText
 /** The dialogs of the list's bulk actions, which act on the selected items. */
 class SelectionDialogs(private val context: Context) {
 
-    private fun items(count: Int) = if (count == 1) "1 item" else "$count items"
-
-    /**
-     * Lets the user choose one of the library's [collections] (a tree, each with its
-     * depth), then add the [count] selected items to it (AddToCollectionDialog).
-     */
-    fun addToCollection(count: Int, collections: List<Pair<Collection, Int>>, onChoose: (Collection) -> Unit) {
-        if (collections.isEmpty()) {
-            AlertDialog.Builder(context)
-                .setTitle("No collections")
-                .setMessage("This library has no collections. Make them in Zotero.")
-                .setPositiveButton("OK", null)
-                .show()
-            return
-        }
-        AddToCollectionDialog(context, count, collections, onChoose).show()
-    }
-
-    /** Asks before taking the [count] selected items out of the collection [name]. */
-    fun removeFromCollection(count: Int, name: String, onRemove: () -> Unit) {
+    /** Says the library has no collections to put items in. */
+    fun noCollections() {
         AlertDialog.Builder(context)
-            .setTitle("Remove ${items(count)} from “$name”?")
-            .setMessage("They stay in the library and in any other collections.")
-            .setPositiveButton("Remove") { _, _ -> onRemove() }
-            .setNegativeButton("Cancel", null)
+            .setTitle("No collections")
+            .setMessage("This library has no collections. Make them in Zotero.")
+            .setPositiveButton("OK", null)
             .show()
     }
 

@@ -341,16 +341,19 @@ class LibraryActivity : AppCompatActivity(),
                 }.show()
                 viewModel.loadTags { all -> libraryTags(all.map { it.first }) }
             }
-            R.id.selection_add_to_collection -> {
-                val count = libraryListViewModel.getSelection().value!!.size
-                SelectionDialogs(this).addToCollection(count, viewModel.collectionsForPicker()) {
-                    viewModel.editSelectedCollection(it.key, it.name, add = true)
-                }
-            }
-            R.id.selection_remove_from_collection -> viewModel.currentCollection()?.let { (key, name) ->
-                val count = libraryListViewModel.getSelection().value!!.size
-                SelectionDialogs(this).removeFromCollection(count, name) {
-                    viewModel.editSelectedCollection(key, name, add = false)
+            R.id.selection_collections -> {
+                val collections = viewModel.collectionsForPicker()
+                if (collections.isEmpty()) {
+                    SelectionDialogs(this).noCollections()
+                } else viewModel.loadSelectedCollections { topLevel, counts ->
+                    if (isFinishing || isDestroyed) return@loadSelectedCollections
+                    if (topLevel == 0) {
+                        makeToastAlert("Attachments and notes can't be in collections: they go with their parent.")
+                        return@loadSelectedCollections
+                    }
+                    BulkCollectionsDialog(this, topLevel, collections, counts, viewModel.currentCollection()?.first) { add, remove ->
+                        viewModel.editSelectedCollections(add, remove)
+                    }.show()
                 }
             }
             R.id.selection_attachments -> viewModel.countSelectedAttachments { counts ->
@@ -592,8 +595,6 @@ class LibraryActivity : AppCompatActivity(),
         // the actions need something selected; choosing (select all, invert) stays
         menu.setGroupVisible(R.id.selection_edits, viewModel.canEditItems() && !selectedNone)
         menu.setGroupVisible(R.id.selection_files, !selectedNone)
-        menu.findItem(R.id.selection_remove_from_collection)?.isVisible =
-            viewModel.canEditItems() && !selectedNone && viewModel.currentCollection() != null
         // the sync icon, at any width, its words the tooltip: turning while a sync runs (this
         // item), following the list while it's pulled down to sync (this item, still), still
         // with a dot while edits wait (pending_edits, below), else not there

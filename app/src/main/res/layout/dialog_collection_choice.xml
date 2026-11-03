@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A collection in "Add to collection" (AddToCollectionDialog): a radio mark at the start
-     (set in code), the name, indented by its depth in the tree (in code). -->
+<!-- A collection in "Change collections" (BulkCollectionsDialog): a three-state box at the
+     start, the name, indented by its depth in the tree, and what applying does to it (all
+     set in code). -->
 <CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/text1"
     android:layout_width="match_parent"

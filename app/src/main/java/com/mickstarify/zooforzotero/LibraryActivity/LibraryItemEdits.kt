@@ -89,28 +89,6 @@ class LibraryItemEdits(
     }
 
     /**
-     * Puts ([add]) the items [keys] in collection [collectionKey], or takes them out of it,
-     * on this device at once, like a tag. Only top-level items can be in collections, so
-     * attachments and notes among them are left out.
-     */
-    fun editCollection(keys: List<String>, collectionKey: String, collectionName: String, add: Boolean) {
-        if (state.isUsingGroup()) {
-            ui.makeToastAlert("Collections can be changed only in My Library, not in groups.")
-            return
-        }
-        val kind = if (add) ItemEditKind.ADD_TO_COLLECTION else ItemEditKind.REMOVE_FROM_COLLECTION
-        var topLevel = keys.size
-        val keysToEdit = {
-            val parents = zoteroDatabase.parentsOf(keys)
-            keys.filter { parents[it] == null && it in parents }.also { topLevel = it.size }
-        }
-        val edit = ItemEdit(kind, collectionKey)
-        recordInBulk(listOf(edit), if (add) "Adding to the collection…" else "Removing from the collection…", keysToEdit) { changed ->
-            bulkCollectionMessage(collectionName, add, changed.getValue(edit).size, topLevel, keys.size)
-        }
-    }
-
-    /**
      * Puts the items [keys] (the list's selection) in each of the collections [add] and
      * takes them out of each of [remove] (collection keys; [names] by key, for the message),
      * on this device at once and in one go, like tags. Only top-level items can be in
@@ -181,18 +159,6 @@ class LibraryItemEdits(
     }
 
     private fun items(n: Int) = if (n == 1) "1 item" else "%,d items".format(n)
-
-    private fun bulkCollectionMessage(name: String, add: Boolean, changed: Int, topLevel: Int, selected: Int): String {
-        val skipped = (selected - topLevel).takeIf { it > 0 }
-            ?.let { " ${items(it)} left out: attachments and notes go with their parent." } ?: ""
-        return when {
-            changed == 0 && add -> "All of them are in “$name” already.$skipped"
-            changed == 0 -> "None of them is in “$name” itself.$skipped"
-            add -> "Added ${items(changed)} to “$name”.$skipped"
-            else -> "Removed ${items(changed)} from “$name”." +
-                    if (changed < topLevel) " The others are only in its subcollections." else skipped
-        }
-    }
 
     /**
      * What a collections change did, from the keys each edit [changed] among the [topLevel]
