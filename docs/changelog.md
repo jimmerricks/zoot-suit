@@ -23,6 +23,11 @@ Changed:
   phone with the keyboard up. Clear (filter, search) shows only while there is something
   to clear. Search, Filter, Sort and the note dialogs used Android's older dialog, whose
   title looked different on newer Android versions; all dialogs are the same kind now.
+- A dialog's two buttons sit side by side when both labels fit (a tablet, short labels)
+  and stack only when they don't (a phone, counts in the labels). Decided as the dialog
+  opens; while it is open they may stack if a label grows, but don't jump back.
+- Add to collection no longer adds as soon as a collection is tapped: tapping chooses
+  it, and "Add to “Name”" does the adding, so a mistap can be put right or cancelled.
 - Pulling the list down shows no round spinner any more: the toolbar's sync icon fades
   in and turns as you pull, snaps (with a short vibration) once letting go would sync,
   and keeps turning as the sync runs. One sign for one sync, where the spinner and the
