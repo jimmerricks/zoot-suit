@@ -31,6 +31,6 @@ class NoteView(val context: Context, val note: Note, val listener: NoteInteracti
     }
 
     fun showNoteEditingDialog() {
-        editNoteAsText(context, note) { edited -> listener.editNote(edited) }
+        listener.editNote(note)
     }
 }

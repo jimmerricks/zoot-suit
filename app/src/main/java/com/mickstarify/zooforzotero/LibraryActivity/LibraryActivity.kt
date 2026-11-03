@@ -46,6 +46,7 @@ import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemAttachmentEntry
 import com.mickstarify.zooforzotero.LibraryActivity.ItemView.ItemViewFragment
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteInteractionListener
 import com.mickstarify.zooforzotero.LibraryActivity.Notes.NoteView
+import com.mickstarify.zooforzotero.LibraryActivity.Notes.editNoteAsText
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.AttachmentStates
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryListViewModel
 import com.mickstarify.zooforzotero.LibraryActivity.ViewModels.LibraryLoadingScreenViewModel
@@ -884,7 +885,7 @@ class LibraryActivity : AppCompatActivity(),
     }
 
     override fun editNote(note: Note) {
-        viewModel.modifyNote(note)
+        editNoteAsText(this, note) { edited -> viewModel.modifyNote(edited) }
     }
 
     override fun onTagAdd(item: Item, tag: String) = viewModel.editTag(item, tag, add = true)
