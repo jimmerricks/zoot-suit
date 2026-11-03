@@ -30,6 +30,13 @@ Changed:
   sync starts). On one line, the buttons keep their own width, with Cancel's spacing
   around the label, from the left. Decided as the dialog opens; while it is open
   they may stack if a label grows, but don't jump back.
+- Settings' dialogs are built like the library's: Theme, List rows, Second line and
+  Attachment folder list their choices with Apply and Cancel (a tap no longer applies at
+  once); Write timeout shows a mistake under its field; changing the attachment folder
+  and signing out ask with full-width answers.
+- The WebDAV server opens as a dialog over Settings instead of its own screen: address
+  and login, Advanced for the rest, then Save and connect, Remove server (while one is
+  set up) and Cancel. It closes once the connection works.
 - "Change collections" replaces "Add to collection" and "Remove from this collection":
   one screen, like "Add and remove tags", with a field to find a collection and a box per
   collection that shows whether all, some or none of the selected items are in it. Tap to
