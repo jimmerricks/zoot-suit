@@ -1,43 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Same layout as dialog_library_filter_header: section headers, then one choice per row.
-     The field checkboxes are added by LibrarySearchDialog, one per LibrarySearch.Field. -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+     The field checkboxes are added by LibrarySearchDialog, one per LibrarySearch.Field.
+     Search, and Clear search while one is on, are full-width buttons under them, as in
+     Manage attachments. They stay put; the rest scrolls above them (its weight lets it
+     shrink when the keyboard is up). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/DialogBody"
+    android:paddingTop="0dp">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="20dp"
-        android:paddingTop="4dp"
-        android:paddingEnd="20dp"
-        android:paddingBottom="8dp">
-
-        <EditText
-            android:id="@+id/editText_search_query"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Words, or a &quot;quoted phrase&quot;"
-            android:imeOptions="actionSearch"
-            android:inputType="text"
-            android:maxLines="1" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="4dp"
-            android:text="Narrows the list on screen, like the filter, until cleared. Every word must match; case and accents are ignored."
-            android:textAppearance="@style/TextAppearance.AppCompat.Caption" />
-
-        <TextView
-            style="@style/DialogSectionHeader"
-            android:text="Search in" />
+        android:layout_weight="1">
 
         <LinearLayout
-            android:id="@+id/layout_search_fields"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </LinearLayout>
-</ScrollView>
+            android:orientation="vertical"
+            android:paddingTop="4dp">
+
+            <EditText
+                android:id="@+id/editText_search_query"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Words, or a &quot;quoted phrase&quot;"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1" />
+
+            <TextView
+                style="@style/DialogHint"
+                android:paddingBottom="0dp"
+                android:text="Narrows the list on screen, like the filter, until cleared. Every word must match; case and accents are ignored." />
+
+            <TextView
+                style="@style/DialogSectionHeader"
+                android:text="Search in" />
+
+            <LinearLayout
+                android:id="@+id/layout_search_fields"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- enabled with a query and a field to search in -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_search"
+        style="@style/DialogAction"
+        android:text="Search" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_clear_search"
+        style="@style/DialogAction.Other"
+        android:text="Clear search"
+        android:visibility="gone" />
+</LinearLayout>
