@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.5.2
+
+Updates 0.5.1 in place (same app id and signing key).
 
 Changed:
 - Bulk downloads show in the sync dialog, not under the title: while they run the
@@ -13,6 +15,30 @@ Changed:
   and Sync now. Pulling the list down syncs at once.
 - Dialogs: the text under the title starts where the title does (it was 4dp further
   left), in the item dialog too.
+- Signing out with edits waiting says how to sync first: pull the list down, or tap
+  the sync icon and Sync now.
+
+Security:
+- Signing in with a Zotero account accepts Zotero's answer only for the sign-in it
+  started (the request token is checked).
+
+Fixed:
+- Bulk downloads could delete a file already on the device, edits and all, if the app
+  was stopped while it checked whether that file was there: the next round took it for
+  a half-finished download. Only files actually being downloaded count as that now.
+- In App storage, a downloaded file is moved into place in one step rather than
+  copied, so a half-written copy can't be left behind; downloads also write half as
+  much.
+- Downloads from Zotero's file storage stop before they would leave less than 100 MB
+  free, as WebDAV downloads already did, and say so.
+- A WebDAV upload whose item changed in Zotero during the upload (a tag added
+  elsewhere) now records the new file on the item; it was left out, and the next upload
+  took the file for a change made on another device.
+- A sync asked for while another runs no longer replaces one already waiting: a group
+  refresh and My Library's sync both run, one after the other.
+
+Removed:
+- The hidden "Re-download library" action and its code.
 
 ## 0.5.1
 

@@ -39,6 +39,19 @@ Smaller items, none blocking a release:
   both. The Zotero File Storage upload chain (`ZoteroAPI.updateAttachment`) relies on an
   Observer throwing inside a Completable, and the database still allows main-thread
   queries (`allowMainThreadQueries`), which hides any left on the main thread.
+  A sync writes each item as five separate database transactions; one per page of 100
+  items would likely make a first sync faster (to be measured, and the Rx inserts
+  checked for running on Room's own thread inside a transaction). `ZoteroAPI` pages
+  items, collections and the trash three ways, and has three near-identical PATCH
+  helpers (notes, attachments, item edits); each could be one.
+- **Notes added on this device:** once uploaded, such a note keeps version 0 here until
+  the sync's download brings Zotero's copy. If that download fails (offline right after
+  the upload), deleting the note says it's only on this device and then fails, and
+  editing it fails, both asking for a sync; nothing is lost. Recording the version
+  Zotero returns for the new note would close the gap.
+- **Storage:** the file provider still shares the pre-0.5.0 App storage folder (the
+  app's external cache) so files not yet moved open; it can go once no installs older
+  than 0.5.0 are around.
 - **Library screen:** it is `singleTask` since 0.5.0 (was `singleInstance`, which left
   Settings in a task of its own). Opening a PDF in an external viewer and coming back
   needs a test on a device.
