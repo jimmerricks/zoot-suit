@@ -130,10 +130,7 @@ class LibraryActivity : AppCompatActivity(),
         viewModel.sidebar.observe(this) { showSidebar(it) }
         viewModel.pendingEdits.observe(this) { showPendingEdits(it) }
         viewModel.syncStatus.observe(this) { showSyncStatus(it) }
-        viewModel.downloadProgress.observe(this) {
-            manageAttachmentsDialog?.showDownloads(it)
-            syncDialog?.showDownloads(it)
-        }
+        viewModel.downloadProgress.observe(this) { showDownloads(it) }
         libraryListViewModel.getItems().observe(this) { pages ->
             val none = pages.size == 0 && !viewModel.isListNarrowed()
             // set with the place, before its list arrives
@@ -435,6 +432,9 @@ class LibraryActivity : AppCompatActivity(),
 
     // "Syncing n%" while a sync runs (the turning icon's tooltip), else null; in place of the edit count
     private var syncLabel: String? = null
+    // "Downloading 3 of 12" while bulk downloads work, else null: the icon turns for them too
+    private var downloadLabel: String? = null
+    private val busyLabel get() = syncLabel ?: downloadLabel
     private var syncMenuItem: MenuItem? = null
 
     private fun showSyncStatus(status: SyncStatus?) {
@@ -450,17 +450,38 @@ class LibraryActivity : AppCompatActivity(),
             } else {
                 window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
+            val wasTurning = busyLabel != null
             syncLabel = label
             // the sync a pull asked for has started: its own icon takes over
             if (label != null) stopPullTurning()
-            invalidateOptionsMenu()
+            if (wasTurning != (busyLabel != null)) invalidateOptionsMenu() else relabelSyncIcon()
         } else if (label != syncLabel) {
             // only the count: rebuilding the menu for each page would close it while open
             syncLabel = label
-            syncMenuItem?.title = label
-            syncMenuItem?.actionView?.let { labelSyncIcon(it, label) }
+            relabelSyncIcon()
         }
         if (status != null) syncDialog?.update(status)
+    }
+
+    /**
+     * The bulk downloads' progress, or null when none are at work: the sync icon turns
+     * while they work, their progress its tooltip unless a sync runs; the sync dialog and
+     * Manage attachments show it with Stop downloads.
+     */
+    private fun showDownloads(status: String?) {
+        manageAttachmentsDialog?.showDownloads(status)
+        syncDialog?.showDownloads(status)
+        if (status == downloadLabel) return
+        val wasTurning = busyLabel != null
+        downloadLabel = status
+        if (wasTurning != (busyLabel != null)) invalidateOptionsMenu() else relabelSyncIcon()
+    }
+
+    // the turning icon's words changed, not whether it turns
+    private fun relabelSyncIcon() {
+        val label = busyLabel ?: return
+        syncMenuItem?.title = label
+        syncMenuItem?.actionView?.let { labelSyncIcon(it, label) }
     }
 
     private var syncIcon: View? = null
@@ -474,7 +495,7 @@ class LibraryActivity : AppCompatActivity(),
 
     /** The list is pulled [fraction] of the way to a sync (PullToSyncLayout). */
     fun showPull(fraction: Float) {
-        if (syncLabel != null || pullTurning || fraction <= 0f) return // already turning
+        if (busyLabel != null || pullTurning || fraction <= 0f) return // already turning
         val starting = pull == null
         pull = fraction
         if (starting) invalidateOptionsMenu() else syncIcon?.let { turnWithPull(it, fraction) }
@@ -484,7 +505,7 @@ class LibraryActivity : AppCompatActivity(),
     fun endPull(sync: Boolean) {
         if (pull == null) return
         pull = null
-        if (sync && syncLabel == null) {
+        if (sync && busyLabel == null) {
             pullTurning = true
             window.decorView.postDelayed(pullTurningTimeout, 5000)
         }
@@ -510,10 +531,10 @@ class LibraryActivity : AppCompatActivity(),
         icon.alpha = 0.4f + 0.6f * fraction.coerceAtMost(1f)
     }
 
-    /** The sync button while a sync runs: the sync icon turning, tapping it opens the dialog. */
+    /** The sync button while a sync or bulk downloads run: the sync icon turning, tapping it opens the dialog. */
     private fun turningSyncIcon(): View =
         layoutInflater.inflate(R.layout.sync_status_action, null).apply {
-            labelSyncIcon(this, syncLabel ?: getString(R.string.syncing))
+            labelSyncIcon(this, busyLabel ?: getString(R.string.syncing))
             setOnClickListener { showSyncDialog() }
             // anticlockwise, the way the icon's arrows point
             startAnimation(RotateAnimation(
@@ -599,14 +620,14 @@ class LibraryActivity : AppCompatActivity(),
         // the actions need something selected; choosing (select all, invert) stays
         menu.setGroupVisible(R.id.selection_edits, viewModel.canEditItems() && !selectedNone)
         menu.setGroupVisible(R.id.selection_files, !selectedNone)
-        // the sync icon, at any width, its words the tooltip: turning while a sync runs (this
-        // item), following the list while it's pulled down to sync (this item, still), still
-        // with a dot while edits wait (pending_edits, below), else not there
-        val turning = syncLabel != null || pullTurning
+        // the sync icon, at any width, its words the tooltip: turning while a sync or bulk
+        // downloads run (this item), following the list while it's pulled down to sync (this
+        // item, still), still with a dot while edits wait (pending_edits, below), else not there
+        val turning = busyLabel != null || pullTurning
         val pulled = pull?.takeIf { !turning }
         syncMenuItem = menu.findItem(R.id.sync_status)?.apply {
             isVisible = turning || pulled != null
-            syncLabel?.let { title = it }
+            busyLabel?.let { title = it }
             // A view removed mid-animation is drawn by its parent until the animation ends,
             // which this one never does: stop the old icon before the menu drops it.
             syncIcon?.clearAnimation()

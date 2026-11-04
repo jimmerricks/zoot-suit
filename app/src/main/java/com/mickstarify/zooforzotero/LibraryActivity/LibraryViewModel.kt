@@ -198,19 +198,15 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         redisplayItems()
     }
 
-    private var filterSummary: String? = null
-    private var downloadStatus: String? = null
-
-    /** How far the bulk downloads are ("Downloading 3 of 12"), null when none are at work. */
+    /**
+     * How far the bulk downloads are ("Downloading 3 of 12"), null when none are at work:
+     * the toolbar's sync icon turns meanwhile, and the sync dialog shows it.
+     */
     val downloadProgress = MutableLiveData<String?>(null)
 
-    private fun showSubtitle() {
-        subtitle.value = listOfNotNull(downloadStatus, filterSummary).joinToString(" · ").ifEmpty { null }
-    }
-
     /**
-     * Follows the bulk downloads' workers: "Downloading 3 of 12" in the subtitle while they
-     * work, the list's PDF badges as files arrive, and what was done when they stop.
+     * Follows the bulk downloads' workers: [downloadProgress] while they work, the list's
+     * PDF badges as files arrive, and what was done when they stop.
      */
     private fun followDownloads() {
         var lastDone = -1
@@ -219,14 +215,13 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             val running = infos.firstOrNull { it.state == WorkInfo.State.RUNNING }
             val done = running?.progress?.getInt(AttachmentDownloadWorker.DONE, -1) ?: -1
             val total = running?.progress?.getInt(AttachmentDownloadWorker.TOTAL, 0) ?: 0
-            downloadStatus = when {
+            val status = when {
                 !active -> null
                 total > 0 && done >= 0 -> "Downloading ${minOf(done + 1, total)} of $total"
                 running == null -> "Downloads waiting for a network"
                 else -> "Downloading…"
             }
-            showSubtitle()
-            if (downloadProgress.value != downloadStatus) downloadProgress.value = downloadStatus
+            if (downloadProgress.value != status) downloadProgress.value = status
             if (done != lastDone && library.isLoaded()) parts.deviceState.refresh()
             lastDone = done
             // also a round that ended while the app was away (or killed) is told at start
@@ -281,14 +276,13 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         val search = parts.lists.librarySearch
         val filter = parts.lists.libraryFilter
         val shown = parts.lists.lastFilteredCount
-        filterSummary =
+        subtitle.value =
             if ((search.isEmpty() && !filter.isActive) || shown == null) null
             else listOfNotNull(
                 "Search: “$search”".takeIf { search.isNotEmpty() },
                 "Filter: ${filter.describe()}".takeIf { filter.isActive },
                 "$shown " + if (shown == 1) "item" else "items",
             ).joinToString(" · ")
-        showSubtitle()
         libraryListViewModel.setEmptyMessage(
             EmptyListMessage.forList(
                 search, filter, shown != null, navigator.currentCollection(),
