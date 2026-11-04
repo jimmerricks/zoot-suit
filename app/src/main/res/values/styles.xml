@@ -17,7 +17,8 @@
         <item name="android:minHeight">36dp</item>
     </style>
     <!-- The parts of a dialog, as Manage attachments has them. Body: the custom view's
-         insets, as the title's. Lead: what the dialog acts on ("Applies to 2 items: those
+         insets, the same as the title's (dialogPreferredPadding, 24dp), so title and body
+         text start on one line. Lead: what the dialog acts on ("Applies to 2 items: those
          selected"). Hint: how it works, grey. Actions: full-width buttons in the body that
          name what they do (with counts where it helps); the filled one is the main act, the
          outlined one the other, together in a DialogActions with the button that leaves
@@ -28,9 +29,9 @@
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:orientation">vertical</item>
-        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingStart">?attr/dialogPreferredPadding</item>
         <item name="android:paddingTop">4dp</item>
-        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingEnd">?attr/dialogPreferredPadding</item>
     </style>
 
     <style name="DialogLead">
