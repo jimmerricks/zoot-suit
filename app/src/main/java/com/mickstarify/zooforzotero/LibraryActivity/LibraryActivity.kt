@@ -130,7 +130,10 @@ class LibraryActivity : AppCompatActivity(),
         viewModel.sidebar.observe(this) { showSidebar(it) }
         viewModel.pendingEdits.observe(this) { showPendingEdits(it) }
         viewModel.syncStatus.observe(this) { showSyncStatus(it) }
-        viewModel.downloadProgress.observe(this) { manageAttachmentsDialog?.showDownloads(it) }
+        viewModel.downloadProgress.observe(this) {
+            manageAttachmentsDialog?.showDownloads(it)
+            syncDialog?.showDownloads(it)
+        }
         libraryListViewModel.getItems().observe(this) { pages ->
             val none = pages.size == 0 && !viewModel.isListNarrowed()
             // set with the place, before its list arrives
@@ -543,7 +546,8 @@ class LibraryActivity : AppCompatActivity(),
                 viewModel.describePendingEdits { if (!isFinishing && !isDestroyed) onResult(it) }
             },
             syncNow = viewModel::requestLibraryRefresh,
-        ).apply { show(viewModel.syncStatus.value) }
+            stopDownloads = viewModel::stopDownloads,
+        ).apply { show(viewModel.syncStatus.value, viewModel.downloadProgress.value) }
     }
 
     // open while the user reads it; follows the bulk downloads

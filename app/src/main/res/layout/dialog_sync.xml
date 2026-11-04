@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The sync dialog (SyncDialog), built like Manage attachments: the edits waiting under
-     their header, the running or last sync stage by stage under its own, then Sync now as
-     a full-width button. The button stays put; the text scrolls above it (a bulk edit
-     lists up to SyncDialog.MAX_EDIT_LINES items). -->
+     their header, the running or last sync stage by stage under its own, then the bulk
+     downloads at work with a button to stop them, then Sync now as a full-width button.
+     The downloads and the button stay put; the text scrolls above them (a bulk edit lists
+     up to SyncDialog.MAX_EDIT_LINES items). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     style="@style/DialogBody"
     android:paddingTop="0dp">
@@ -44,6 +45,35 @@
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
         </LinearLayout>
     </ScrollView>
+
+    <TextView
+        android:id="@+id/textView_downloads_header"
+        style="@style/DialogSectionHeader"
+        android:text="Downloads"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/layout_downloads"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/textView_downloads"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
+
+        <Button
+            android:id="@+id/button_stop_downloads"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/stop_downloads" />
+    </LinearLayout>
 
     <com.mickstarify.zooforzotero.common.DialogActions
         android:id="@+id/dialog_actions"

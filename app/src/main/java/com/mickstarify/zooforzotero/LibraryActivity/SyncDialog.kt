@@ -13,8 +13,9 @@ import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncStatus
 /**
  * The sync dialog, behind both of the toolbar's sync buttons ("N edits to sync" and
  * "Syncing 45%"): the edits waiting to go up, the running or last sync stage by stage
- * (SyncDetails), and Sync now while no sync runs. Open while the user reads it, redrawn as
- * the sync goes on; when it ends, the edits are listed again (those left, if any). Laid
+ * (SyncDetails), the bulk downloads of attachments while they work (with Stop downloads),
+ * and Sync now while no sync runs. Open while the user reads it, redrawn as the sync and
+ * the downloads go on; when a sync ends, the edits are listed again (those left, if any). Laid
  * out like Manage attachments: a header over each part, Sync now and Close under them
  * (DialogActions).
  *
@@ -23,6 +24,7 @@ import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncStatus
  * @param editCount the number of edits waiting, for the title
  * @param describeEdits the edits waiting, a line per item, given to its argument on the main thread
  * @param syncNow starts a sync of the open library
+ * @param stopDownloads stops the bulk downloads
  */
 class SyncDialog(
     private val context: Context,
@@ -31,6 +33,7 @@ class SyncDialog(
     private val editCount: () -> Int,
     private val describeEdits: ((List<String>) -> Unit) -> Unit,
     private val syncNow: () -> Unit,
+    private val stopDownloads: () -> Unit,
 ) {
     private var dialog: AlertDialog? = null
     private lateinit var editsHeader: View
@@ -38,13 +41,17 @@ class SyncDialog(
     private lateinit var syncHeader: TextView
     private lateinit var syncText: TextView
     private lateinit var syncNowButton: Button
+    private lateinit var downloadsHeader: View
+    private lateinit var downloadsRow: View
+    private lateinit var downloadsText: TextView
     private var status: SyncStatus? = null
     // null until read
     private var edits: List<String>? = null
 
     val isShowing get() = dialog != null
 
-    fun show(status: SyncStatus?) {
+    /** Opens with the sync's [status] and the bulk downloads' progress [downloads] (see showDownloads). */
+    fun show(status: SyncStatus?, downloads: String?) {
         this.status = status
         val builder = AlertDialog.Builder(context)
         val view = LayoutInflater.from(builder.context).inflate(R.layout.dialog_sync, null)
@@ -53,6 +60,11 @@ class SyncDialog(
         syncHeader = view.findViewById(R.id.textView_sync_header)
         syncText = view.findViewById(R.id.textView_sync_stages)
         syncNowButton = view.findViewById(R.id.button_sync_now)
+        downloadsHeader = view.findViewById(R.id.textView_downloads_header)
+        downloadsRow = view.findViewById(R.id.layout_downloads)
+        downloadsText = view.findViewById(R.id.textView_downloads)
+        view.findViewById<Button>(R.id.button_stop_downloads).setOnClickListener { stopDownloads() }
+        showDownloads(downloads)
         val d = builder
             .setTitle(" ")
             .setView(view)
@@ -82,6 +94,15 @@ class SyncDialog(
         if (dialog == null) return
         render()
         if (ended) readEdits()
+    }
+
+    /** The bulk downloads' progress ("Downloading 3 of 12"), or null when none are at work. */
+    fun showDownloads(status: String?) {
+        if (!this::downloadsText.isInitialized) return // not shown yet
+        val visibility = if (status == null) View.GONE else View.VISIBLE
+        downloadsHeader.visibility = visibility
+        downloadsRow.visibility = visibility
+        downloadsText.text = status
     }
 
     fun dismiss() {
