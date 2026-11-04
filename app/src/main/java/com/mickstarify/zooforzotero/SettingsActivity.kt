@@ -275,7 +275,7 @@ class SettingsActivity : AppCompatActivity() {
             unsynced.isEmpty -> forgets
             else -> "Not synced yet, and lost if you sign out now:\n" +
                     unsynced.describe().joinToString("\n") { "• $it" } +
-                    "\n\nSync first: in the library, tap the sync icon at the top.\n\n$forgets"
+                    "\n\nSync first: in the library, pull the list down, or tap the sync icon at the top and Sync now.\n\n$forgets"
         }
         ConfirmDialog.show(
             this, "Sign out?", message,

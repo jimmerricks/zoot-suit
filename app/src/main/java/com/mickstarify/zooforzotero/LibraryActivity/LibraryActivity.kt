@@ -422,7 +422,7 @@ class LibraryActivity : AppCompatActivity(),
 
     private var pendingEdits = 0
 
-    /** Edits waiting to go up: the toolbar's sync icon has a dot; a tap syncs them. */
+    /** Edits waiting to go up: the toolbar's sync icon has a dot; its dialog lists them. */
     fun showPendingEdits(count: Int) {
         if (count == pendingEdits) return
         pendingEdits = count
@@ -485,8 +485,7 @@ class LibraryActivity : AppCompatActivity(),
     // How far the list is pulled down to sync (1 = far enough), null when it isn't: the
     // sync icon shows the pull, so one icon shows it from the pull to the sync's end.
     private var pull: Float? = null
-    // let go far enough, or the sync button tapped: the icon turns until the sync's status
-    // arrives, else not for long
+    // let go far enough: the icon turns until the sync's status arrives, else not for long
     private var pullTurning = false
     private val pullTurningTimeout = Runnable { pullTurning = false; invalidateOptionsMenu() }
 
@@ -509,15 +508,6 @@ class LibraryActivity : AppCompatActivity(),
         invalidateOptionsMenu()
     }
 
-    /** The sync button's tap while nothing runs: a sync, the icon turning at once, as after a pull. */
-    private fun syncFromButton() {
-        stopPullTurning()
-        pullTurning = true
-        window.decorView.postDelayed(pullTurningTimeout, 5000)
-        invalidateOptionsMenu()
-        libraryListViewModel.onLibraryRefreshRequested()
-    }
-
     private fun stopPullTurning() {
         pullTurning = false
         window.decorView.removeCallbacks(pullTurningTimeout)
@@ -530,10 +520,7 @@ class LibraryActivity : AppCompatActivity(),
             turnWithPull(this, fraction)
         }
 
-    /**
-     * The sync button while nothing runs: the sync icon, still, with a dot while edits wait;
-     * tapping it syncs (the edits too).
-     */
+    /** The sync button while nothing runs: the sync icon, still, with a dot while edits wait. */
     private fun stillSyncIcon(): View =
         layoutInflater.inflate(R.layout.sync_status_action, null).apply {
             this as ImageView
@@ -541,7 +528,6 @@ class LibraryActivity : AppCompatActivity(),
             labelSyncIcon(this, if (pendingEdits > 0)
                 resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)
             else getString(R.string.sync))
-            setOnClickListener { syncFromButton() }
         }
 
     // anticlockwise like the turning icon, three quarters of a turn on the way; far enough
@@ -551,12 +537,10 @@ class LibraryActivity : AppCompatActivity(),
         icon.alpha = 0.4f + 0.6f * fraction.coerceAtMost(1f)
     }
 
-    /** The sync button while a sync or bulk downloads run: the sync icon turning, tapping it opens the dialog. */
+    /** The sync button while a sync or bulk downloads run: the sync icon turning. */
     private fun turningSyncIcon(): View =
         layoutInflater.inflate(R.layout.sync_status_action, null).apply {
             labelSyncIcon(this, busyLabel ?: getString(R.string.syncing))
-            // nothing to start: what is running, with Stop downloads
-            setOnClickListener { showSyncDialog() }
             // anticlockwise, the way the icon's arrows point
             startAnimation(RotateAnimation(
                 0f, -360f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f
@@ -567,17 +551,18 @@ class LibraryActivity : AppCompatActivity(),
             })
         }
 
-    // an action view shows no title: the label goes to TalkBack. A long press opens the
-    // sync dialog (edits waiting, last sync, what runs) in every state, in place of a tooltip.
+    // an action view shows no title: the label goes to TalkBack. A tap opens the sync
+    // dialog (edits waiting, last sync, what runs, Sync now) in every state; a pull of the
+    // list syncs at once.
     private fun labelSyncIcon(icon: View, label: String?) {
         icon.contentDescription = label
-        icon.setOnLongClickListener { showSyncDialog(); true }
+        icon.setOnClickListener { showSyncDialog() }
     }
 
     // open while the user reads it; redrawn as the sync goes on
     private var syncDialog: SyncDialog? = null
 
-    /** The sync dialog (SyncDialog): the sync button tapped while something runs, or long-pressed. */
+    /** The sync dialog (SyncDialog): the sync button tapped. */
     private fun showSyncDialog() {
         syncDialog?.dismiss()
         syncDialog = SyncDialog(

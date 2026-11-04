@@ -3,8 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <!-- the sync button, always first, its look and words set in onPrepareOptionsMenu
-         (an action view): still, with a dot while edits wait; tap syncs. Turning while a
-         sync or bulk downloads run; tap shows them. A long press shows the sync dialog -->
+         (an action view): still, with a dot while edits wait; turning while a sync or bulk
+         downloads run. A tap shows the sync dialog (with Sync now); a pull of the list syncs -->
     <item
         android:id="@+id/sync"
         android:title="@string/sync"

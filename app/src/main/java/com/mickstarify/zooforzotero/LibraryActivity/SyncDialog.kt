@@ -11,8 +11,7 @@ import com.mickstarify.zooforzotero.common.DialogActions
 import com.mickstarify.zooforzotero.ZoteroAPI.Syncing.SyncStatus
 
 /**
- * The sync dialog, behind both of the toolbar's sync buttons ("N edits to sync" and
- * "Syncing 45%"): the edits waiting to go up, the running or last sync stage by stage
+ * The sync dialog, behind the toolbar's sync button in every state: the edits waiting to go up, the running or last sync stage by stage
  * (SyncDetails), the bulk downloads of attachments while they work (with Stop downloads),
  * and Sync now while no sync runs. Open while the user reads it, redrawn as the sync and
  * the downloads go on; when a sync ends, the edits are listed again (those left, if any). Laid

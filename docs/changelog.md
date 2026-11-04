@@ -8,10 +8,9 @@ Changed:
   dialog with the downloads' progress and Stop downloads under the sync. Manage
   attachments no longer shows the downloads itself.
 - The sync button stays in the toolbar, first, so it no longer appears and disappears
-  or moves the buttons beside it. A tap syncs, edits waiting included (they show as a
-  dot on it), and the icon turns at once; while a sync or downloads run, a tap shows
-  them. A long press opens the sync dialog in any state: edits waiting, the last sync,
-  Sync now.
+  or moves the buttons beside it. A tap opens the sync dialog in any state: edits
+  waiting (they show as a dot on the icon), the running or last sync, the downloads,
+  and Sync now. Pulling the list down syncs at once.
 - Dialogs: the text under the title starts where the title does (it was 4dp further
   left), in the item dialog too.
 
