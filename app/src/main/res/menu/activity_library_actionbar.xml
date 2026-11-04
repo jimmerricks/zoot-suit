@@ -2,21 +2,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- while a sync runs: the sync icon turning (an action view), its progress the
-         tooltip; tapping it shows the details -->
+    <!-- the sync button, always first, its look and words set in onPrepareOptionsMenu
+         (an action view): still, with a dot while edits wait; tap syncs. Turning while a
+         sync or bulk downloads run; tap shows them. A long press shows the sync dialog -->
     <item
-        android:id="@+id/sync_status"
-        android:title="@string/syncing"
-        android:visible="false"
-        app:showAsAction="always" />
-
-    <!-- while edits wait to sync: the sync icon, still, with a dot; tapping it lists them,
-         with Sync now. Otherwise nothing: pulling the list down syncs -->
-    <item
-        android:id="@+id/pending_edits"
-        android:icon="@drawable/sync_with_edits_24"
+        android:id="@+id/sync"
         android:title="@string/sync"
-        android:visible="false"
         app:showAsAction="always" />
 
     <item

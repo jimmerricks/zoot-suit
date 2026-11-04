@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- the toolbar's sync button while a sync runs: the sync icon, turning -->
+<!-- the toolbar's sync button: the sync icon, still (with a dot while edits wait),
+     turning while a sync runs, or following the list while it's pulled down -->
 <ImageView xmlns:android="http://schemas.android.com/apk/res/android"
     style="?attr/actionButtonStyle"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
-    android:contentDescription="@string/syncing"
+    android:contentDescription="@string/sync"
     android:src="@drawable/baseline_sync_white_24" />

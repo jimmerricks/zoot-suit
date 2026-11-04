@@ -20,6 +20,7 @@ import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Toast
 import com.mickstarify.zooforzotero.SyncSetup.domain.AuthenticationStorageImpl
 import com.mickstarify.zooforzotero.SyncSetup.SyncSetupActivity
@@ -30,7 +31,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.appcompat.widget.TooltipCompat
+
 import androidx.core.content.getSystemService
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
@@ -386,8 +387,6 @@ class LibraryActivity : AppCompatActivity(),
                 }
             }
 
-            R.id.sync_status, R.id.pending_edits -> showSyncDialog()
-
             R.id.force_resync -> {
                 // clears every table: pending tag edits and new notes (PendingItemEdit)
                 // are gone, and with the attachment bases edited files no longer count
@@ -423,7 +422,7 @@ class LibraryActivity : AppCompatActivity(),
 
     private var pendingEdits = 0
 
-    /** Edits waiting to go up: the still sync icon with a dot in the toolbar, which opens the sync dialog. */
+    /** Edits waiting to go up: the toolbar's sync icon has a dot; a tap syncs them. */
     fun showPendingEdits(count: Int) {
         if (count == pendingEdits) return
         pendingEdits = count
@@ -435,7 +434,6 @@ class LibraryActivity : AppCompatActivity(),
     // "Downloading 3 of 12" while bulk downloads work, else null: the icon turns for them too
     private var downloadLabel: String? = null
     private val busyLabel get() = syncLabel ?: downloadLabel
-    private var syncMenuItem: MenuItem? = null
 
     private fun showSyncStatus(status: SyncStatus?) {
         val label = status?.takeIf { it.running }?.let { running ->
@@ -479,8 +477,7 @@ class LibraryActivity : AppCompatActivity(),
     // the turning icon's words changed, not whether it turns
     private fun relabelSyncIcon() {
         val label = busyLabel ?: return
-        syncMenuItem?.title = label
-        syncMenuItem?.actionView?.let { labelSyncIcon(it, label) }
+        syncIcon?.let { labelSyncIcon(it, label) }
     }
 
     private var syncIcon: View? = null
@@ -488,7 +485,8 @@ class LibraryActivity : AppCompatActivity(),
     // How far the list is pulled down to sync (1 = far enough), null when it isn't: the
     // sync icon shows the pull, so one icon shows it from the pull to the sync's end.
     private var pull: Float? = null
-    // let go far enough: the icon turns until the sync's status arrives, else not for long
+    // let go far enough, or the sync button tapped: the icon turns until the sync's status
+    // arrives, else not for long
     private var pullTurning = false
     private val pullTurningTimeout = Runnable { pullTurning = false; invalidateOptionsMenu() }
 
@@ -511,6 +509,15 @@ class LibraryActivity : AppCompatActivity(),
         invalidateOptionsMenu()
     }
 
+    /** The sync button's tap while nothing runs: a sync, the icon turning at once, as after a pull. */
+    private fun syncFromButton() {
+        stopPullTurning()
+        pullTurning = true
+        window.decorView.postDelayed(pullTurningTimeout, 5000)
+        invalidateOptionsMenu()
+        libraryListViewModel.onLibraryRefreshRequested()
+    }
+
     private fun stopPullTurning() {
         pullTurning = false
         window.decorView.removeCallbacks(pullTurningTimeout)
@@ -521,6 +528,20 @@ class LibraryActivity : AppCompatActivity(),
         layoutInflater.inflate(R.layout.sync_status_action, null).apply {
             labelSyncIcon(this, getString(R.string.pull_to_sync))
             turnWithPull(this, fraction)
+        }
+
+    /**
+     * The sync button while nothing runs: the sync icon, still, with a dot while edits wait;
+     * tapping it syncs (the edits too).
+     */
+    private fun stillSyncIcon(): View =
+        layoutInflater.inflate(R.layout.sync_status_action, null).apply {
+            this as ImageView
+            if (pendingEdits > 0) setImageResource(R.drawable.sync_with_edits_24)
+            labelSyncIcon(this, if (pendingEdits > 0)
+                resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)
+            else getString(R.string.sync))
+            setOnClickListener { syncFromButton() }
         }
 
     // anticlockwise like the turning icon, three quarters of a turn on the way; far enough
@@ -534,6 +555,7 @@ class LibraryActivity : AppCompatActivity(),
     private fun turningSyncIcon(): View =
         layoutInflater.inflate(R.layout.sync_status_action, null).apply {
             labelSyncIcon(this, busyLabel ?: getString(R.string.syncing))
+            // nothing to start: what is running, with Stop downloads
             setOnClickListener { showSyncDialog() }
             // anticlockwise, the way the icon's arrows point
             startAnimation(RotateAnimation(
@@ -545,16 +567,17 @@ class LibraryActivity : AppCompatActivity(),
             })
         }
 
-    // an action view shows no title: the label goes in its tooltip and for TalkBack
+    // an action view shows no title: the label goes to TalkBack. A long press opens the
+    // sync dialog (edits waiting, last sync, what runs) in every state, in place of a tooltip.
     private fun labelSyncIcon(icon: View, label: String?) {
         icon.contentDescription = label
-        TooltipCompat.setTooltipText(icon, label)
+        icon.setOnLongClickListener { showSyncDialog(); true }
     }
 
     // open while the user reads it; redrawn as the sync goes on
     private var syncDialog: SyncDialog? = null
 
-    /** The sync dialog (SyncDialog), from either of the toolbar's sync buttons. */
+    /** The sync dialog (SyncDialog): the sync button tapped while something runs, or long-pressed. */
     private fun showSyncDialog() {
         syncDialog?.dismiss()
         syncDialog = SyncDialog(
@@ -614,31 +637,29 @@ class LibraryActivity : AppCompatActivity(),
         // the actions need something selected; choosing (select all, invert) stays
         menu.setGroupVisible(R.id.selection_edits, viewModel.canEditItems() && !selectedNone)
         menu.setGroupVisible(R.id.selection_files, !selectedNone)
-        // the sync icon, at any width, its words the tooltip: turning while a sync or bulk
-        // downloads run (this item), following the list while it's pulled down to sync (this
-        // item, still), still with a dot while edits wait (pending_edits, below), else not there
+        // the sync button, at any width and always first, so it never moves: turning while a
+        // sync or bulk downloads run, following the list while it's pulled down to sync, else
+        // still (with a dot while edits wait)
         val turning = busyLabel != null || pullTurning
         val pulled = pull?.takeIf { !turning }
-        syncMenuItem = menu.findItem(R.id.sync_status)?.apply {
-            isVisible = turning || pulled != null
-            busyLabel?.let { title = it }
+        menu.findItem(R.id.sync)?.apply {
+            title = busyLabel ?: getString(R.string.sync)
             // A view removed mid-animation is drawn by its parent until the animation ends,
             // which this one never does: stop the old icon before the menu drops it.
             syncIcon?.clearAnimation()
             syncIcon = when {
                 turning -> turningSyncIcon()
                 pulled != null -> pullSyncIcon(pulled)
-                else -> null
+                else -> stillSyncIcon()
             }
             actionView = syncIcon
         }
         // Android caps the toolbar's buttons by its width, and the sync icon takes a place:
         // search (and filter, from 600dp wide) keep theirs beside it rather than move to the
         // menu. Narrower, filter and sort are in the menu always, so they don't move.
-        val pinned = if (turning || pulled != null || pendingEdits > 0) MenuItem.SHOW_AS_ACTION_ALWAYS else MenuItem.SHOW_AS_ACTION_IF_ROOM
-        menu.findItem(R.id.search)?.setShowAsAction(pinned)
+        menu.findItem(R.id.search)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         if (resources.getBoolean(R.bool.sort_filter_in_toolbar)) {
-            menu.findItem(R.id.library_filter)?.setShowAsAction(pinned)
+            menu.findItem(R.id.library_filter)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         } else {
             menu.findItem(R.id.library_filter)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
             menu.findItem(R.id.filter_menu)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
@@ -649,11 +670,6 @@ class LibraryActivity : AppCompatActivity(),
         menu.findItem(R.id.start_selection)?.isVisible = listSelectable
         // not in the trash, whose items' files aren't counted
         menu.findItem(R.id.manage_attachments)?.isVisible = listSelectable
-        menu.findItem(R.id.pending_edits)?.apply {
-            // while a sync runs the edits are going up; its details list them
-            isVisible = pendingEdits > 0 && !turning && pulled == null
-            title = resources.getQuantityString(R.plurals.pending_edits, pendingEdits, pendingEdits)
-        }
         return super.onPrepareOptionsMenu(menu)
     }
 
