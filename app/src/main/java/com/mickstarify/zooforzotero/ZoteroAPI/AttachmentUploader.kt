@@ -83,8 +83,17 @@ class AttachmentUploader(
                     modificationJsonObject.addProperty("mtime", mtime)
                     // the version just checked, so attachment edits that didn't touch
                     // the file (e.g. a tag) don't fail the patch after the upload
-                    api().patchItem(attachment, modificationJsonObject, serverVersion)
-                        .blockingAwait()
+                    try {
+                        api().patchItem(attachment, modificationJsonObject, serverVersion)
+                            .blockingAwait()
+                    } catch (e: ItemChangedSinceException) {
+                        // The item changed in Zotero since the check (a tag, say), but the
+                        // WebDAV replace went through: this file is the latest there. Without
+                        // the md5 on the item, the next upload would take this device's own
+                        // file for a change made elsewhere. Once more, at the new version.
+                        val (version, _) = api().getAttachmentFileState(attachment.itemKey).blockingGet()
+                        api().patchItem(attachment, modificationJsonObject, version).blockingAwait()
+                    }
                 }
             )
         }
