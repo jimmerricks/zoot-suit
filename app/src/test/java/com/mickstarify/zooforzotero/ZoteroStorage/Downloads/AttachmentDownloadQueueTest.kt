@@ -47,6 +47,18 @@ class AttachmentDownloadQueueTest {
     }
 
     @Test
+    fun `a peeked entry isn't in progress, and finishing it moves on`() {
+        val q = queue()
+        q.add(listOf(a, b))
+        assertEquals(a, q.peek())
+        assertNull(queue().state().inProgress) // a file found on the device is never deleted as partial
+        q.finish(a, Outcome.SKIPPED)
+        assertEquals(b, q.peek())
+        assertEquals(listOf(b), q.state().pending)
+        assertEquals(1, q.state().skipped)
+    }
+
+    @Test
     fun `a released entry stays first, no longer in progress`() {
         val q = queue()
         q.add(listOf(a, b))

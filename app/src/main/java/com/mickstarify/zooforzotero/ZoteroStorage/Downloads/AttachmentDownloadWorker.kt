@@ -61,7 +61,7 @@ class AttachmentDownloadWorker(context: Context, params: WorkerParameters) : Cor
             load(cutOff)?.let { storage.deleteAttachment(it) }
         }
         while (!isStopped) {
-            val entry = queue.next() ?: break
+            val entry = queue.peek() ?: break
             report()
             try {
                 val (outcome, error) = download(api, entry)
@@ -88,11 +88,17 @@ class AttachmentDownloadWorker(context: Context, params: WorkerParameters) : Cor
     private fun load(entry: AttachmentDownloadQueue.Entry): Item? =
         database.loadItemsByKeys(listOf(entry.key), listFieldsOnly = false, withChildren = false).firstOrNull()
 
-    /** Downloads [entry]'s file; the outcome, and why if it failed. Throws when offline. */
+    /**
+     * Downloads [entry] (the queue's next)'s file; the outcome, and why if it failed. Throws
+     * when offline. It is marked in progress only once its file is known to be missing: a
+     * file already on the device (perhaps with edits not uploaded) is never the partial one
+     * the next run deletes, should the process die while it is looked at.
+     */
     private fun download(api: ZoteroAPI, entry: AttachmentDownloadQueue.Entry): Pair<Outcome, String?> {
         val item = load(entry) ?: return Outcome.SKIPPED to null // gone from the library since
         val exists = runCatching { storage.checkIfAttachmentExists(item, checkMd5 = false) }.getOrDefault(false)
         if (exists) return Outcome.SKIPPED to null
+        queue.next()
 
         // Zotero's md5 now; the one from the last sync is stale for a file changed since
         val latest = if (entry.group == GroupInfo.NO_GROUP_ID) latestMd5Of(api, entry.key) else null

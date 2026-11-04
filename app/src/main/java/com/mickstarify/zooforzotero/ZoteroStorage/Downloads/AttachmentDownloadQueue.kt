@@ -80,6 +80,9 @@ class AttachmentDownloadQueue(private val file: File) {
         added.size
     }
 
+    /** The next entry to download, not marked; null when there is none. */
+    fun peek(): Entry? = synchronized(LOCK) { stored().pending.getOrNull(progress().taken) }
+
     /** The next entry to download, marked as in progress; null when there is none. */
     fun next(): Entry? = synchronized(LOCK) {
         val progress = progress()
