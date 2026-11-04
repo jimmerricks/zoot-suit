@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+Changed:
+- Bulk downloads show in the sync dialog, not under the title: while they run the
+  toolbar's sync icon turns as it does during a sync (its tooltip says how far they
+  are), and tapping it opens the sync dialog with the downloads' progress and Stop
+  downloads under the sync. Manage attachments no longer shows the downloads itself.
+
 ## 0.5.1
 
 Updates 0.5.0 in place (same app id and signing key).
