@@ -393,6 +393,10 @@ class AttachmentStorageManager @Inject constructor(
      */
     fun writeAttachmentFromFile(file: File, attachment: Item): Uri {
         if (storageMode == StorageMode.APP_STORAGE) {
+            // on the disk before it counts as downloaded: a device that loses power (or an
+            // app killed) just after can otherwise be left with an empty file, which the
+            // records would still call a whole download
+            java.io.FileOutputStream(file, true).use { it.fd.sync() }
             val target = appStorageFile(attachment)
             target.parentFile?.mkdirs()
             if (file.renameTo(target)) return getAttachmentUri(attachment)
