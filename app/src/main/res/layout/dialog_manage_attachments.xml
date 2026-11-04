@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- "Manage attachments" (ManageAttachmentsDialog): what the selection's files are, a box
-     per kind (PDFs, HTML snapshots, others) with how many are on this device, and the bulk
-     downloads at work with a button to stop them; that part scrolls. Under it Download and
+     per kind (PDFs, HTML snapshots, others) with how many are on this device; that part
+     scrolls. Under it Download and
      Remove, with their counts in words, and Close (DialogActions: on one line if they fit). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     style="@style/DialogBody">
@@ -32,34 +32,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
 
-            <TextView
-                style="@style/DialogSectionHeader"
-                android:id="@+id/textView_downloads_header"
-                android:text="Downloads"
-                android:visibility="gone" />
-
-            <LinearLayout
-                android:id="@+id/layout_downloads"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/textView_downloads"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
-
-                <Button
-                    android:id="@+id/button_stop_downloads"
-                    style="?attr/borderlessButtonStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/stop_downloads" />
-            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 

@@ -465,11 +465,10 @@ class LibraryActivity : AppCompatActivity(),
 
     /**
      * The bulk downloads' progress, or null when none are at work: the sync icon turns
-     * while they work, their progress its tooltip unless a sync runs; the sync dialog and
-     * Manage attachments show it with Stop downloads.
+     * while they work, their progress its tooltip unless a sync runs; the sync dialog
+     * shows it with Stop downloads.
      */
     private fun showDownloads(status: String?) {
-        manageAttachmentsDialog?.showDownloads(status)
         syncDialog?.showDownloads(status)
         if (status == downloadLabel) return
         val wasTurning = busyLabel != null
@@ -571,7 +570,6 @@ class LibraryActivity : AppCompatActivity(),
         ).apply { show(viewModel.syncStatus.value, viewModel.downloadProgress.value) }
     }
 
-    // open while the user reads it; follows the bulk downloads
     private var manageAttachmentsDialog: ManageAttachmentsDialog? = null
 
     /** "Manage attachments" for [count] items, the selection or ([listed]) the whole list. */
@@ -580,11 +578,7 @@ class LibraryActivity : AppCompatActivity(),
         manageAttachmentsDialog = ManageAttachmentsDialog(this, count, listed, counts,
             onDownload = { viewModel.downloadAttachments(it) },
             onRemove = { files -> confirmRemoveFiles(files) },
-            onStop = { viewModel.stopDownloads() },
-        ).apply {
-            show()
-            showDownloads(viewModel.downloadProgress.value)
-        }
+        ).apply { show() }
     }
 
     /** Removes [files] from this device after asking, saying which have edits not uploaded. */

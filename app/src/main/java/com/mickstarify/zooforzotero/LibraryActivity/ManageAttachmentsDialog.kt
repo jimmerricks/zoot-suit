@@ -23,16 +23,15 @@ import com.mickstarify.zooforzotero.ZoteroStorage.Downloads.AttachmentKind
  * (PDFs, HTML snapshots, others), each with how many are on this device, ticked to be
  * acted on; Download fetches the ticked kinds' missing files in the background, Remove
  * takes their copies off this device (after asking). Both are full-width buttons under
- * the boxes, naming how many files they act on; Close is the only one in the button bar. While bulk downloads are at work it
- * says how far they are, with a button to stop them. Counts and lists only: as cheap for
- * the whole library as for one item.
+ * the boxes, naming how many files they act on; Close is the only one in the button bar.
+ * Bulk downloads at work are followed in the sync dialog (the toolbar's turning sync icon),
+ * which can stop them. Counts and lists only: as cheap for the whole library as for one item.
  *
  * @param count the number of items acted on
  * @param listed the items are those the list shows, not a selection
  * @param counts the selection's stored files by kind (AttachmentCounts.of); kinds without any are left out
  * @param onDownload the ticked kinds' files not on this device
  * @param onRemove the ticked kinds' files on this device
- * @param onStop stops the bulk downloads
  */
 class ManageAttachmentsDialog(
     private val context: Context,
@@ -41,13 +40,9 @@ class ManageAttachmentsDialog(
     private val counts: Map<AttachmentKind, AttachmentCounts>,
     private val onDownload: (List<Item>) -> Unit,
     private val onRemove: (List<Item>) -> Unit,
-    private val onStop: () -> Unit,
 ) {
     private val ticked = counts.keys.toMutableSet()
     private var dialog: AlertDialog? = null
-    private var downloadsHeader: View? = null
-    private var downloadsRow: View? = null
-    private var downloadsText: TextView? = null
     private var downloadButton: Button? = null
     private var removeButton: Button? = null
 
@@ -62,10 +57,6 @@ class ManageAttachmentsDialog(
         val scope = view.findViewById<TextView>(R.id.textView_attachments_scope)
         val hint = view.findViewById<TextView>(R.id.textView_attachments_hint)
         val kinds = view.findViewById<LinearLayout>(R.id.layout_attachment_kinds)
-        downloadsHeader = view.findViewById(R.id.textView_downloads_header)
-        downloadsRow = view.findViewById(R.id.layout_downloads)
-        downloadsText = view.findViewById(R.id.textView_downloads)
-        view.findViewById<Button>(R.id.button_stop_downloads).setOnClickListener { onStop() }
         // like the button bar's buttons, each closes the dialog as it acts
         downloadButton = view.findViewById<Button>(R.id.button_download_attachments).apply {
             setOnClickListener { dismiss(); chosen().missing.takeIf { it.isNotEmpty() }?.let(onDownload) }
@@ -106,20 +97,10 @@ class ManageAttachmentsDialog(
             .setView(view)
             .setOnDismissListener { dialog = null }
             .create()
-        // the downloads' status comes and goes under the boxes
-        DialogActions.keepButtonsInPlace(shown)
         shown.show()
         dialog = shown
         DialogActions.leave(view, shown, "Close")
         showButtons()
-    }
-
-    /** The bulk downloads' progress ("Downloading 3 of 12"), or null when none are at work. */
-    fun showDownloads(status: String?) {
-        val visibility = if (status == null) View.GONE else View.VISIBLE
-        downloadsHeader?.visibility = visibility
-        downloadsRow?.visibility = visibility
-        downloadsText?.text = status
     }
 
     fun dismiss() {
