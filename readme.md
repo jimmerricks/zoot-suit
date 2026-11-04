@@ -21,8 +21,8 @@ by Michael Johnston, forked at v4.0.0 (commit `0261040`) in October 2026. What c
 - Select many items at once to tag them, file them, or download or remove their
   attachments in the background.
 - Built for large libraries (tested with 18,000 items): a fast first sync that resumes
-  if interrupted, with progress in the toolbar. Pull the list down to sync; a sync icon
-  in the toolbar shows edits waiting to go up.
+  if interrupted, with progress in the toolbar. Tap the toolbar's sync button or pull the
+  list down to sync; a dot on the button shows edits waiting to go up.
 - A list you can set up: compact rows, the year and journal or publisher beside the
   creator, and the tags you coloured in Zotero as dots, emoji tags as emoji. Light and
   dark themes. Runs on Android 7 and later.

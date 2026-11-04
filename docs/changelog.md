@@ -4,9 +4,16 @@
 
 Changed:
 - Bulk downloads show in the sync dialog, not under the title: while they run the
-  toolbar's sync icon turns as it does during a sync (its tooltip says how far they
-  are), and tapping it opens the sync dialog with the downloads' progress and Stop
-  downloads under the sync. Manage attachments no longer shows the downloads itself.
+  toolbar's sync icon turns as it does during a sync, and tapping it opens the sync
+  dialog with the downloads' progress and Stop downloads under the sync. Manage
+  attachments no longer shows the downloads itself.
+- The sync button stays in the toolbar, first, so it no longer appears and disappears
+  or moves the buttons beside it. A tap syncs, edits waiting included (they show as a
+  dot on it), and the icon turns at once; while a sync or downloads run, a tap shows
+  them. A long press opens the sync dialog in any state: edits waiting, the last sync,
+  Sync now.
+- Dialogs: the text under the title starts where the title does (it was 4dp further
+  left), in the item dialog too.
 
 ## 0.5.1
 

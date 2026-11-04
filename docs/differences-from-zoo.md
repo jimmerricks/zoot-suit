@@ -17,7 +17,7 @@ forked at v4.0.0. The main differences:
 | New notes | Online only, uploaded at once | Offline too; uploaded at the next sync |
 | Large libraries | Whole library held in memory | List, sort and search read from the database |
 | Sidebar | Top-level collections; groups in a flat list | Collection tree; groups with their own collections; Settings at its foot |
-| Syncing | Sync in the menu; a spinner over the list | Pull the list down; the toolbar's sync icon shows edits waiting (with a dot) and turns while a sync runs |
+| Syncing | Sync in the menu; a spinner over the list | A sync button always in the toolbar (or pull the list down); it shows edits waiting (with a dot) and turns while a sync runs |
 | Rotation and restart | Reloads the library; restarts in My Library | Keeps your place |
 | Theme | Follows the system | Settings → Theme: auto, light or dark (dark on Android 7–9 too) |
 | List rows | Type icon, title, first creator | Settings → Appearance: compact rows, year and publication after the creator, type icons on or off, and Zotero's coloured and emoji tags at the start of the second line |
