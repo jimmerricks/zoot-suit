@@ -114,6 +114,12 @@ class ZoteroAccountAuthViewModel @Inject constructor(
     }
 
     private fun handleOAuthCallback(token: String, verifier: String) {
+        // the answer to this sign-in's request, not a callback made up or left from another
+        if (token != oAuthConsumer.token) {
+            Log.w(TAG, "OAuth callback for another request token")
+            _state.value = _state.value.copy(isLoading = false, error = "Zotero's answer didn't match this sign-in. Try again.")
+            return
+        }
         _state.value = _state.value.copy(isLoading = true, error = null)
 
         viewModelScope.launch {
