@@ -36,6 +36,10 @@ Fixed:
   took the file for a change made on another device.
 - A sync asked for while another runs no longer replaces one already waiting: a group
   refresh and My Library's sync both run, one after the other.
+- A file left empty by a power loss (or the app being killed) just after its download
+  no longer shows as edited and waiting to upload: it counts as not downloaded, and
+  opening it fetches it again. Downloads into App storage are written to disk before
+  they count as done.
 
 Removed:
 - The hidden "Re-download library" action and its code.
