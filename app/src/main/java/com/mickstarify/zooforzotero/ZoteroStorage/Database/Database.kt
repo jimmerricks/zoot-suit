@@ -544,10 +544,6 @@ class ZoteroDatabase @Inject constructor(val context: Context) {
         return db.itemDao().restoreFromTrash(groupID, itemKey)
     }
 
-    fun deleteAllItems(): Completable {
-        return db.itemDao().deleteAllItems()
-    }
-
     fun deleteEverything() {
         db.clearAllTables()
     }

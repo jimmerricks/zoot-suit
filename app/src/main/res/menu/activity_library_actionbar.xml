@@ -44,10 +44,4 @@
         android:visible="false"
         app:showAsAction="never" />
 
-    <item
-        android:id="@+id/force_resync"
-        android:visible="false"
-        android:title="@string/force_resync"
-        app:showAsAction="collapseActionView"/>
-
 </menu>

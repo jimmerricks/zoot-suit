@@ -387,20 +387,6 @@ class LibraryActivity : AppCompatActivity(),
                 }
             }
 
-            R.id.force_resync -> {
-                // clears every table: pending tag edits and new notes (PendingItemEdit)
-                // are gone, and with the attachment bases edited files no longer count
-                // as edited
-                createYesNoPrompt(
-                    "Re-download the library?",
-                    "This deletes the library data on this device; the next sync downloads " +
-                            "all of it again from Zotero. Downloaded files stay.\n\n" +
-                            "Edits waiting to sync are lost: new notes and tag changes are " +
-                            "deleted, and edited files are no longer seen as edited. Sync first.",
-                    "Re-download", "Cancel", { viewModel.requestForceResync() }, {}
-                )
-            }
-
             android.R.id.home -> {
                 // ✕ while selecting; Back clears the selection then
                 onBackPressedDispatcher.onBackPressed()

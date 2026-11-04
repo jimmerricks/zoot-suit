@@ -500,10 +500,6 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         parts.attachments.uploadAttachment(item)
     }
 
-    fun requestForceResync() {
-        parts.sync.destroyLibrary()
-    }
-
     fun backButtonPressed() {
         loadPriorState()
         refreshSidebar()

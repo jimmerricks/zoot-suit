@@ -185,11 +185,6 @@ class LibrarySync(
         return true
     }
 
-    fun destroyLibrary() {
-        zoteroDB.clearItemsVersion()
-        zoteroDatabase.deleteEverything()
-    }
-
     fun loadLibraryLocally(onFinish: () -> Unit = {}) {
         if (!zoteroDB.isOpen())
             finishLibrarySync(zoteroDB) {

@@ -558,7 +558,4 @@ interface ItemDao {
     @Query("DELETE FROM iteminfo WHERE `group`=:groupID")
     fun deleteAllForGroup(groupID: Int): Completable
 
-    @Transaction
-    @Query("DELETE FROM ItemInfo")
-    fun deleteAllItems(): Completable
 }
