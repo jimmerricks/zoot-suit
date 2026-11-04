@@ -11,6 +11,7 @@ import com.mickstarify.zooforzotero.ZoteroAPI.AttachmentUploader
 import com.mickstarify.zooforzotero.ZoteroAPI.DownloadProgress
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroAPI
 import com.mickstarify.zooforzotero.ZoteroAPI.DamagedDownloadException
+import com.mickstarify.zooforzotero.ZoteroAPI.NotEnoughSpaceException
 import com.mickstarify.zooforzotero.ZoteroAPI.ZoteroNotFoundException
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentLocalState
 import com.mickstarify.zooforzotero.ZoteroStorage.AttachmentOpenCheck
@@ -364,6 +365,11 @@ class LibraryAttachments(
                     if (e is ZoteroNotFoundException) {
                         ui.attachmentDownloadError(
                             "The file isn't in Zotero's storage (or on your WebDAV server)."
+                        )
+                    } else if (e is NotEnoughSpaceException) {
+                        ui.attachmentDownloadError(
+                            "Not enough free space on this device for this file. The " +
+                                    "download stops while it would leave less than 100 MB free."
                         )
                     } else if (e is DamagedDownloadException) {
                         ui.attachmentDownloadError(

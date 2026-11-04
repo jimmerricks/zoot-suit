@@ -263,12 +263,16 @@ class ZoteroAPI(
                                     val buffer = ByteArray(65536)
                                     val reporter = ProgressThrottle()
                                     var progress: Long = 0
+                                    // as WebDAV's: never fill the device (App storage is its
+                                    // internal storage)
+                                    val limit = spaceLeftFor(temp)
                                     var read = input.read(buffer)
                                     // a cancelled download stops here; left running, a retry
                                     // wrote the same file alongside it
                                     while (read > 0 && !emitter.isDisposed) {
                                         out.write(buffer, 0, read)
                                         progress += read
+                                        if (progress > limit) throw NotEnoughSpaceException(item.itemKey)
                                         if (reporter.due()) {
                                             emitter.onNext(
                                                 DownloadProgress(
