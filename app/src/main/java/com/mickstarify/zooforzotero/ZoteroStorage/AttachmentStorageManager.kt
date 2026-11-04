@@ -77,17 +77,15 @@ class AttachmentStorageManager @Inject constructor(
     val preferenceManager: PreferenceManager
 ) {
 
+    /** Where attachments are kept: App storage, or a folder the user chose (CUSTOM). */
     enum class StorageMode {
         CUSTOM,
-        EXTERNAL_CACHE
+        APP_STORAGE
     }
 
+    // stored as "EXTERNAL_CACHE" for App storage, its place before 0.5.0
     val storageMode: StorageMode
-        get() = when (preferenceManager.getStorageMode()) {
-            "CUSTOM" -> StorageMode.CUSTOM
-            "EXTERNAL_CACHE" -> StorageMode.EXTERNAL_CACHE
-            else -> StorageMode.EXTERNAL_CACHE
-        }
+        get() = if (preferenceManager.getStorageMode() == "CUSTOM") StorageMode.CUSTOM else StorageMode.APP_STORAGE
 
 
     /**
@@ -113,35 +111,27 @@ class AttachmentStorageManager @Inject constructor(
 
     fun getFilenameForItem(item: Item): String = safeFileName(item.data["filename"])
 
-    fun checkIfAttachmentExists(item: Item, checkMd5: Boolean = true): Boolean {
-        if (storageMode == StorageMode.EXTERNAL_CACHE) {
+    fun checkIfAttachmentExists(item: Item, checkMd5: Boolean = true): Boolean = when (storageMode) {
+        StorageMode.APP_STORAGE -> {
             val file = getAttachmentFile(item)
             if (file.length() == 0L) {
                 file.delete()
-                return false
-            }
-            if (checkMd5) {
-                return file.exists() && calculateMd5(file.inputStream()) == item.data["md5"]
+                false
             } else {
-                return file.exists()
-            }
-
-        } else if (storageMode == StorageMode.CUSTOM) {
-            val file = findCustomAttachment(item) ?: return false
-            if (file.length() == 0L) {
-                file.delete()
-                return false
-            }
-            val exists = file.exists()
-            if (exists && checkMd5) {
-                return calculateMd5(context.contentResolver.openInputStream(file.uri)!!) == item.data["md5"]
-            } else {
-                return exists
+                !checkMd5 || calculateMd5(file.inputStream()) == item.data["md5"]
             }
         }
-
-        Log.e("zotero", "checkIfAttachmentExists called with unconfigured storage mode")
-        return false
+        StorageMode.CUSTOM -> {
+            val file = findCustomAttachment(item)
+            if (file == null) {
+                false
+            } else if (file.length() == 0L) {
+                file.delete()
+                false
+            } else {
+                !checkMd5 || calculateMd5(context.contentResolver.openInputStream(file.uri)!!) == item.data["md5"]
+            }
+        }
     }
 
     fun calculateMd5(attachment: Item): String {
@@ -153,15 +143,15 @@ class AttachmentStorageManager @Inject constructor(
     fun calculateMd5(inputStream: InputStream): String = md5Hex(inputStream)
 
     fun getItemOutputStream(item: Item): OutputStream {
-        val filename = getFilenameForItem(item)
-        val mimeType = item.data["contentType"] ?: "application/pdf"
-        if (storageMode == StorageMode.EXTERNAL_CACHE) {
+        if (storageMode == StorageMode.APP_STORAGE) {
             // always the new place: a copy still in the old one is then shadowed, and the
             // move deletes it
             val file = appStorageFile(item)
             file.parentFile?.mkdirs()
             return file.outputStream()
-        } else if (storageMode == StorageMode.CUSTOM) {
+        } else {
+            val filename = getFilenameForItem(item)
+            val mimeType = item.data["contentType"] ?: "application/pdf"
             val documentTree = DocumentFile.fromTreeUri(context, getCustomStorageTreeURI())
             var directory = documentTree?.findFile(item.itemKey.uppercase())
             if (directory == null || directory.isDirectory == false) {
@@ -175,28 +165,16 @@ class AttachmentStorageManager @Inject constructor(
             // smaller file written over a larger one kept the old tail (and failed its md5)
             return context.contentResolver.openOutputStream(itemFile!!.uri, "wt")!!
         }
-        throw Exception("not implemented")
     }
 
-    fun getItemInputStream(item: Item): InputStream {
-        val filename = getFilenameForItem(item)
-        val mimeType = item.data["contentType"] ?: "application/pdf"
-        if (storageMode == StorageMode.EXTERNAL_CACHE) {
-            val file = getAttachmentFile(item)
-            return file.inputStream()
-        } else if (storageMode == StorageMode.CUSTOM) {
-            return context.contentResolver.openInputStream(getAttachmentUri(item))!!
-        }
-        throw Exception("not implemented")
+    fun getItemInputStream(item: Item): InputStream = when (storageMode) {
+        StorageMode.APP_STORAGE -> getAttachmentFile(item).inputStream()
+        StorageMode.CUSTOM -> context.contentResolver.openInputStream(getAttachmentUri(item))!!
     }
 
-    fun getAttachmentUri(item: Item): Uri {
-        if (storageMode == StorageMode.EXTERNAL_CACHE) {
-            return fileProviderUri(getAttachmentFile(item))
-        } else if (storageMode == StorageMode.CUSTOM) {
-            return findCustomAttachment(item)?.uri ?: throw FileNotFoundException()
-        }
-        throw Exception("not implemented")
+    fun getAttachmentUri(item: Item): Uri = when (storageMode) {
+        StorageMode.APP_STORAGE -> fileProviderUri(getAttachmentFile(item))
+        StorageMode.CUSTOM -> findCustomAttachment(item)?.uri ?: throw FileNotFoundException()
     }
 
     /**
@@ -259,7 +237,7 @@ class AttachmentStorageManager @Inject constructor(
 
 
     fun testStorage(): Boolean {
-        if (storageMode == StorageMode.EXTERNAL_CACHE) {
+        if (storageMode == StorageMode.APP_STORAGE) {
             return true //nothing to test.
         }
 
@@ -310,7 +288,7 @@ class AttachmentStorageManager @Inject constructor(
     /** Keys (upper case) of attachments with a folder in storage, listed once. */
     fun listDownloadedItemKeys(): Set<String> {
         return when (storageMode) {
-            StorageMode.EXTERNAL_CACHE ->
+            StorageMode.APP_STORAGE ->
                 listOfNotNull(appStorageDir, oldAppStorageDir).flatMap { dir ->
                     // not a move's half-copied "KEY.moving"
                     dir.listFiles()?.filter { it.isDirectory && !it.name.contains('.') }
@@ -345,7 +323,7 @@ class AttachmentStorageManager @Inject constructor(
 
     fun getMtime(attachment: Item): Long {
         when (storageMode) {
-            StorageMode.EXTERNAL_CACHE -> {
+            StorageMode.APP_STORAGE -> {
                 val file = getAttachmentFile(attachment)
                 return file.lastModified()
             }
@@ -378,13 +356,9 @@ class AttachmentStorageManager @Inject constructor(
 
     fun getFileSize(attachment: Item): Result<Long> {
         return try {
-            val size = if (storageMode == StorageMode.EXTERNAL_CACHE) {
-                getAttachmentFile(attachment).length()
-            } else if (storageMode == StorageMode.CUSTOM) {
-                val uri = getAttachmentUri(attachment)
-                getFileSize(uri)
-            } else {
-                throw Exception("Invalid storage mode")
+            val size = when (storageMode) {
+                StorageMode.APP_STORAGE -> getAttachmentFile(attachment).length()
+                StorageMode.CUSTOM -> getFileSize(getAttachmentUri(attachment))
             }
             Result.success(size)
         } catch (e: FileNotFoundException) {
@@ -418,7 +392,7 @@ class AttachmentStorageManager @Inject constructor(
      * a folder the user chose.
      */
     fun writeAttachmentFromFile(file: File, attachment: Item): Uri {
-        if (storageMode == StorageMode.EXTERNAL_CACHE) {
+        if (storageMode == StorageMode.APP_STORAGE) {
             val target = appStorageFile(attachment)
             target.parentFile?.mkdirs()
             if (file.renameTo(target)) return getAttachmentUri(attachment)
@@ -437,7 +411,7 @@ class AttachmentStorageManager @Inject constructor(
      */
     fun deleteAttachment(attachment: Item): Boolean {
         return when (storageMode) {
-            StorageMode.EXTERNAL_CACHE -> {
+            StorageMode.APP_STORAGE -> {
                 // both places: a copy left in the old one would show again
                 listOfNotNull(appStorageDir, oldAppStorageDir).map { dir ->
                     val file = attachmentFileIn(dir, attachment)
@@ -519,7 +493,7 @@ class AttachmentStorageManager @Inject constructor(
                     return openAttachment(documentFile!!.uri, item.data["contentType"] ?: "")
                 }
             }
-        } else if (storageMode == StorageMode.EXTERNAL_CACHE) {
+        } else {
             // logic using File api is much simpler
             for (i in directories.indices) {
                 val path = directories.drop(i).joinToString("/")
@@ -530,10 +504,6 @@ class AttachmentStorageManager @Inject constructor(
                     return openAttachment(fileProviderUri(document), item.data["contentType"] ?: "")
                 }
             }
-
-
-        } else {
-            throw NotImplementedError()
         }
 
         return null
