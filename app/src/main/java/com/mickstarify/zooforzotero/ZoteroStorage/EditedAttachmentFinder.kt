@@ -48,11 +48,15 @@ class EditedAttachmentFinder(
             md5 != null && !md5.equals(base, ignoreCase = true)
         }.keys
 
-    /** md5 of the file on the device now, null if there's none or it can't be read. */
+    /**
+     * md5 of the file on the device now, null if there's none or it can't be read. An empty
+     * file counts as none: it is a download whose contents never reached the disk (the
+     * device lost power or the app was killed just after), not an edit to upload.
+     */
     @Synchronized
     fun currentMd5(itemKey: String): String? {
         val stamp = stampOf(itemKey)
-        if (stamp == null) {
+        if (stamp == null || stamp.first == 0L) {
             cache.remove(itemKey)
             runCatching { store.remove(itemKey) }
             return null

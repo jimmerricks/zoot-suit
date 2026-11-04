@@ -33,6 +33,13 @@ class EditedAttachmentFinderTest {
     }
 
     @Test
+    fun `an empty file, a download lost before it reached the disk, is not edited`() {
+        files["AAAA"] = FakeFile(0, 1, "d41d8cd98f00b204e9800998ecf8427e")
+        assertNull(finder.currentMd5("AAAA"))
+        assertEquals(emptySet<String>(), finder.edited(mapOf("AAAA" to "base")))
+    }
+
+    @Test
     fun `an unchanged file is hashed once`() {
         files["AAAA"] = FakeFile(10, 1, "md5")
         finder.edited(mapOf("AAAA" to "md5"))
