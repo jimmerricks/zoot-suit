@@ -260,6 +260,40 @@ class SyncManagerTest {
     }
 
     @Test
+    fun syncsOfTwoLibrariesAskedForDuringASyncBothRunAfterIt() {
+        itemsVersion = 500
+        val running = io.reactivex.rxjava3.subjects.PublishSubject.create<ZoteroAPIItemsResponse>()
+        var myLibraryFetches = 0
+        val groupRunning = io.reactivex.rxjava3.subjects.PublishSubject.create<ZoteroAPIItemsResponse>()
+        whenever(api.getItems(any(), any(), anyOrNull(), any())) doAnswer {
+            val library = it.getArgument<Int>(1)
+            events += "fetch $library"
+            when {
+                library == 7 -> groupRunning
+                ++myLibraryFetches == 1 -> running
+                else -> Observable.never()
+            }
+        }
+        // the queued syncs are complete ones: collections and trash up to date
+        whenever(api.getCollections(any(), any())) doReturn Observable.empty()
+        whenever(api.getTrashedItems(any(), any())) doReturn Observable.empty()
+        val group = mock<ZoteroDB> {
+            on { groupID } doReturn 7
+            on { getLibraryVersion() } doReturn 300
+            on { getLastDeletedItemsCheckVersion() } doReturn 300
+        }
+        sync.startItemsSync(db)
+
+        sync.startItemsSync(group) // a group refreshing
+        sync.startItemsSync(db) // then this device's edits went up: neither replaces the other
+        sync.startItemsSync(group) // already waiting
+
+        running.onComplete()
+        groupRunning.onComplete()
+        assertEquals(listOf("fetch -1", "open", "fetch 7", "open", "fetch -1"), events.filter { it.startsWith("fetch") || it == "open" })
+    }
+
+    @Test
     fun aFirstSyncCountsBothPassesAtTheStart() {
         whenever(api.countItems(any(), eq(ItemScope.TOP))) doReturn Single.just(10_306)
         whenever(api.countItems(any(), eq(ItemScope.CHILDREN))) doReturn Single.just(8_007)

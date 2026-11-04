@@ -37,8 +37,8 @@ class SyncManager (
     var loadingTrash = false
     // past the downloads: deletions, then loading the library from the database
     private var finishing = false
-    // a sync asked for while one runs (see startCompleteSync)
-    private var queued: ZoteroDB? = null
+    // syncs asked for while one runs (see startCompleteSync), one per library, in order
+    private val queued = LinkedHashMap<Int, ZoteroDB>()
     fun isSyncing() : Boolean {
         return (loadingItems || loadingCollections || loadingTrash || finishing)
     }
@@ -114,9 +114,11 @@ class SyncManager (
         if (isSyncing()) {
             // runs once this one is done: the running sync may be another library's (a
             // group refreshing), or have fetched before this request's edits went up
+            // one per library: a second request for one already waiting changes nothing, and
+            // a request for another library no longer replaces the one waiting
             Log.d("zotero", "sync of ${zoteroDB.groupID} queued behind the running one")
-            queued = zoteroDB
-            status?.let { begin(it.copy(queued = zoteroDB.groupID)) }
+            queued[zoteroDB.groupID] = zoteroDB
+            status?.let { if (it.queued == null) begin(it.copy(queued = zoteroDB.groupID)) }
             return
         }
 
@@ -518,13 +520,12 @@ class SyncManager (
 
     }
 
-    /** After the library is loaded and the animation stopped: runs a queued sync. */
+    /** After the library is loaded and the animation stopped: runs the first queued sync (the rest after it). */
     private fun finishSync() {
         finishing = false
         status?.let { begin(it.copy(running = false, queued = null)) }
-        queued?.let { db ->
-            queued = null
-            startCompleteSync(db)
+        queued.keys.firstOrNull()?.let { group ->
+            startCompleteSync(queued.remove(group)!!)
         }
     }
 
