@@ -411,7 +411,18 @@ class AttachmentStorageManager @Inject constructor(
             }
         }
 
+    /**
+     * Puts [file] (a finished download in the app's cache) in place as [attachment]'s
+     * file. In App storage it is renamed there, one step on the same filesystem, so the
+     * copy on the device is never a partial file; it is copied where that fails, and into
+     * a folder the user chose.
+     */
     fun writeAttachmentFromFile(file: File, attachment: Item): Uri {
+        if (storageMode == StorageMode.EXTERNAL_CACHE) {
+            val target = appStorageFile(attachment)
+            target.parentFile?.mkdirs()
+            if (file.renameTo(target)) return getAttachmentUri(attachment)
+        }
         // closing the sink closes the output stream too
         file.inputStream().source().use { input ->
             getItemOutputStream(attachment).sink().buffer().use { it.writeAll(input) }
